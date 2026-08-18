@@ -204,10 +204,12 @@ export function relativeDay(iso) {
   return fmtDate(iso);
 }
 
+/* Relevance: scores cluster in the 80s–90s, so a ring or bar reads as "full"
+   on every card and encodes nothing. The number carries the meaning. */
 export const relevanceBar = n => `
   <span class="relevance" title="${num(n)} درصد مرتبط با پژوهش شما">
-    <span class="relevance-bar"><i style="width:${n}%"></i></span>
-    <strong>٪${num(n)}</strong>
+    <b class="val">٪${num(n)}</b>
+    <span class="lbl">مرتبط</span>
   </span>`;
 
 export const greeting = () => {
@@ -226,12 +228,12 @@ export function runSteps(container, steps, { onDone, stepMs = 620 } = {}) {
       <div class="steps">
         ${steps.map((s, k) => `
           <div class="step" data-state="${k < i ? 'done' : k === i ? 'active' : 'idle'}">
-            <span class="step-mark">${k < i ? icon('check', 10) : ''}</span>
+            <span class="step-mark">${k < i ? icon('check', 13) : ''}</span>
             <span>${esc(s.label)}</span>
             ${k < i && s.note ? `<span class="note">${esc(s.note)}</span>` : ''}
           </div>`).join('')}
       </div>
-      <div class="progress mt-4"><i style="width:${Math.round((i / steps.length) * 100)}%"></i></div>`;
+      <div class="progress mt-5"><i style="width:${Math.round((i / steps.length) * 100)}%"></i></div>`;
   };
   let i = 0;
   render(0);

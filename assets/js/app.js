@@ -29,19 +29,25 @@ const app = document.getElementById('app');
 let currentView = null;
 
 /* ------------------------------------------------------------------ Shell */
-function sidebar(active) {
+function rail(active) {
   const s = store.get();
   const unread = store.notifications().filter(n => n.unread).length;
+  const topics = store.rankedTopics().slice(0, 4);
+  const maxWeight = Math.max(1, ...topics.map(t => t.weight));
+
   return `
-    <aside class="sidebar">
+    <aside class="rail">
       <a class="brand" href="#/home">
         <span class="brand-mark">پ</span>
-        <span class="brand-name">پژوهش</span>
+        <span>
+          <span class="brand-name">پژوهش</span>
+          <span class="brand-sub">هوشمندی پژوهش شخصی</span>
+        </span>
       </a>
 
-      <button class="btn btn-primary btn-block" data-act="add:menu">${icon('plus', 14)} افزودن</button>
+      <button class="rail-cta" data-act="add:menu">${icon('plus', 16)} افزودن منبع</button>
 
-      <nav class="nav mt-5">
+      <nav class="nav">
         ${NAV.map(n => `
           <a class="nav-item" href="#${n.path}" ${active === n.path ? 'aria-current="page"' : ''}>
             ${icon(n.icon)} <span>${n.label}</span>
@@ -52,25 +58,27 @@ function sidebar(active) {
         </a>
       </nav>
 
-      <div class="nav mt-6">
-        <span class="eyebrow nav-label">موضوع‌های شما</span>
-        ${store.rankedTopics().slice(0, 4).map(t => `
-          <a class="nav-item small" href="#/topics/${t.id}">
-            <i class="dot ${store.get().followedTopics.includes(t.id) ? 'dot-live' : ''}"></i>
-            <span class="clamp-1">${esc(t.name)}</span>
-          </a>`).join('')}
+      <div class="nav" style="margin-top:var(--s-5)">
+        <span class="nav-label">موضوع‌های شما</span>
+        <div class="rail-topics">
+          ${topics.map(t => `
+            <button class="rail-topic" data-act="nav:go" data-id="/topics/${t.id}">
+              <span class="bar"><i style="width:${(t.weight / maxWeight) * 100}%"></i></span>
+              <span class="clamp-1">${esc(t.name)}</span>
+            </button>`).join('')}
+        </div>
       </div>
 
-      <div class="sidebar-foot">
+      <div class="rail-foot">
         <a class="nav-item" href="#/settings" ${active === '/settings' ? 'aria-current="page"' : ''}>
           ${icon('settings')} <span>تنظیمات</span>
         </a>
         <button class="nav-item" data-act="help">${icon('help')} <span>راهنما</span></button>
         <button class="user-chip mt-2" data-act="nav:go" data-id="/settings">
-          <span class="avatar">${esc((s.account?.name || 'G').slice(0, 1).toUpperCase())}</span>
+          <span class="avatar">${esc((s.account?.name || 'م').slice(0, 1))}</span>
           <span class="grow" style="min-width:0">
-            <span class="small clamp-1" style="display:block">${esc(s.account?.name || 'مهمان')}</span>
-            <span class="xs muted-2 clamp-1 latin" style="display:block">${esc(s.account?.email || '—')}</span>
+            <span class="small strong clamp-1" style="display:block">${esc(s.account?.name || 'مهمان')}</span>
+            <span class="xs clamp-1 latin" style="display:block;color:var(--on-wine-3)">${esc(s.account?.email || '—')}</span>
           </span>
         </button>
       </div>
@@ -92,7 +100,9 @@ function topbar() {
       </button>
       <a class="btn btn-ghost btn-icon" href="#/notifications" aria-label="اعلان‌ها" style="position:relative">
         ${icon('bell')}
-        ${unread ? '<i class="dot dot-live" style="position:absolute;top:7px;right:7px"></i>' : ''}
+        ${unread ? `<span style="position:absolute;top:4px;inset-inline-end:4px;min-width:16px;height:16px;
+          padding:0 4px;border-radius:999px;background:var(--crimson);color:#fff;font-size:10px;font-weight:700;
+          display:grid;place-items:center">${num(unread)}</span>` : ''}
       </a>
     </header>`;
 }
@@ -120,7 +130,7 @@ function render(view) {
   const active = '/' + (currentRoute().segments[0] || '');
   app.innerHTML = `
     <div class="shell">
-      ${sidebar(active)}
+      ${rail(active)}
       <div class="main">
         ${topbar()}
         ${view.html}
@@ -202,7 +212,7 @@ on('help', () => openModal({
       </div>
       <div>
         <span class="eyebrow">میان‌برها</span>
-        <p class="mt-2"><span class="kbd">⌘K</span> جست‌وجو یا پرسش · <span class="kbd">Esc</span> بستن</p>
+        <p class="mt-3"><span class="kbd">⌘K</span> جست‌وجو یا پرسش · <span class="kbd">Esc</span> بستن</p>
       </div>
     </div>`,
 }));
@@ -242,7 +252,7 @@ on('article:why', ({ id }) => {
     title: 'چرا این را می‌بینید',
     subtitle: `٪${num(store.personalRelevance(a))} مرتبط · ${esc(topicName(a.topic))}`,
     body: `
-      <p class="h3" style="font-family:var(--font-serif);font-weight:400">${esc(a.title)}</p>
+      <p class="editorial" style="font-size:1.25rem;line-height:1.55">${esc(a.title)}</p>
       <ul class="reasons mt-5">
         ${a.reasons.map(r => `<li>${esc(r)}</li>`).join('')}
         <li>وزن علاقه شما به «${esc(topicName(a.topic))}» برابر ${num(weight)} از ۱۰۰ است</li>
@@ -252,7 +262,7 @@ on('article:why', ({ id }) => {
       <div class="mt-5">
         <span class="eyebrow">این مفید بود؟</span>
         <div class="row wrap gap-2 mt-3">
-          <button class="btn btn-sm" data-act="fb:up" data-id="${a.id}">${icon('thumbUp', 14)} مرتبط بود</button>
+          <button class="btn btn-sm btn-crimson" data-act="fb:up" data-id="${a.id}">${icon('thumbUp', 14)} مرتبط بود</button>
           <button class="btn btn-sm" data-act="fb:down" data-id="${a.id}">${icon('thumbDn', 14)} مرتبط نبود</button>
           <button class="btn btn-sm btn-ghost" data-act="fb:more" data-id="${a.id}">بیشتر از این‌ها</button>
           <button class="btn btn-sm btn-ghost" data-act="fb:less" data-id="${a.id}">کمتر از این‌ها</button>
@@ -315,7 +325,7 @@ function paletteRender(q) {
     ${query ? `
       <div class="palette-group eyebrow">پرسش از پژوهش</div>
       <button class="palette-item" data-act="palette:ask" data-q="${esc(query)}">
-        ${icon('spark', 14)}
+        <span class="palette-icon">${icon('spark', 15)}</span>
         <span class="grow"><b class="small">${esc(query)}</b>
           <span class="xs muted" style="display:block">پاسخ از کل کتابخانه شما</span></span>
       </button>` : ''}
@@ -323,7 +333,7 @@ function paletteRender(q) {
     <div class="palette-group eyebrow">${query ? 'در کتابخانه شما' : 'پیشنهاد برای شما'}</div>
     ${articles.length ? articles.map(a => `
       <button class="palette-item" data-act="palette:article" data-id="${a.id}">
-        ${icon('file', 14)}
+        <span class="palette-icon">${icon('file', 15)}</span>
         <span class="grow"><b class="small clamp-1">${esc(a.title)}</b>
           <span class="xs muted">${esc(sourceName(a.source))} · ${esc(topicName(a.topic))}</span></span>
       </button>`).join('')
@@ -333,13 +343,13 @@ function paletteRender(q) {
       <div class="palette-group eyebrow">موضوع‌ها</div>
       ${topics.map(t => `
         <button class="palette-item" data-act="palette:topic" data-id="${t.id}">
-          ${icon('hash', 14)} <span class="small">${esc(t.name)}</span>
+          <span class="palette-icon">${icon('hash', 15)}</span> <span class="small">${esc(t.name)}</span>
         </button>`).join('')}` : ''}
 
     ${query ? `
       <div class="palette-group eyebrow">جست‌وجوی محتوا</div>
       <button class="palette-item" data-act="palette:library" data-q="${esc(query)}">
-        ${icon('book', 14)} <span class="small">دیدن همه نتایج در کتابخانه</span>
+        <span class="palette-icon">${icon('book', 15)}</span> <span class="small">دیدن همه نتایج در کتابخانه</span>
       </button>` : ''}`;
 }
 

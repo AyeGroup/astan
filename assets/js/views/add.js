@@ -106,7 +106,7 @@ function runArticle() {
           </div>
           <div class="card card-tight mt-5">
             <span class="badge badge-topic">${esc(topicName(a.topic))}</span>
-            <p class="h3 mt-3" style="font-family:var(--font-serif);font-weight:400">${esc(a.title)}</p>
+            <p class="editorial mt-3" style="font-size:1.1875rem;line-height:1.55">${esc(a.title)}</p>
             <p class="xs muted mt-2"><span class="latin">${esc(url.hostname)}</span> · ${num(a.minutes)} دقیقه مطالعه · ٪${num(a.relevance)} مرتبط</p>
           </div>`,
         foot: `

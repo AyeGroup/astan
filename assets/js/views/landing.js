@@ -7,7 +7,10 @@ import { INTEREST_SEEDS } from '../data.js';
 const brand = `
   <a class="brand" href="#/" style="padding:0">
     <span class="brand-mark">پ</span>
-    <span class="brand-name">پژوهش</span>
+    <span>
+      <span class="brand-name">پژوهش</span>
+      <span class="brand-sub">هوشمندی پژوهش شخصی</span>
+    </span>
   </a>`;
 
 /* --------------------------------------------------------------- Landing */
@@ -17,101 +20,94 @@ export function landing() {
     title: 'پژوهش — آنچه مهم است را بدانید',
     html: `
       <div class="landing">
-        <nav class="landing-nav">
-          ${brand}
-          <div class="actions-inline">
-            <button class="btn btn-ghost btn-icon" data-act="theme:toggle" aria-label="تغییر پوسته">${icon('moon')}</button>
-            <button class="btn btn-ghost" data-act="nav:auth">ورود</button>
-            <button class="btn btn-primary" data-act="nav:auth">شروع پژوهش</button>
-          </div>
-        </nav>
-
-        <header class="hero">
-          <div class="hero-copy">
-            <span class="eyebrow">هوشمندی پژوهش شخصی</span>
-            <h1 class="display">آنچه مهم است را بدانید.<br>بدون اینکه همه‌چیز را بخوانید.</h1>
-            <p class="lead">سایت‌ها، مقاله‌ها و موضوع‌هایی را که برایتان مهم‌اند وصل کنید.
-              هوش مصنوعی آنچه را برای شما مهم است پیدا می‌کند، می‌فهمد و پیشنهاد می‌دهد.</p>
-            <div class="actions-inline mt-2">
-              <button class="btn btn-primary btn-lg" data-act="nav:auth">شروع پژوهش</button>
-              <button class="btn btn-lg" data-act="landing:how">ببینید چطور کار می‌کند</button>
+        <div class="landing-inner">
+          <nav class="landing-nav">
+            ${brand}
+            <div class="actions-inline">
+              <button class="btn btn-ghost btn-icon" data-act="theme:toggle" aria-label="تغییر پوسته">${icon('moon')}</button>
+              <button class="btn btn-ghost" data-act="nav:auth">ورود</button>
+              <button class="btn btn-primary" data-act="nav:auth">شروع کنید</button>
             </div>
-            <p class="xs muted-2">بدون کارت بانکی. نخستین بینش شما در کمتر از یک دقیقه.</p>
-          </div>
+          </nav>
 
-          <!-- §7 Hero visual: the real product surface, not decoration -->
-          <div class="preview" aria-hidden="true">
-            <div class="preview-bar">
-              <span class="dot"></span><span class="dot"></span><span class="dot"></span>
-              <span class="xs muted-2" style="margin-inline-start:auto">هوشمندی پژوهش شما</span>
-            </div>
-            <div class="preview-body">
-              <div>
-                <span class="eyebrow">سه‌شنبه</span>
-                <p class="h2 serif mt-2">سه چیزی که امروز باید بدانید</p>
+          <header class="hero">
+            <div class="hero-copy">
+              <span class="eyebrow">هوشمندی پژوهش شخصی</span>
+              <h1 class="display">آنچه مهم است را بدانید،<br><strong>بدون اینکه همه‌چیز را بخوانید.</strong></h1>
+              <p class="lead">سایت‌ها، مقاله‌ها و موضوع‌هایی را که برایتان مهم‌اند وصل کنید.
+                هوش مصنوعی می‌خواند، می‌فهمد، و فقط آنچه را که به کار شما می‌آید جلو می‌آورد.</p>
+              <div class="actions-inline">
+                <button class="btn btn-primary btn-lg" data-act="nav:auth">شروع پژوهش</button>
+                <button class="btn btn-lg" data-act="landing:how">ببینید چطور کار می‌کند</button>
               </div>
-              <div>
-                <div class="preview-row">
-                  <span class="preview-score">٪۹۴</span>
-                  <div>
-                    <p style="font-family:var(--font-serif)">ابزار عامل‌ها سریع‌تر از پیش‌بینی استاندارد شد</p>
-                    <p class="xs muted mt-2">عامل‌های هوش مصنوعی · مرتبط با ۸ مقاله‌ای که خواندید</p>
-                  </div>
+              <p class="xs muted-2">بدون کارت بانکی · نخستین بینش در کمتر از یک دقیقه</p>
+            </div>
+
+            <!-- §7: the hero visual is the real product surface -->
+            <div class="preview" aria-hidden="true">
+              <div class="preview-inner">
+                <div class="preview-bar">
+                  <i></i><i></i><i></i>
+                  <span class="xs muted-2" style="margin-inline-start:auto">هوشمندی پژوهش شما</span>
                 </div>
-                <div class="preview-row">
-                  <span class="preview-score">٪۹۱</span>
-                  <div>
-                    <p style="font-family:var(--font-serif)">اجرای قانون هوش مصنوعی با کاغذبازی آغاز شد</p>
-                    <p class="xs muted mt-2">مقررات هوش مصنوعی · از منبعی که پایش می‌کنید</p>
-                  </div>
-                </div>
-                <div class="preview-row">
-                  <span class="preview-score">٪۸۳</span>
-                  <div>
-                    <p style="font-family:var(--font-serif)">پژوهشی ادعایی که ذخیره کردید را مقید می‌کند</p>
-                    <p class="xs muted mt-2">داده مصنوعی · با کتابخانه شما در تضاد است</p>
+                <div class="preview-body">
+                  <span class="eyebrow">سه‌شنبه صبح</span>
+                  <p class="editorial mt-3" style="font-size:1.5rem;line-height:1.45">سه چیزی که امروز باید بدانید</p>
+                  <div class="mt-4">
+                    ${[
+                      ['۹۴', 'ابزار عامل‌ها سریع‌تر از پیش‌بینی استاندارد شد', 'عامل‌های هوش مصنوعی · مرتبط با ۸ مقاله شما'],
+                      ['۹۱', 'اجرای قانون هوش مصنوعی با کاغذبازی آغاز شد', 'مقررات · از منبعی که پایش می‌کنید'],
+                      ['۸۳', 'پژوهشی ادعایی که ذخیره کردید را مقید می‌کند', 'داده مصنوعی · با کتابخانه شما در تضاد'],
+                    ].map(([score, title, meta]) => `
+                      <div class="preview-row">
+                        <span class="preview-score">٪${score}</span>
+                        <div>
+                          <p class="strong" style="line-height:1.6">${title}</p>
+                          <p class="xs muted mt-2">${meta}</p>
+                        </div>
+                      </div>`).join('')}
                   </div>
                 </div>
               </div>
             </div>
-          </div>
-        </header>
+          </header>
+        </div>
 
-        <section class="feature-grid" id="how">
-          <div class="feature">
-            <span class="num">۰۱</span>
-            <h3 class="h2">یک منبع اضافه کنید</h3>
-            <p class="muted">یک مقاله، یک PDF، یا یک سایت کامل. ساختارش را نقشه‌برداری می‌کنیم،
-              مقاله‌های هم‌خوان با موضوع‌های شما را پیدا می‌کنیم و بقیه را نادیده می‌گیریم.</p>
-          </div>
-          <div class="feature">
-            <span class="num">۰۲</span>
-            <h3 class="h2">درک به دست بیاورید</h3>
-            <p class="muted">خلاصه، نکته‌های کلیدی، ترجمه و — بخشی که واقعاً مهم است —
-              اینکه نسبت به آنچه می‌دانید چه چیزی تغییر کرده.</p>
-          </div>
-          <div class="feature">
-            <span class="num">۰۳</span>
-            <h3 class="h2">بدانید چرا</h3>
-            <p class="muted">هر پیشنهاد دلیل خودش را می‌گوید و به منبعش پیوند می‌دهد.
-              وقتی منابع مطمئن نیستند، ما هم نیستیم.</p>
-          </div>
-        </section>
-
-        <section class="card" style="padding:var(--s-7)">
-          <div class="row between wrap gap-5">
-            <div style="max-width:44ch">
-              <span class="eyebrow">قول ما</span>
-              <p class="h1 serif mt-3">همه‌چیز را نخوانید.<br>آنچه مهم است را بدانید.</p>
+        <div class="landing-inner">
+          <section class="how" id="how">
+            <span class="eyebrow">در سه گام</span>
+            <h2 class="h1 mt-3" style="margin-bottom:var(--s-7)">پژوهش چطور کار می‌کند</h2>
+            <div class="how-grid">
+              ${[
+                ['۱', 'یک منبع اضافه کنید',
+                 'یک مقاله، یک PDF، یا یک سایت کامل. ساختارش را نقشه‌برداری می‌کنیم، مقاله‌های هم‌خوان با موضوع‌های شما را پیدا می‌کنیم و بقیه را نادیده می‌گیریم.'],
+                ['۲', 'درک به دست بیاورید',
+                 'خلاصه، نکته‌های کلیدی، ترجمه — و بخشی که واقعاً مهم است: اینکه نسبت به آنچه از پیش می‌دانید چه چیزی تغییر کرده.'],
+                ['۳', 'بدانید چرا',
+                 'هر پیشنهاد دلیل خودش را می‌گوید و به منبعش پیوند می‌دهد. وقتی منابع مطمئن نیستند، ما هم نیستیم.'],
+              ].map(([n, title, body]) => `
+                <div class="how-step">
+                  <span class="how-num">${n}</span>
+                  <h3 class="h2">${title}</h3>
+                  <p class="muted" style="line-height:1.9">${body}</p>
+                </div>`).join('')}
             </div>
-            <button class="btn btn-accent btn-lg" data-act="nav:auth">ساخت حساب کاربری</button>
-          </div>
-        </section>
+          </section>
 
-        <footer class="landing-foot">
-          <span class="xs muted-2">پژوهش · سکوی هوشمندی پژوهش شخصی</span>
-          <span class="xs muted-2">نمونه اولیه — همه محتوا داده نمونه است</span>
-        </footer>
+          <section class="closer">
+            <span class="eyebrow" style="color:var(--on-wine-2)">قول ما</span>
+            <p class="h1 editorial">همه‌چیز را نخوانید.<br>آنچه مهم است را بدانید.</p>
+            <p class="lead" style="color:var(--on-wine-2);max-width:34rem">
+              اگر فقط پنج دقیقه وقت داشته باشید، پژوهش مهم‌ترین چیزهایی را که باید بدانید نشان می‌دهد.
+            </p>
+            <button class="btn btn-onwine btn-lg" data-act="nav:auth">ساخت حساب کاربری</button>
+          </section>
+
+          <footer class="landing-foot">
+            <span class="xs muted-2">پژوهش · سکوی هوشمندی پژوهش شخصی</span>
+            <span class="xs muted-2">نمونه اولیه — همه محتوا داده نمونه است</span>
+          </footer>
+        </div>
       </div>`,
   };
 }
@@ -123,39 +119,54 @@ export function auth() {
     title: 'ورود — پژوهش',
     html: `
       <div class="auth-wrap">
-        <div class="auth-card">
-          <div class="col gap-2" style="align-items:flex-start">
-            ${brand}
-            <h1 class="h1 mt-4">ساخت حساب کاربری</h1>
-            <p class="muted small">در گام بعد موضوع‌هایتان را انتخاب می‌کنید، تا هرگز به داشبورد خالی نرسید.</p>
+        <aside class="auth-aside">
+          ${brand}
+          <div style="max-width:26rem">
+            <span class="eyebrow" style="color:var(--on-wine-2)">چرا پژوهش</span>
+            <p class="h1 editorial mt-4" style="color:var(--on-wine);line-height:1.4">
+              کاربر نباید دنبال دانش بگردد.<br>دانش باید سراغ او بیاید.
+            </p>
+            <p class="lead mt-5" style="color:var(--on-wine-2)">
+              در گام بعد موضوع‌هایتان را انتخاب می‌کنید، تا هرگز به یک داشبورد خالی نرسید.
+            </p>
           </div>
+          <span class="xs" style="color:var(--on-wine-3)">نمونه اولیه — چیزی از مرورگر شما بیرون نمی‌رود</span>
+        </aside>
 
-          <button class="btn btn-block btn-lg" data-act="auth:google">
-            ${icon('globe')} ادامه با گوگل
-          </button>
+        <main class="auth-main">
+          <div class="auth-card">
+            <div>
+              <h1 class="h1">ساخت حساب کاربری</h1>
+              <p class="muted mt-3">کمتر از یک دقیقه طول می‌کشد.</p>
+            </div>
 
-          <div class="row gap-4">
-            <span class="divider grow"></span>
-            <span class="xs muted-2">یا</span>
-            <span class="divider grow"></span>
+            <button class="btn btn-block btn-lg" data-act="auth:google">
+              ${icon('globe')} ادامه با گوگل
+            </button>
+
+            <div class="row gap-4">
+              <span class="divider grow"></span>
+              <span class="xs muted-2">یا</span>
+              <span class="divider grow"></span>
+            </div>
+
+            <form class="col gap-4" data-act="auth:submit">
+              <div class="field">
+                <label for="email">ایمیل</label>
+                <input class="input" id="email" name="email" type="email" placeholder="you@example.com" dir="ltr" required>
+              </div>
+              <div class="field">
+                <label for="password">گذرواژه</label>
+                <input class="input" id="password" name="password" type="password" placeholder="دست‌کم ۸ نویسه" minlength="8" required>
+              </div>
+              <button class="btn btn-primary btn-lg btn-block" type="submit">ادامه</button>
+            </form>
+
+            <p class="xs muted-2" style="text-align:center">
+              نمونه اولیه — حسابی ساخته نمی‌شود و نامی ثبت نمی‌گردد.
+            </p>
           </div>
-
-          <form class="col gap-4" data-act="auth:submit">
-            <div class="field">
-              <label for="email">ایمیل</label>
-              <input class="input" id="email" name="email" type="email" placeholder="you@example.com" dir="ltr" required>
-            </div>
-            <div class="field">
-              <label for="password">گذرواژه</label>
-              <input class="input" id="password" name="password" type="password" placeholder="دست‌کم ۸ نویسه" minlength="8" required>
-            </div>
-            <button class="btn btn-primary btn-lg btn-block" type="submit">ادامه</button>
-          </form>
-
-          <p class="xs muted-2" style="text-align:center">
-            نمونه اولیه — حسابی ساخته نمی‌شود و چیزی از مرورگر شما بیرون نمی‌رود.
-          </p>
-        </div>
+        </main>
       </div>`,
   };
 }
@@ -172,7 +183,7 @@ const shell = (step, body, foot) => ({
       <header class="onboard-head">
         ${brand}
         <div class="row gap-4">
-          <span class="xs muted">گام ${step} از ۳</span>
+          <span class="xs muted tnum">گام ${['۱','۲','۳'][step - 1]} از ۳</span>
           <span class="stepper">
             ${[1, 2, 3].map(i => `<i data-on="${i <= step}"></i>`).join('')}
           </span>
@@ -216,7 +227,8 @@ function topicGrid() {
 
 function onboardStep1() {
   return shell(1, `
-    <h1 class="h1">دوست دارید درباره چه چیزی بیشتر بدانید؟</h1>
+    <span class="eyebrow">گام یک · علاقه‌مندی‌ها</span>
+    <h1 class="h1 mt-3">دوست دارید درباره چه چیزی بیشتر بدانید؟</h1>
     <p class="lead mt-3">دست‌کم دو مورد انتخاب کنید. هر زمان می‌توانید تغییرشان دهید و
       پیشنهادها همزمان با مطالعه شما تنظیم می‌شوند.</p>
 
@@ -235,25 +247,21 @@ function onboardStep1() {
 
 function onboardStep2() {
   return shell(2, `
-    <h1 class="h1">نخستین منبعتان را اضافه کنید</h1>
+    <span class="eyebrow">گام دو · نخستین منبع</span>
+    <h1 class="h1 mt-3">نخستین منبعتان را اضافه کنید</h1>
     <p class="lead mt-3">یک منبع برای شروع کافی است. تا شما راه‌اندازی را تمام کنید، پردازشش می‌کنیم.</p>
 
     <div class="grid grid-3 mt-6">
-      <button class="source-choice" data-act="onb:add" data-kind="article">
-        ${icon('file', 20)}
-        <b>مقاله</b>
-        <span class="small muted">نشانی یک مقاله را بچسبانید</span>
-      </button>
-      <button class="source-choice" data-act="onb:add" data-kind="website">
-        ${icon('globe', 20)}
-        <b>سایت</b>
-        <span class="small muted">پایش یک سایت را به هوش مصنوعی بسپارید</span>
-      </button>
-      <button class="source-choice" data-act="onb:add" data-kind="pdf">
-        ${icon('file', 20)}
-        <b>PDF</b>
-        <span class="small muted">یک سند بارگذاری کنید</span>
-      </button>
+      ${[
+        ['article', 'link', 'مقاله', 'نشانی یک مقاله را بچسبانید'],
+        ['website', 'globe', 'سایت', 'پایش یک سایت را به هوش مصنوعی بسپارید'],
+        ['pdf', 'file', 'PDF', 'یک سند بارگذاری کنید'],
+      ].map(([kind, ic, name, hint]) => `
+        <button class="source-choice" data-act="onb:add" data-kind="${kind}">
+          <span class="ico">${icon(ic, 22)}</span>
+          <b>${name}</b>
+          <span class="small muted">${hint}</span>
+        </button>`).join('')}
     </div>
 
     <p class="xs muted-2 mt-5">اگر رد کنید، باز هم از منابع عمومیِ هم‌خوان با موضوع‌های انتخابی شما
@@ -274,17 +282,18 @@ const INTENTS = [
 
 function onboardStep3() {
   return shell(3, `
-    <h1 class="h1">می‌خواهید چطور از پژوهش استفاده کنید؟</h1>
+    <span class="eyebrow">گام سه · شکل فید</span>
+    <h1 class="h1 mt-3">می‌خواهید چطور از پژوهش استفاده کنید؟</h1>
     <p class="lead mt-3">این شکل فید شما را تعیین می‌کند. نقطه شروع است، نه قفل همیشگی.</p>
 
     <div class="col gap-2 mt-6">
       ${INTENTS.map(i => `
         <button class="radio-card" data-act="onb:intent" data-id="${i.id}"
           data-selected="${draft.intent === i.id}">
-          <span class="step-mark" style="margin-top:2px">${draft.intent === i.id ? icon('check', 10) : ''}</span>
+          <span class="radio-mark">${draft.intent === i.id ? icon('check', 12) : ''}</span>
           <span>
-            <b>${esc(i.label)}</b>
-            <span class="small muted" style="display:block">${esc(i.hint)}</span>
+            <b style="font-size:1.0625rem">${esc(i.label)}</b>
+            <span class="small muted mt-2" style="display:block">${esc(i.hint)}</span>
           </span>
         </button>`).join('')}
     </div>

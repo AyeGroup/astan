@@ -7,7 +7,7 @@ import { sectionHead, articleCard, articleRow, emptyState, tabBar } from './comp
 /* ------------------------------------------------------------- Discover */
 export function discover() {
   const ranked = store.feed({ excludeRead: true });
-  const forYou = ranked.slice(0, 4);
+  const forYou = ranked.slice(0, 3);
   const trending = [...ranked]
     .sort((a, b) => (TOPICS.find(t => t.id === b.topic)?.momentum ?? 0) - (TOPICS.find(t => t.id === a.topic)?.momentum ?? 0))
     .slice(0, 3);
@@ -51,7 +51,7 @@ export function discover() {
             ${TOPICS.map(t => `
               <div class="card card-hover card-tight">
                 <div class="row between">
-                  <button class="link" data-act="nav:go" data-id="/topics/${t.id}" style="font-family:var(--font-serif);font-size:1.0625rem">${esc(t.name)}</button>
+                  <button class="link editorial" data-act="nav:go" data-id="/topics/${t.id}" style="font-size:1.25rem;border:0">${esc(t.name)}</button>
                   <span class="${t.momentum >= 0 ? 'trend-up' : 'muted small'}">${t.momentum >= 0 ? '+' : '−'}٪${num(Math.abs(t.momentum))}</span>
                 </div>
                 <p class="xs muted mt-2">${num(t.articles)} مقاله · ${num(t.sources)} منبع</p>

@@ -1,6 +1,6 @@
 /* §28–35 · §50 — Article Reader. Order follows §53 content hierarchy:
    what happened → why it matters → what is new → what it relates to → source. */
-import { esc, icon, on, toast, fmtDate, num, words, openModal, closeModal } from '../ui.js';
+import { esc, icon, on, toast, fmtDate, num, words, relevanceBar, openModal, closeModal } from '../ui.js';
 import { topicName, sourceName, ARTICLE_QA } from '../data.js';
 import * as store from '../store.js';
 import { sectionHead, articleCard, emptyState } from './components.js';
@@ -38,10 +38,12 @@ export function reader(segments) {
 
         <!-- §29 Article header -->
         <header class="reader-head mt-4">
-          <div class="row wrap gap-2">
-            <span class="badge badge-topic">${esc(topicName(a.topic))}</span>
-            <button class="badge" data-act="nav:go" data-id="/sources/${a.source}">${esc(sourceName(a.source))}</button>
-            <span class="badge badge-outline">٪${num(store.personalRelevance(a))} مرتبط</span>
+          <div class="row wrap gap-2 between">
+            <div class="row wrap gap-2">
+              <span class="badge badge-topic">${esc(topicName(a.topic))}</span>
+              <button class="badge latin" data-act="nav:go" data-id="/sources/${a.source}">${esc(sourceName(a.source))}</button>
+            </div>
+            ${relevanceBar(store.personalRelevance(a))}
           </div>
           <h1 class="reader-title">${esc(a.title)}</h1>
           <div class="meta">
@@ -49,7 +51,7 @@ export function reader(segments) {
             <span>${esc(fmtDate(a.date))}</span><span class="sep">·</span>
             <span>${num(a.minutes)} دقیقه مطالعه</span>
           </div>
-          ${a.titleOriginal ? `<p class="xs muted-2 mt-3 latin">${esc(a.titleOriginal)}</p>` : ''}
+          ${a.titleOriginal ? `<p class="reader-original mt-4 latin">${esc(a.titleOriginal)}</p>` : ''}
         </header>
 
         <!-- Toolbar: actions + translation -->
@@ -71,15 +73,15 @@ export function reader(segments) {
           <button class="btn btn-sm btn-ghost" data-act="article:why" data-id="${a.id}">چرا این؟</button>
         </div>
 
-        <!-- §30 TL;DR -->
-        <div class="callout callout-accent">
+        <!-- §30 TL;DR — readable in under 15 seconds -->
+        <div class="tldr-card">
           <span class="eyebrow">در یک نگاه</span>
           <p class="tldr">${esc(a.tldr)}</p>
         </div>
 
         <!-- §31 Key insights -->
         <section class="section">
-          ${sectionHead('نکته‌های کلیدی')}
+          ${sectionHead('نکته‌های کلیدی', '', 'حداکثر هفت نکته')}
           <ol class="insight-list">
             ${a.insights.map(i => `<li><div><h4>${esc(i.h)}</h4><p>${esc(i.p)}</p></div></li>`).join('')}
           </ol>
@@ -87,9 +89,9 @@ export function reader(segments) {
 
         <!-- §32 Why it matters — personalized -->
         <section class="section">
-          <div class="callout">
+          <div class="callout callout-wine">
             <span class="eyebrow">چرا برای شما مهم است</span>
-            <p class="mt-3" style="max-width:var(--measure)">${esc(a.why)}</p>
+            <p class="mt-3" style="max-width:var(--measure);font-size:1.0625rem;line-height:1.9">${esc(a.why)}</p>
             <p class="xs muted-2 mt-4">بر پایه تاریخچه مطالعه و مقاله‌های ذخیره‌شده شما.</p>
           </div>
         </section>
@@ -127,7 +129,7 @@ export function reader(segments) {
               ${fromLibrary.map(x => `
                 <div class="list-row" data-act="article:open" data-id="${x.id}">
                   <div class="grow">
-                    <p style="font-family:var(--font-serif)">${esc(x.title)}</p>
+                    <p class="editorial" style="font-size:1.125rem;line-height:1.55">${esc(x.title)}</p>
                     <p class="xs muted mt-2">${store.isSaved(x.id) ? 'این را ذخیره کردید' : 'این را خواندید'} · ${esc(sourceName(x.source))}</p>
                   </div>
                   ${icon('left', 14)}
@@ -136,7 +138,7 @@ export function reader(segments) {
           </section>` : ''}
 
         <section class="section">
-          ${sectionHead('مقاله‌های مرتبط')}
+          ${sectionHead('مقاله‌های مرتبط', '', 'از همین موضوع و منبع')}
           <div class="grid grid-auto">${related.map(x => articleCard(x, { showReasons: false })).join('')}</div>
         </section>
       </article>
@@ -199,7 +201,13 @@ function askPanel(a) {
   return `
     <div class="ask-panel">
       <button class="ask-head" data-act="reader:ask-toggle">
-        <span class="row gap-3">${icon('spark')} <b>درباره این مقاله بپرسید</b></span>
+        <span class="row gap-4">
+          <span class="ask-icon">${icon('spark', 18)}</span>
+          <span>
+            <b style="font-size:1.0625rem;display:block">درباره این مقاله بپرسید</b>
+            <span class="xs muted">پاسخ فقط از متن همین مقاله</span>
+          </span>
+        </span>
         <span class="row gap-2 xs muted">${state.askOpen ? 'بستن' : 'باز کردن'} ${icon('down', 13)}</span>
       </button>
       ${state.askOpen ? `
