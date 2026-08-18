@@ -132,7 +132,7 @@ export function openModal({ title = '', subtitle = '', body = '', foot = '', wid
           <h2 class="h2">${esc(title)}</h2>
           ${subtitle ? `<p class="small muted mt-2">${subtitle}</p>` : ''}
         </div>
-        ${dismissible ? `<button class="btn btn-ghost btn-icon" data-act="modal:close" aria-label="Close">${icon('x')}</button>` : ''}
+        ${dismissible ? `<button class="btn btn-ghost btn-icon" data-act="modal:close" aria-label="بستن">${icon('x')}</button>` : ''}
       </div>
       <div class="modal-body">${body}</div>
       ${foot ? `<div class="modal-foot">${foot}</div>` : ''}
@@ -182,28 +182,42 @@ on('modal:close', closeModal);
 
 document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
 
-/* --- Small formatters ---------------------------------------------------- */
-export const fmtDate = iso => new Date(iso + 'T00:00:00').toLocaleDateString('en-GB',
-  { day: 'numeric', month: 'short', year: 'numeric' });
+/* Word-splitting for matching. JS \w is ASCII-only, so a \W split drops every
+   Persian letter; split on whitespace, punctuation and ZWNJ instead. */
+export const words = str => String(str)
+  .toLowerCase()
+  .split(/[\s\u200c،؛_.:!?؟«»()\[\]{}"'`\-–—/\\]+/)
+  .filter(Boolean);
+
+/* --- Persian formatting -------------------------------------------------- */
+/* Digits stay Persian throughout; the width of a percentage bar does not. */
+export const num = n => Number(n).toLocaleString('fa-IR');
+
+export const fmtDate = iso => new Date(iso + 'T00:00:00')
+  .toLocaleDateString('fa-IR', { day: 'numeric', month: 'long', year: 'numeric' });
 
 export function relativeDay(iso) {
   const days = Math.round((Date.now() - new Date(iso + 'T00:00:00')) / 86400000);
-  if (days <= 0) return 'Today';
-  if (days === 1) return 'Yesterday';
-  if (days < 7) return `${days} days ago`;
+  if (days <= 0) return 'امروز';
+  if (days === 1) return 'دیروز';
+  if (days < 7) return `${num(days)} روز پیش`;
   return fmtDate(iso);
 }
 
 export const relevanceBar = n => `
-  <span class="relevance" title="${n}% relevant to your research">
+  <span class="relevance" title="${num(n)} درصد مرتبط با پژوهش شما">
     <span class="relevance-bar"><i style="width:${n}%"></i></span>
-    <strong>${n}%</strong>
+    <strong>٪${num(n)}</strong>
   </span>`;
 
 export const greeting = () => {
   const h = new Date().getHours();
-  return h < 12 ? 'Good morning' : h < 18 ? 'Good afternoon' : 'Good evening';
+  return h < 12 ? 'صبح بخیر' : h < 18 ? 'ظهر بخیر' : 'عصر بخیر';
 };
+
+/* Long Persian date for the Home header, e.g. «سه‌شنبه ۲۷ مرداد». */
+export const todayLong = () => new Date()
+  .toLocaleDateString('fa-IR', { weekday: 'long', day: 'numeric', month: 'long' });
 
 /* Run async steps, rendering progress into a container. */
 export function runSteps(container, steps, { onDone, stepMs = 620 } = {}) {

@@ -1,15 +1,15 @@
 /* §44–45 Notifications · §54 Personalization / Settings */
-import { esc, icon, on, toast } from '../ui.js';
+import { esc, icon, on, toast, num } from '../ui.js';
 import { topicName, sourceName } from '../data.js';
 import * as store from '../store.js';
 import { sectionHead, emptyState, tabBar } from './components.js';
 
 const KINDS = [
-  { id: 'all', label: 'All' },
-  { id: 'important', label: 'Important' },
-  { id: 'article', label: 'New articles' },
-  { id: 'topic', label: 'Topic updates' },
-  { id: 'source', label: 'Source updates' },
+  { id: 'all', label: 'همه' },
+  { id: 'important', label: 'مهم' },
+  { id: 'article', label: 'مقاله‌های تازه' },
+  { id: 'topic', label: 'به‌روزرسانی موضوع' },
+  { id: 'source', label: 'به‌روزرسانی منبع' },
 ];
 
 const nstate = { tab: 'all' };
@@ -21,16 +21,16 @@ export function notifications() {
 
   return {
     layout: 'app',
-    title: 'Notifications — Research',
+    title: 'اعلان‌ها — پژوهش',
     html: `
       <div class="page narrow fade-in">
         <header class="page-head">
           <div class="row between wrap gap-4">
             <div>
-              <h1 class="h1">Notifications</h1>
-              <p class="lead">${unread ? `${unread} unread` : 'You are up to date'}</p>
+              <h1 class="h1">اعلان‌ها</h1>
+              <p class="lead">${unread ? `${num(unread)} نخوانده` : 'همه‌چیز را دیده‌اید'}</p>
             </div>
-            ${unread ? '<button class="btn btn-sm" data-act="notif:readAll">Mark all read</button>' : ''}
+            ${unread ? '<button class="btn btn-sm" data-act="notif:readAll">علامت‌زدن همه به‌عنوان خوانده‌شده</button>' : ''}
           </div>
         </header>
 
@@ -52,16 +52,16 @@ export function notifications() {
               </div>`).join('')}
           </div>`
           : emptyState({
-              title: 'Nothing here',
-              body: 'Notifications only arrive when importance, personal relevance and novelty are all high enough. Quiet is the intended state.',
+              title: 'اینجا چیزی نیست',
+              body: 'اعلان تنها وقتی می‌رسد که اهمیت، ارتباط شخصی و تازگی هر سه به‌اندازه کافی بالا باشند. سکوت، حالت مطلوب است.',
             })}
 
         <div class="card mt-6" style="background:transparent;border-style:dashed">
-          <span class="eyebrow">How notifications are decided</span>
+          <span class="eyebrow">اعلان‌ها چطور تصمیم‌گیری می‌شوند</span>
           <p class="small muted mt-3" style="max-width:var(--measure)">
-            Nothing is sent for being new alone. Each candidate is scored as
-            <b>importance × personal relevance × novelty</b>, and anything below the threshold
-            is collected silently into your library instead.
+            هیچ‌چیز صرفاً به‌خاطر تازه‌بودن فرستاده نمی‌شود. هر نامزد با فرمول
+            <b>اهمیت × ارتباط شخصی × تازگی</b> امتیاز می‌گیرد و هرچه زیر آستانه باشد
+            بی‌سروصدا وارد کتابخانه شما می‌شود.
           </p>
         </div>
       </div>`,
@@ -76,56 +76,56 @@ export function settings() {
 
   return {
     layout: 'app',
-    title: 'Settings — Research',
+    title: 'تنظیمات — پژوهش',
     html: `
       <div class="page narrow fade-in">
         <header class="page-head">
-          <h1 class="h1">Settings</h1>
-          <p class="lead">What we know about your research, and how to change it.</p>
+          <h1 class="h1">تنظیمات</h1>
+          <p class="lead">آنچه درباره پژوهش شما می‌دانیم، و راه تغییرش.</p>
         </header>
 
         <section class="section">
-          ${sectionHead('Account')}
+          ${sectionHead('حساب کاربری')}
           <div class="row gap-4">
             <span class="avatar lg">${esc((s.account?.name || 'R').slice(0, 1).toUpperCase())}</span>
             <div class="grow">
-              <b>${esc(s.account?.name || 'Guest')}</b>
-              <p class="small muted">${esc(s.account?.email || 'Not signed in')}</p>
+              <b>${esc(s.account?.name || 'مهمان')}</b>
+              <p class="small muted latin">${esc(s.account?.email || '—')}</p>
             </div>
-            <button class="btn btn-sm" data-act="account:signout">Sign out</button>
+            <button class="btn btn-sm" data-act="account:signout">خروج</button>
           </div>
         </section>
 
         <section class="section">
-          ${sectionHead('Interests', '<span class="xs muted-2">Chosen during onboarding</span>')}
+          ${sectionHead('علاقه‌مندی‌ها', '<span class="xs muted-2">انتخاب‌شده در راه‌اندازی</span>')}
           <div class="row wrap gap-2">
-            ${(s.interests.length ? s.interests : ['AI', 'Technology']).map(i => `<span class="chip" aria-pressed="true">${esc(i)}</span>`).join('')}
+            ${(s.interests.length ? s.interests : ['هوش مصنوعی', 'فناوری']).map(i => `<span class="chip" aria-pressed="true">${esc(i)}</span>`).join('')}
           </div>
           <p class="small muted mt-4">
-            You are using Research to <b>${esc({
-              updated: 'stay updated', deep: 'research deeply', industry: 'follow an industry',
-              learn: 'learn a topic', track: 'track specific websites',
-            }[s.intent] || 'stay updated')}</b>.
+            شما از پژوهش برای <b>${esc({
+              updated: 'به‌روز ماندن', deep: 'پژوهش عمیق', industry: 'دنبال‌کردن یک صنعت',
+              learn: 'یادگیری یک موضوع', track: 'پایش سایت‌های مشخص',
+            }[s.intent] || 'به‌روز ماندن')}</b> استفاده می‌کنید.
           </p>
-          <button class="btn btn-sm mt-4" data-act="account:redo-onboarding">Adjust interests</button>
+          <button class="btn btn-sm mt-4" data-act="account:redo-onboarding">تنظیم علاقه‌مندی‌ها</button>
         </section>
 
         <section class="section">
-          ${sectionHead('What we have learned', '<span class="xs muted-2">Updated as you read</span>')}
+          ${sectionHead('آنچه یاد گرفته‌ایم', '<span class="xs muted-2">با مطالعه شما به‌روز می‌شود</span>')}
           <div class="meter">
             ${topics.map(t => `
               <div class="meter-track"><i style="width:${t.weight}%"></i></div>
-              <span class="small muted" style="min-width:140px">${esc(t.name)} · ${t.weight}</span>
+              <span class="small muted" style="min-width:140px">${esc(t.name)} · ${num(t.weight)}</span>
             `).join('')}
           </div>
           <p class="xs muted-2 mt-4">
-            ${topics[0] ? `You've shown strong interest in ${esc(topics[0].name)}.` : ''}
-            Weights move with every save, read and dismissal.
+            ${topics[0] ? `شما علاقه پررنگی به «${esc(topics[0].name)}» نشان داده‌اید.` : ''}
+            وزن‌ها با هر ذخیره، مطالعه و رد کردن تغییر می‌کنند.
           </p>
         </section>
 
         <section class="section">
-          ${sectionHead('Recent signals', '<span class="xs muted-2">Everything shaping your feed</span>')}
+          ${sectionHead('سیگنال‌های اخیر', '<span class="xs muted-2">هرچه فید شما را شکل می‌دهد</span>')}
           ${recent.length ? `
             <div class="rows">
               ${recent.map(sig => `
@@ -134,31 +134,31 @@ export function settings() {
                     <p class="small">${esc(sig.label || sig.kind)}</p>
                     <p class="xs muted-2 mt-2">${esc(sig.kind)}${sig.topicId ? ` · ${esc(topicName(sig.topicId))}` : ''}</p>
                   </div>
-                  <span class="xs ${sig.weight >= 0 ? 'trend-up' : 'muted'}">${sig.weight >= 0 ? '+' : ''}${sig.weight}</span>
+                  <span class="xs ${sig.weight >= 0 ? 'trend-up' : 'muted'}">${sig.weight >= 0 ? '+' : '−'}${num(Math.abs(sig.weight))}</span>
                 </div>`).join('')}
             </div>`
-            : '<p class="small muted">Nothing recorded yet. Read or save something and it will show up here.</p>'}
+            : '<p class="small muted">هنوز چیزی ثبت نشده. چیزی بخوانید یا ذخیره کنید تا اینجا بیاید.</p>'}
         </section>
 
         <section class="section">
-          ${sectionHead('Appearance')}
+          ${sectionHead('ظاهر')}
           <div class="settings-row">
             <div>
-              <b>Dark mode</b>
-              <p class="xs muted mt-2">A calmer surface for long reading sessions.</p>
+              <b>حالت تاریک</b>
+              <p class="xs muted mt-2">سطحی آرام‌تر برای مطالعه‌های طولانی.</p>
             </div>
             <button class="switch" role="switch" aria-checked="${store.resolvedTheme() === 'dark'}" data-act="theme:toggle"></button>
           </div>
         </section>
 
         <section class="section">
-          ${sectionHead('Data')}
+          ${sectionHead('داده‌ها')}
           <div class="settings-row">
             <div>
-              <b>Reset this prototype</b>
-              <p class="xs muted mt-2">Clears your account, saved articles, signals and sources from this browser.</p>
+              <b>بازنشانی این نمونه</b>
+              <p class="xs muted mt-2">حساب، مقاله‌های ذخیره‌شده، سیگنال‌ها و منابع را از این مرورگر پاک می‌کند.</p>
             </div>
-            <button class="btn btn-sm" data-act="account:reset">Reset</button>
+            <button class="btn btn-sm" data-act="account:reset">بازنشانی</button>
           </div>
         </section>
       </div>`,
@@ -167,7 +167,7 @@ export function settings() {
 
 export function registerMiscActions(rerender) {
   on('notif:tab', ({ id }) => { nstate.tab = id; rerender(); });
-  on('notif:readAll', () => { store.readAllNotifications(); rerender(); toast('All notifications marked read'); });
+  on('notif:readAll', () => { store.readAllNotifications(); rerender(); toast('همه اعلان‌ها خوانده‌شده علامت خوردند'); });
   on('notif:open', ({ id, article, topic, source }) => {
     store.readNotification(id);
     if (article) location.hash = `#/article/${article}`;
@@ -182,6 +182,6 @@ export function registerMiscActions(rerender) {
     store.reset();
     store.applyTheme(null);
     location.hash = '#/';
-    toast('Prototype reset');
+    toast('نمونه بازنشانی شد');
   });
 }

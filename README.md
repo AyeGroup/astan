@@ -1,80 +1,83 @@
-# Research — Personal Research Intelligence Platform
+# پژوهش — سکوی هوشمندی پژوهش شخصی
 
-A working front-end prototype of the MVP described in
-*UX Product Specification — Personal Research Intelligence Platform v1.0*,
-built with a minimal, editorial design.
+نمونه اولیه کارآمد از MVP توصیف‌شده در
+*UX Product Specification — Personal Research Intelligence Platform v1.0*،
+با طراحی مینیمال و رابط کاملاً فارسی و راست‌به‌چپ.
 
-> **Don't read everything. Know what matters.**
+> **همه‌چیز را نخوانید. آنچه مهم است را بدانید.**
 
-## Running it
+## اجرا
 
-No build step and no dependencies — it is plain HTML, CSS and ES modules.
+بدون مرحله ساخت و بدون وابستگی — فقط HTML، CSS و ماژول‌های ES.
 
 ```bash
-npx http-server -p 8000 .     # or: python3 -m http.server 8000
-# then open http://localhost:8000
+npx http-server -p 8000 .     # یا: python3 -m http.server 8000
+# سپس http://localhost:8000
 ```
 
-Open the landing page, sign up with any email, and the onboarding flow will
-build a feed. All state lives in `localStorage`; **Settings → Reset** clears it.
+از صفحه فرود شروع کنید، با هر ایمیلی ثبت‌نام کنید و راه‌اندازی سه‌مرحله‌ای فید را می‌سازد.
+همه وضعیت در `localStorage` می‌ماند؛ **تنظیمات ← بازنشانی** پاکش می‌کند.
 
-## What's implemented
+## چه چیزی پیاده شده
 
-Every screen in the specification, wired into one navigable product:
+هر صفحه‌ای که در سند مشخص شده، به‌صورت یک محصول قابل پیمایش:
 
-| Spec | Screen | Notes |
+| بند | صفحه | توضیح |
 | --- | --- | --- |
-| §7 | Landing | Hero shows the real product surface, not decoration |
-| §8 | Authentication | Email or Google, straight into onboarding |
-| §9–11 | Onboarding | Interests (with live search + custom topics), first source, intent |
-| §12–16, §61 | Home | Daily Brief, Worth Your Time, Since your last visit, Emerging topics, Continue researching |
-| §17–18 | Add article | Staged progress, then a result checklist |
-| §19–22 | Add website | Discovery → category selection → frequency → confirmation → monitoring |
-| §23–24 | Sources | List and detail with Articles / Topics / Activity / Settings |
-| §25–27 | Discover | Recommendation cards with "Why this?" and the full feedback set |
-| §28–35 | Article Reader | TL;DR, Key Insights, Why It Matters, What Changed, translation, scoped assistant |
-| §36 | Library | Tabs, search, topic/source filters, sorting |
-| §37–40 | Topics | Workspace with Overview / Articles / Timeline / Trends / Sources |
-| §41–43 | Research | Answer, Key Findings, Timeline, Sources, Conflicting Views, Further Reading |
-| §44–45 | Notifications | Categorised, with the importance × relevance × novelty rule stated |
-| §46–48 | Empty / loading / error states | Every empty state carries an action; every failure offers a way forward |
-| §49–50 | Responsive | Desktop-first, sidebar → bottom nav + FAB, reader gets its own mobile action bar |
-| §54–58 | Personalization | Every interaction is a weighted signal; Settings shows the audit trail |
+| ۷ | فرود | تصویر قهرمان، خودِ محصول است نه تصویر تزئینی |
+| ۸ | احراز هویت | ایمیل یا گوگل، مستقیم به راه‌اندازی |
+| ۹–۱۱ | راه‌اندازی | علاقه‌مندی‌ها (با جست‌وجوی زنده و موضوع سفارشی)، نخستین منبع، هدف استفاده |
+| ۱۲–۱۶، ۶۱ | خانه | خلاصه روزانه، ارزش وقت شما، از آخرین بازدید، موضوع‌های در حال شتاب، ادامه پژوهش |
+| ۱۷–۱۸ | افزودن مقاله | پیشرفت مرحله‌ای و سپس فهرست نتیجه |
+| ۱۹–۲۲ | افزودن سایت | کشف ← انتخاب دسته ← دوره ← تأیید ← آغاز پایش |
+| ۲۳–۲۴ | منابع | فهرست و جزئیات با زبانه‌های مقاله‌ها / موضوع‌ها / فعالیت / تنظیمات |
+| ۲۵–۲۷ | کشف | کارت پیشنهاد با «چرا این؟» و مجموعه کامل بازخورد |
+| ۲۸–۳۵ | خواننده مقاله | در یک نگاه، نکته‌های کلیدی، چرا مهم است، چه چیزی تازه است، ترجمه، پرسش از مقاله |
+| ۳۶ | کتابخانه | زبانه‌ها، جست‌وجو، فیلتر موضوع و منبع، مرتب‌سازی |
+| ۳۷–۴۰ | موضوع‌ها | فضای کاری با نمای کلی / مقاله‌ها / خط زمانی / روندها / منابع |
+| ۴۱–۴۳ | پژوهش عمیق | پاسخ، یافته‌های کلیدی، خط زمانی، منابع، دیدگاه‌های متعارض، مطالعه بیشتر |
+| ۴۴–۴۵ | اعلان‌ها | دسته‌بندی‌شده، با بیان صریح قاعده «اهمیت × ارتباط × تازگی» |
+| ۴۶–۴۸ | حالت‌های خالی / بارگذاری / خطا | هر حالت خالی یک اقدام دارد؛ هر شکست یک راه پیش رو |
+| ۴۹–۵۰ | واکنش‌گرا | دسکتاپ‌محور، نوار کناری ← ناوبری پایین و دکمه شناور، خواننده نوار اقدام خودش را دارد |
+| ۵۴–۵۸ | شخصی‌سازی | هر تعامل یک سیگنال وزن‌دار است؛ تنظیمات ردّ آن را نشان می‌دهد |
 
-## Design decisions
+## تصمیم‌های طراحی
 
-**Minimal, not sparse.** Paper-and-ink palette, one restrained green accent,
-no gradients, no glow, no card-on-card nesting. A serif (Newsreader) carries
-headlines and article text; a sans (Inter) carries the interface — the two
-families the spec allows. Article body is 19px at a 1.85 line height (§52).
+**فارسی‌محور، نه ترجمه‌شده.** کل چیدمان با logical property‌ها آینه می‌شود،
+اعداد فارسی‌اند، تاریخ‌ها شمسی (از `Intl` با تقویم `fa-IR`)، و هرجا متن لاتین
+هست — نام نشریه، نویسنده، دامنه — در جزیره‌ای با `dir="ltr"` و فونت لاتین خودش
+می‌نشیند.
 
-**Trust is a visual property.** Relevance is always shown with its bar and its
-reasons. "Why this?" is one click from every recommendation. Where the system
-has nothing to say it says *"No significant change detected"* rather than
-generating filler, and Research refuses to answer questions the library cannot
-support.
+**مینیمال، نه خالی.** پالت کاغذ و مرکب با یک سبز آرام، بدون گرادیان، بدون درخشش،
+بدون کارت تودرتو. جفت تایپوگرافی فارسی: **Markazi Text** برای تیترهای ادیتوریال و
+**وزیرمتن** برای رابط و متن — همان نسبتی که Newsreader/Inter در نسخه لاتین داشت.
+متن مقاله ۱۹ پیکسل با ارتفاع خط ۲ (فارسی به فضای بیشتری نیاز دارد).
 
-**AI sits behind the UX** (§60). The assistant is collapsed by default inside
-the reader and scoped to the open article; Research is a separate deliberate
-mode. Nothing asks the user to write a prompt to get value.
+**اعتماد، یک ویژگی بصری است.** ارتباط همیشه با نوار و دلایلش نمایش داده می‌شود.
+«چرا این؟» یک کلیک با هر پیشنهاد فاصله دارد. جایی که سیستم چیزی برای گفتن ندارد
+می‌گوید «تغییر معناداری تشخیص داده نشد» و پژوهش عمیق از پاسخ به پرسشی که کتابخانه
+پشتیبانی‌اش نمی‌کند سر باز می‌زند.
 
-## Structure
+**هوش مصنوعی پشت UX می‌نشیند** (بند ۶۰). دستیار به‌صورت پیش‌فرض بسته است و فقط به
+مقاله باز محدود می‌شود؛ «پژوهش عمیق» حالتی جداگانه و آگاهانه است.
+
+## ساختار
 
 ```
-index.html               shell: fonts, tokens, module entry
-assets/css/tokens.css    design tokens — colour, type, space, motion (light + dark)
-assets/css/app.css       components and layout
-assets/js/app.js         shell, navigation, search palette, global actions
-assets/js/router.js      hash router
-assets/js/store.js       state, persistence, personalization signals
-assets/js/data.js        mock corpus (articles, sources, topics, timelines)
-assets/js/ui.js          icons, event delegation, modal, toast, staged progress
-assets/js/views/         one module per screen area
+index.html               پوسته: dir=rtl، فونت‌ها، توکن‌ها، نقطه ورود
+assets/css/tokens.css    توکن‌های طراحی — رنگ، تایپ، فاصله، حرکت (روشن و تاریک)
+assets/css/app.css       اجزا و چیدمان (logical properties برای RTL)
+assets/js/app.js         پوسته، ناوبری، پالت جست‌وجو، اقدامات سراسری
+assets/js/router.js      مسیریاب هش
+assets/js/store.js       وضعیت، ماندگاری، سیگنال‌های شخصی‌سازی
+assets/js/data.js        پیکره نمونه (مقاله، منبع، موضوع، خط زمانی)
+assets/js/ui.js          آیکون، واگذاری رویداد، مودال، توست، اعداد و تاریخ فارسی
+assets/js/views/         یک ماژول برای هر ناحیه از رابط
 ```
 
-## Prototype boundaries
+## مرزهای این نمونه
 
-There is no backend: no crawling, extraction, translation or model calls
-happen. Article and website imports run the real interaction flow against
-generated data and say so on screen rather than inventing article text. The
-Persian translations in the sample corpus are written, not machine-produced.
+پشتیبانی سمت سرور وجود ندارد: هیچ خزش، استخراج، ترجمه یا فراخوانی مدلی رخ نمی‌دهد.
+افزودن مقاله و سایت، مسیر تعاملی واقعی را روی داده تولیدشده اجرا می‌کند و همین را
+روی صفحه می‌گوید، به‌جای اینکه متن مقاله از خودش بسازد. متن فارسی مقاله‌های نمونه
+نوشته شده است، نه ترجمه ماشینی؛ متن اصلی هر مقاله هم زیر کلید «اصلی» در دسترس است.

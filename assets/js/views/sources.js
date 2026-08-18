@@ -1,5 +1,5 @@
 /* §23 Sources · §24 Source detail */
-import { esc, icon, on, toast } from '../ui.js';
+import { esc, icon, on, toast, num } from '../ui.js';
 import { topicName } from '../data.js';
 import * as store from '../store.js';
 import { sectionHead, articleRow, statBlock, tabBar, emptyState } from './components.js';
@@ -10,16 +10,16 @@ export function sourcesIndex() {
 
   return {
     layout: 'app',
-    title: 'Sources — Research',
+    title: 'منابع — پژوهش',
     html: `
       <div class="page fade-in">
         <header class="page-head">
           <div class="row between wrap gap-4">
             <div>
-              <h1 class="h1">Sources</h1>
-              <p class="lead">Websites and documents being watched on your behalf.</p>
+              <h1 class="h1">منابع</h1>
+              <p class="lead">سایت‌ها و سندهایی که به‌جای شما پایش می‌شوند.</p>
             </div>
-            <button class="btn btn-primary" data-act="add:open" data-kind="website">${icon('plus', 14)} Add source</button>
+            <button class="btn btn-primary" data-act="add:open" data-kind="website">${icon('plus', 14)} افزودن منبع</button>
           </div>
         </header>
 
@@ -33,17 +33,17 @@ export function sourcesIndex() {
                   <div class="row between">
                     <div class="row gap-2">
                       <i class="dot ${paused ? 'dot-warn' : 'dot-live'}"></i>
-                      <span class="xs muted">${paused ? 'Paused' : 'Monitoring'} · ${esc(cfg.frequency || s.frequency)}</span>
+                      <span class="xs muted">${paused ? 'متوقف' : 'در حال پایش'} · ${esc(cfg.frequency || s.frequency)}</span>
                     </div>
-                    <button class="btn btn-ghost btn-icon btn-sm" data-act="source:menu" data-id="${s.id}" aria-label="Source actions">${icon('more', 14)}</button>
+                    <button class="btn btn-ghost btn-icon btn-sm" data-act="source:menu" data-id="${s.id}" aria-label="اقدامات منبع">${icon('more', 14)}</button>
                   </div>
 
                   <h2 class="h2 mt-4" style="cursor:pointer" data-act="nav:go" data-id="/sources/${s.id}">${esc(s.name)}</h2>
-                  <p class="xs muted-2">${esc(s.domain)}</p>
+                  <p class="xs muted-2 latin">${esc(s.domain)}</p>
 
                   <div class="row gap-5 mt-5">
-                    ${statBlock('relevant', s.relevant.toLocaleString('en-GB'))}
-                    ${statBlock('new this week', s.newThisWeek)}
+                    ${statBlock('مرتبط', num(s.relevant))}
+                    ${statBlock('تازه این هفته', num(s.newThisWeek))}
                   </div>
 
                   <div class="row wrap gap-2 mt-4">
@@ -51,16 +51,16 @@ export function sourcesIndex() {
                   </div>
 
                   <div class="row between mt-5" style="padding-top:var(--s-3);border-top:1px solid var(--line)">
-                    <span class="xs muted-2">Last checked ${esc(s.lastChecked)}</span>
-                    <button class="btn btn-sm btn-ghost" data-act="nav:go" data-id="/sources/${s.id}">Open ${icon('right', 13)}</button>
+                    <span class="xs muted-2">آخرین بررسی ${esc(s.lastChecked)}</span>
+                    <button class="btn btn-sm btn-ghost" data-act="nav:go" data-id="/sources/${s.id}">باز کردن ${icon('left', 13)}</button>
                   </div>
                 </div>`;
             }).join('')}
           </div>`
           : emptyState({
-              title: 'No sources yet.',
-              body: 'Point us at a website and we will map its structure, find the articles that fit your topics, and keep watching.',
-              cta: 'Add your first source', act: 'add:open', arg: 'website',
+              title: 'هنوز منبعی نیست.',
+              body: 'یک سایت به ما نشان دهید تا ساختارش را نقشه‌برداری کنیم، مقاله‌های هم‌خوان با موضوع‌های شما را پیدا کنیم و پایشش را ادامه دهیم.',
+              cta: 'افزودن نخستین منبع', act: 'add:open', arg: 'website',
             })}
       </div>`,
   };
@@ -72,10 +72,10 @@ export function sourceDetail(segments) {
   const s = store.findSource(segments[0]);
   if (!s) {
     return {
-      layout: 'app', title: 'Source not found',
+      layout: 'app', title: 'منبع پیدا نشد',
       html: `<div class="page">${emptyState({
-        title: 'Source not found', body: 'That source is not in your workspace.',
-        cta: 'Back to Sources', act: 'nav:go', arg: '/sources',
+        title: 'منبع پیدا نشد', body: 'این منبع در فضای کاری شما نیست.',
+        cta: 'بازگشت به منابع', act: 'nav:go', arg: '/sources',
       })}</div>`,
     };
   }
@@ -87,29 +87,29 @@ export function sourceDetail(segments) {
   const panes = {
     articles: articles.length
       ? `<div class="rows">${articles.map(articleRow).join('')}</div>`
-      : '<p class="muted small">No collected articles from this source yet.</p>',
+      : '<p class="muted small">هنوز مقاله‌ای از این منبع جمع‌آوری نشده است.</p>',
     topics: `
       <div class="grid grid-auto">
         ${(s.categories || []).map(c => `
           <div class="card card-tight">
             <div class="row between">
               <b>${esc(c.name)}</b>
-              <span class="tnum small muted">${c.count}</span>
+              <span class="tnum small muted">${num(c.count)}</span>
             </div>
             <label class="checkbox mt-3">
               <input type="checkbox" data-act="source:track" data-id="${s.id}" data-cat="${esc(c.name)}"
                 ${(cfg.tracked || []).includes(c.name) ? 'checked' : ''}>
-              <span class="small">Track this category</span>
+              <span class="small">پایش این دسته</span>
             </label>
           </div>`).join('')}
       </div>`,
     activity: `
       <div class="rows">
         ${[
-          ['Checked for new articles', s.lastChecked, `${s.newThisWeek} new this week`],
-          ['Relevance filter applied', 'Yesterday', `${s.total - s.relevant} filtered out as low relevance`],
-          ['Structure re-mapped', '3 days ago', `${(s.categories || []).length} categories detected`],
-          ['Monitoring started', '3 weeks ago', `${esc(cfg.frequency || s.frequency)} schedule`],
+          ['بررسی مقاله‌های تازه', s.lastChecked, `${num(s.newThisWeek)} مورد تازه این هفته`],
+          ['اعمال فیلتر ارتباط', 'دیروز', `${num(s.total - s.relevant)} مورد به‌دلیل ارتباط پایین کنار گذاشته شد`],
+          ['نقشه‌برداری دوباره ساختار', '۳ روز پیش', `${num((s.categories || []).length)} دسته شناسایی شد`],
+          ['آغاز پایش', '۳ هفته پیش', `زمان‌بندی ${esc(cfg.frequency || s.frequency)}`],
         ].map(([t, when, note]) => `
           <div class="list-row" style="cursor:default">
             <div class="grow">
@@ -123,59 +123,59 @@ export function sourceDetail(segments) {
       <div style="max-width:520px">
         <div class="settings-row">
           <div>
-            <b>Monitoring</b>
-            <p class="xs muted mt-2">${paused ? 'Paused — nothing is being collected.' : 'Active — new articles are collected and scored.'}</p>
+            <b>پایش</b>
+            <p class="xs muted mt-2">${paused ? 'متوقف — چیزی جمع‌آوری نمی‌شود.' : 'فعال — مقاله‌های تازه جمع‌آوری و امتیازدهی می‌شوند.'}</p>
           </div>
           <button class="switch" role="switch" aria-checked="${!paused}" data-act="source:pause" data-id="${s.id}"></button>
         </div>
         <div class="settings-row">
           <div>
-            <b>Update frequency</b>
-            <p class="xs muted mt-2">How often we re-check this source.</p>
+            <b>دوره به‌روزرسانی</b>
+            <p class="xs muted mt-2">هر چند وقت این منبع را دوباره بررسی کنیم.</p>
           </div>
           <select class="select" style="width:auto" data-source-freq="${s.id}">
-            ${['Daily', 'Every 6 hours', 'Weekly', 'Manual'].map(f =>
+            ${['روزانه', 'هر ۶ ساعت', 'هفتگی', 'دستی'].map(f =>
               `<option ${((cfg.frequency || s.frequency) === f) ? 'selected' : ''}>${f}</option>`).join('')}
           </select>
         </div>
         <div class="settings-row">
           <div>
-            <b>Remove source</b>
-            <p class="xs muted mt-2">Collected articles stay in your library.</p>
+            <b>حذف منبع</b>
+            <p class="xs muted mt-2">مقاله‌های جمع‌آوری‌شده در کتابخانه شما می‌مانند.</p>
           </div>
-          <button class="btn btn-sm" data-act="source:remove" data-id="${s.id}">${icon('trash', 14)} Remove</button>
+          <button class="btn btn-sm" data-act="source:remove" data-id="${s.id}">${icon('trash', 14)} حذف</button>
         </div>
       </div>`,
   };
 
   return {
     layout: 'app',
-    title: `${s.name} — Research`,
+    title: `${s.name} — پژوهش`,
     html: `
       <div class="page fade-in">
-        <button class="btn btn-sm btn-ghost" data-act="nav:go" data-id="/sources">${icon('left', 13)} Sources</button>
+        <button class="btn btn-sm btn-ghost" data-act="nav:go" data-id="/sources">${icon('right', 13)} منابع</button>
 
         <header class="page-head mt-4">
           <div class="row gap-2">
             <i class="dot ${paused ? 'dot-warn' : 'dot-live'}"></i>
-            <span class="xs muted">${paused ? 'Paused' : 'Monitoring'} · ${esc(cfg.frequency || s.frequency)} · last checked ${esc(s.lastChecked)}</span>
+            <span class="xs muted">${paused ? 'متوقف' : 'در حال پایش'} · ${esc(cfg.frequency || s.frequency)} · آخرین بررسی ${esc(s.lastChecked)}</span>
           </div>
           <h1 class="h1 mt-3">${esc(s.name)}</h1>
-          <a class="link small" href="https://${esc(s.domain)}" target="_blank" rel="noopener">${esc(s.domain)} ${icon('external', 12)}</a>
+          <a class="link small latin" href="https://${esc(s.domain)}" target="_blank" rel="noopener">${esc(s.domain)} ${icon('external', 12)}</a>
 
           <div class="row wrap gap-6 mt-5">
-            ${statBlock('articles found', s.total.toLocaleString('en-GB'))}
-            ${statBlock('relevant to you', s.relevant.toLocaleString('en-GB'))}
-            ${statBlock('new this week', s.newThisWeek)}
-            ${statBlock('topics', (s.topics || []).length)}
+            ${statBlock('مقاله یافت‌شده', num(s.total))}
+            ${statBlock('مرتبط با شما', num(s.relevant))}
+            ${statBlock('تازه این هفته', num(s.newThisWeek))}
+            ${statBlock('موضوع', num((s.topics || []).length))}
           </div>
         </header>
 
         ${tabBar([
-          { id: 'articles', label: 'Articles', count: articles.length },
-          { id: 'topics', label: 'Topics' },
-          { id: 'activity', label: 'Activity' },
-          { id: 'settings', label: 'Settings' },
+          { id: 'articles', label: 'مقاله‌ها', count: articles.length },
+          { id: 'topics', label: 'موضوع‌ها' },
+          { id: 'activity', label: 'فعالیت' },
+          { id: 'settings', label: 'تنظیمات' },
         ], state.tab, 'source:tab')}
 
         <div>${panes[state.tab] || panes.articles}</div>
@@ -190,7 +190,7 @@ export function registerSourceActions(rerender) {
     const cur = store.get().sourceState[id] || {};
     const next = cur.status === 'paused' ? 'monitoring' : 'paused';
     store.setSourceState(id, { status: next });
-    toast(next === 'paused' ? 'Monitoring paused' : 'Monitoring resumed');
+    toast(next === 'paused' ? 'پایش متوقف شد' : 'پایش از سر گرفته شد');
     rerender();
   });
 
@@ -203,7 +203,7 @@ export function registerSourceActions(rerender) {
 
   on('source:remove', ({ id }) => {
     store.hideSource(id);
-    toast('Source removed. Its articles stay in your library.');
+    toast('منبع حذف شد. مقاله‌هایش در کتابخانه شما می‌مانند.');
     location.hash = '#/sources';
     rerender();
   });
@@ -214,7 +214,7 @@ export function registerSourceActions(rerender) {
     const el = e.target;
     if (el.dataset && el.dataset.sourceFreq) {
       store.setSourceState(el.dataset.sourceFreq, { frequency: el.value });
-      toast(`Update frequency set to ${el.value}`);
+      toast(`دوره به‌روزرسانی روی «${el.value}» تنظیم شد`);
     }
     if (el.matches?.('input[data-act="source:track"]')) {
       const { id, cat } = el.dataset;
@@ -222,7 +222,7 @@ export function registerSourceActions(rerender) {
       const tracked = new Set(cur.tracked || []);
       if (el.checked) tracked.add(cat); else tracked.delete(cat);
       store.setSourceState(id, { tracked: [...tracked] });
-      toast(el.checked ? `Tracking ${cat}` : `Stopped tracking ${cat}`);
+      toast(el.checked ? `«${cat}» پایش می‌شود` : `پایش «${cat}» متوقف شد`);
     }
   });
 }

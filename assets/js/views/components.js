@@ -1,5 +1,5 @@
 /* Shared presentational pieces used across screens. */
-import { esc, icon, relevanceBar, relativeDay } from '../ui.js';
+import { esc, icon, relevanceBar, relativeDay, num } from '../ui.js';
 import { topicName, sourceName } from '../data.js';
 import * as store from '../store.js';
 
@@ -15,7 +15,7 @@ export const articleMeta = a => `
     <span class="sep">·</span>
     <span>${esc(relativeDay(a.date))}</span>
     <span class="sep">·</span>
-    <span>${a.minutes} min read</span>
+    <span>${num(a.minutes)} دقیقه مطالعه</span>
   </div>`;
 
 /* §26 — recommendation card, always carrying its own explanation. */
@@ -37,14 +37,14 @@ export function articleCard(a, { showReasons = true, compact = false } = {}) {
         </ul>` : ''}
       <footer>
         <div class="actions-inline">
-          <button class="btn btn-sm" data-act="article:open" data-id="${a.id}">Read</button>
+          <button class="btn btn-sm" data-act="article:open" data-id="${a.id}">بخوانید</button>
           <button class="btn btn-sm btn-ghost" data-act="article:save" data-id="${a.id}" aria-pressed="${saved}">
-            ${icon('bookmark', 14)} ${saved ? 'Saved' : 'Save'}
+            ${icon('bookmark', 14)} ${saved ? 'ذخیره شد' : 'ذخیره'}
           </button>
         </div>
         <div class="actions-inline">
-          <button class="btn btn-sm btn-ghost" data-act="article:why" data-id="${a.id}" title="Why am I seeing this?">Why this?</button>
-          <button class="btn btn-ghost btn-icon btn-sm" data-act="article:dismiss" data-id="${a.id}" title="Not interested" aria-label="Not interested">${icon('x', 14)}</button>
+          <button class="btn btn-sm btn-ghost" data-act="article:why" data-id="${a.id}" title="چرا این را می‌بینم؟">چرا این؟</button>
+          <button class="btn btn-ghost btn-icon btn-sm" data-act="article:dismiss" data-id="${a.id}" title="علاقه‌مند نیستم" aria-label="علاقه‌مند نیستم">${icon('x', 14)}</button>
         </div>
       </footer>
     </article>`;
@@ -58,8 +58,8 @@ export function articleRow(a) {
       <div class="grow">
         <div class="row gap-2 wrap">
           <span class="badge badge-topic">${esc(topicName(a.topic))}</span>
-          ${store.isSaved(a.id) ? '<span class="badge">Saved</span>' : ''}
-          ${store.isRead(a.id) ? '<span class="badge badge-outline">Read</span>' : ''}
+          ${store.isSaved(a.id) ? '<span class="badge">ذخیره‌شده</span>' : ''}
+          ${store.isRead(a.id) ? '<span class="badge badge-outline">خوانده‌شده</span>' : ''}
         </div>
         <h3 class="mt-2" style="font-family:var(--font-serif);font-weight:400;font-size:1.0625rem">${esc(a.title)}</h3>
         <p class="small muted mt-2 clamp-2">${esc(a.summary)}</p>
@@ -68,7 +68,7 @@ export function articleRow(a) {
       <div class="col gap-2" style="align-items:flex-end;flex:none">
         ${relevanceBar(score)}
         <button class="btn btn-sm btn-ghost" data-act="article:save" data-id="${a.id}">
-          ${icon('bookmark', 14)} ${store.isSaved(a.id) ? 'Saved' : 'Save'}
+          ${icon('bookmark', 14)} ${store.isSaved(a.id) ? 'ذخیره شد' : 'ذخیره'}
         </button>
       </div>
     </div>`;
@@ -87,13 +87,13 @@ export function insightCard(b) {
       <h3 class="insight-title" data-act="article:open" data-id="${b.articleId}">${esc(b.title)}</h3>
       <p class="insight-summary">${esc(b.summary)}</p>
       <div class="why">
-        <span class="eyebrow">Why it matters</span>
+        <span class="eyebrow">چرا مهم است</span>
         <p>${esc(b.why)}</p>
       </div>
       <div class="row between wrap gap-2">
-        <span class="meta">${icon('layers', 13)} Based on ${b.basedOn} sources in your library</span>
+        <span class="meta">${icon('layers', 13)} بر پایه ${num(b.basedOn)} منبع در کتابخانه شما</span>
         <button class="btn btn-sm btn-ghost" data-act="article:open" data-id="${b.articleId}">
-          Read the source ${icon('right', 13)}
+          خواندن منبع ${icon('left', 13)}
         </button>
       </div>
     </article>`;
@@ -111,7 +111,7 @@ export const errorState = ({ title, reasons = [], actions = '' }) => `
     <h3 class="h3">${esc(title)}</h3>
     ${reasons.length ? `
       <div>
-        <span class="eyebrow">Possible reasons</span>
+        <span class="eyebrow">دلایل احتمالی</span>
         <ul class="reasons mt-2">${reasons.map(r => `<li>${esc(r)}</li>`).join('')}</ul>
       </div>` : ''}
     ${actions ? `<div class="actions-inline">${actions}</div>` : ''}
