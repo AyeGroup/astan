@@ -147,7 +147,7 @@ export function settings() {
               <b>Dark mode</b>
               <p class="xs muted mt-2">A calmer surface for long reading sessions.</p>
             </div>
-            <button class="switch" role="switch" aria-checked="${s.theme === 'dark'}" data-act="theme:toggle"></button>
+            <button class="switch" role="switch" aria-checked="${store.resolvedTheme() === 'dark'}" data-act="theme:toggle"></button>
           </div>
         </section>
 
@@ -180,7 +180,7 @@ export function registerMiscActions(rerender) {
   on('account:redo-onboarding', () => { location.hash = '#/onboarding/1'; });
   on('account:reset', () => {
     store.reset();
-    store.applyTheme('light');
+    store.applyTheme(null);
     location.hash = '#/';
     toast('Prototype reset');
   });

@@ -88,7 +88,7 @@ function topbar() {
       </button>
       <span class="grow"></span>
       <button class="btn btn-ghost btn-icon" data-act="theme:toggle" aria-label="Toggle theme">
-        ${icon(store.get().theme === 'dark' ? 'sun' : 'moon')}
+        ${icon(store.resolvedTheme() === 'dark' ? 'sun' : 'moon')}
       </button>
       <a class="btn btn-ghost btn-icon" href="#/notifications" aria-label="Notifications" style="position:relative">
         ${icon('bell')}
@@ -226,8 +226,11 @@ on('article:share', ({ id }) => {
   const a = store.findArticle(id);
   const text = `${a.title} — ${location.origin}${location.pathname}#/article/${id}`;
   if (navigator.share) navigator.share({ title: a.title, text }).catch(() => {});
-  else if (navigator.clipboard) navigator.clipboard.writeText(text).then(() => toast('Link copied'));
-  else toast('Sharing is unavailable in this browser', 'x');
+  else if (navigator.clipboard) {
+    navigator.clipboard.writeText(text)
+      .then(() => toast('Link copied'))
+      .catch(() => toast('Copying is blocked here', 'x'));
+  } else toast('Sharing is unavailable in this browser', 'x');
 });
 
 /* §26 "Why this?" + §27 feedback, in one place. */
@@ -377,6 +380,6 @@ registerResearchActions(rerender);
 registerMiscActions(rerender);
 registerAddActions(rerender);
 
-store.applyTheme(store.get().theme);
+store.applyTheme();
 store.touchVisit();
 start();

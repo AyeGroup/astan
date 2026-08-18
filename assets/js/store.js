@@ -32,7 +32,7 @@ const defaults = () => ({
   extraSources: [],
   readNotifications: [],
   signals: [],                   // audit trail, surfaced in Settings
-  theme: 'light',
+  theme: null,          // null = follow the viewer's system preference
   lastVisit: null,
   research: [],                  // saved research answers
 });
@@ -206,14 +206,20 @@ export function readAllNotifications() {
 }
 
 /* --- Theme --------------------------------------------------------------- */
-export function applyTheme(theme = state.theme) {
-  document.documentElement.setAttribute('data-theme', theme);
-  state.theme = theme;
+const systemTheme = () =>
+  (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+
+/* Until the reader picks a side, follow their system preference. */
+export const resolvedTheme = () => state.theme || systemTheme();
+
+export function applyTheme(theme) {
+  if (theme !== undefined) state.theme = theme;
+  document.documentElement.setAttribute('data-theme', resolvedTheme());
   save();
 }
 
 export function toggleTheme() {
-  applyTheme(state.theme === 'dark' ? 'light' : 'dark');
+  applyTheme(resolvedTheme() === 'dark' ? 'light' : 'dark');
 }
 
 /* --- Visit tracking ------------------------------------------------------ */

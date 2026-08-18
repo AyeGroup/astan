@@ -10,8 +10,13 @@ export const currentRoute = () => current;
 export function go(path, { replace = false } = {}) {
   const hash = '#' + (path.startsWith('/') ? path : '/' + path);
   if (location.hash === hash) return resolve();
-  if (replace) history.replaceState(null, '', hash);
-  else location.hash = hash;
+  if (replace) {
+    /* Sandboxed frames can refuse history writes; falling back to a plain
+       hash change keeps navigation working, it just keeps the entry. */
+    try { history.replaceState(null, '', hash); resolve(); return; }
+    catch { location.hash = hash; return; }
+  }
+  location.hash = hash;
 }
 
 export function resolve() {
