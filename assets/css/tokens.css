@@ -1,0 +1,109 @@
+/* ==========================================================================
+   Design tokens — "Research Workspace + Premium Reading App"
+   Intelligent · Calm · Premium · Editorial
+   No gradients, no neon, no glow. Paper, ink, and one quiet accent.
+   ========================================================================== */
+
+:root {
+  /* --- Color: light (paper) ------------------------------------------- */
+  --paper:        #fbfaf8;
+  --surface:      #ffffff;
+  --surface-2:    #f4f2ee;
+  --surface-3:    #ece9e3;
+
+  --ink:          #17181a;
+  --ink-2:        #45474b;
+  --ink-3:        #6d7075;
+  --ink-4:        #97999e;
+
+  --line:         #e4e1da;
+  --line-2:       #d5d1c8;
+
+  --accent:       #2f5d4c;
+  --accent-ink:   #24493c;
+  --accent-soft:  #e8efeb;
+
+  --warn:         #8a6320;
+  --warn-soft:    #f6eedd;
+  --danger:       #8f3a33;
+  --danger-soft:  #f7e9e7;
+
+  --shadow-sm: 0 1px 2px rgba(23, 24, 26, .04);
+  --shadow-md: 0 4px 16px rgba(23, 24, 26, .06);
+  --shadow-lg: 0 18px 48px rgba(23, 24, 26, .12);
+
+  /* --- Type ------------------------------------------------------------ */
+  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-serif: "Newsreader", ui-serif, Georgia, "Times New Roman", serif;
+  --font-fa: "Vazirmatn", "Inter", Tahoma, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
+
+  --t-display: 3.25rem;
+  --t-h1:      2rem;
+  --t-h2:      1.375rem;
+  --t-h3:      1.0625rem;
+  --t-body:    0.9375rem;
+  --t-sm:      0.8125rem;
+  --t-xs:      0.75rem;
+  --t-read:    1.1875rem;   /* article body — 19px, per spec 18–20px */
+
+  --lh-read: 1.85;
+  --lh-body: 1.6;
+  --lh-tight: 1.2;
+
+  --tracking-eyebrow: .09em;
+
+  /* --- Space (4pt scale) ----------------------------------------------- */
+  --s-1: 4px;  --s-2: 8px;  --s-3: 12px; --s-4: 16px;
+  --s-5: 24px; --s-6: 32px; --s-7: 48px; --s-8: 64px; --s-9: 96px;
+
+  /* --- Radius / motion -------------------------------------------------- */
+  --r-sm: 6px; --r-md: 10px; --r-lg: 14px; --r-full: 999px;
+
+  --ease: cubic-bezier(.2, .6, .2, 1);
+  --dur-fast: 120ms;
+  --dur: 200ms;
+  --dur-slow: 420ms;
+
+  /* --- Layout ----------------------------------------------------------- */
+  --sidebar-w: 232px;
+  --topbar-h: 60px;
+  --measure: 68ch;
+}
+
+/* --- Color: dark (night desk) ------------------------------------------ */
+:root[data-theme="dark"] {
+  --paper:        #121316;
+  --surface:      #191a1e;
+  --surface-2:    #1f2126;
+  --surface-3:    #282a30;
+
+  --ink:          #f0efec;
+  --ink-2:        #c3c2be;
+  --ink-3:        #94938f;
+  --ink-4:        #6e6d6a;
+
+  --line:         #2b2d33;
+  --line-2:       #3a3d44;
+
+  --accent:       #79b39c;
+  --accent-ink:   #9ccbb7;
+  --accent-soft:  #1c2a25;
+
+  --warn:         #d6ac63;
+  --warn-soft:    #2a2318;
+  --danger:       #d98a80;
+  --danger-soft:  #2c1e1c;
+
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, .4);
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, .35);
+  --shadow-lg: 0 18px 48px rgba(0, 0, 0, .5);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+  }
+}
