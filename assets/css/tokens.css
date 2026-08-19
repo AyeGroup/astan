@@ -1,148 +1,98 @@
 /* ==========================================================================
-   Design tokens — «پژوهش»
-   Deep wine + white. Intelligent · Calm · Premium · Editorial (§51)
-   The red carries authority and focus; white carries the reading.
-   No neon, no glow, no heavy gradients.
+   «پژوهش» — design tokens
+   White page, one red accent, one typeface. Nothing decorative.
    ========================================================================== */
 
 :root {
-  /* --- Brand reds -------------------------------------------------------
-     wine       the anchor: navigation rail, the one focal surface
-     wine-deep  depth beneath the rail
-     crimson    the interactive/active red — links, meters, live state
-     ember      hover lift on crimson
-     blush      tinted surface, the only place red touches large areas  */
-  --wine:        #5e0b14;
-  --wine-deep:   #430810;
-  --wine-soft:   #7a1420;
-  --crimson:     #a81d2d;
-  --ember:       #c02a3a;
-  --blush:       #fdf0f0;
-  --blush-2:     #f8dfe0;
+  /* Red is an accent, never a surface. It marks what you can act on. */
+  --red:        #b01b2e;
+  --red-dark:   #8a1424;
+  --red-tint:   #fdeef0;
+  --red-tint-2: #f9d9dd;
 
-  /* --- Ground ------------------------------------------------------------
-     Neutrals carry a deliberate warm/red bias so nothing reads as flat grey. */
-  --paper:       #ffffff;
-  --bone:        #faf6f5;
-  --surface:     #ffffff;
-  --surface-2:   #f6f1f0;
-  --surface-3:   #ece4e3;
+  --page:     #ffffff;
+  --panel:    #fbfafa;
+  --panel-2:  #f4f2f2;
 
-  --ink:         #1a1416;
-  --ink-2:       #4a4143;
-  --ink-3:       #756a6c;
-  --ink-4:       #9c9295;
+  --ink:      #17151a;
+  --ink-2:    #55505a;
+  --ink-3:    #837d88;
+  --ink-4:    #a9a3ad;
 
-  --line:        #ece4e3;
-  --line-2:      #dcd0cf;
-  --rule:        var(--ink);      /* the firm rule under a section heading */
+  --line:     #e9e6e8;
+  --line-2:   #d6d1d5;
 
-  /* On the wine rail */
-  --on-wine:     #fdf6f5;
-  --on-wine-2:   #e0bfc2;
-  --on-wine-3:   #b58d92;
-  --wine-line:   rgba(253, 246, 245, .14);
+  --ok:       #1f7a52;
+  --ok-tint:  #e9f4ef;
+  --warn:     #8a5a16;
+  --warn-tint:#fbf1e2;
 
-  --ok:          #2f6b4f;
-  --ok-soft:     #e8f1ec;
-  --warn:        #8a5a16;
-  --warn-soft:   #f9efdf;
-  --danger:      #a81d2d;
-  --danger-soft: #fdf0f0;
+  --shadow-1: 0 1px 2px rgba(23, 21, 26, .05);
+  --shadow-2: 0 4px 14px rgba(23, 21, 26, .07);
+  --shadow-3: 0 16px 40px rgba(23, 21, 26, .14);
 
-  /* Shadows are warm, never neutral grey */
-  --shadow-sm: 0 1px 2px rgba(60, 10, 18, .05);
-  --shadow-md: 0 6px 20px rgba(60, 10, 18, .07);
-  --shadow-lg: 0 20px 50px rgba(60, 10, 18, .16);
-  --shadow-wine: 0 12px 32px rgba(94, 11, 20, .22);
-
-  /* --- Type -------------------------------------------------------------
-     Markazi Text 600 for large editorial moments; Vazirmatn for everything
-     that must be read fast. Latin islands keep their own faces. */
-  --font-sans:  "Vazirmatn", "Inter", ui-sans-serif, system-ui, Tahoma, sans-serif;
-  --font-display: "Markazi Text", "Vazirmatn", ui-serif, Georgia, serif;
+  /* One family. Two would make the page feel heavier, not richer. */
+  --font: "Vazirmatn", "Inter", ui-sans-serif, system-ui, Tahoma, sans-serif;
   --font-latin: "Inter", ui-sans-serif, system-ui, -apple-system, sans-serif;
-  --font-latin-serif: "Newsreader", ui-serif, Georgia, serif;
-  --font-mono:  ui-monospace, SFMono-Regular, Menlo, monospace;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
 
-  --t-display: 3.5rem;
-  --t-h1:      2.5rem;
-  --t-h2:      1.5rem;
-  --t-h3:      1.125rem;
-  --t-body:    0.9375rem;
-  --t-sm:      0.8125rem;
-  --t-xs:      0.75rem;
-  --t-read:    1.1875rem;      /* §52 — 19px article body */
+  --t-hero: 2.5rem;
+  --t-h1:   1.75rem;
+  --t-h2:   1.25rem;
+  --t-h3:   1.0625rem;
+  --t-body: 0.9375rem;
+  --t-sm:   0.8125rem;
+  --t-xs:   0.75rem;
+  --t-read: 1.125rem;
 
-  --lh-read:  2;               /* §52 — 1.8–2 for Persian */
-  --lh-body:  1.75;
-  --lh-tight: 1.4;
-  --track-eyebrow: .12em;
+  --lh-read:  2;
+  --lh-body:  1.8;
+  --lh-tight: 1.5;
 
-  /* --- Space (4pt) -------------------------------------------------------- */
   --s-1: 4px;  --s-2: 8px;  --s-3: 12px; --s-4: 16px;
-  --s-5: 24px; --s-6: 32px; --s-7: 48px; --s-8: 64px; --s-9: 96px; --s-10: 128px;
+  --s-5: 20px; --s-6: 28px; --s-7: 40px; --s-8: 56px; --s-9: 80px;
 
-  --r-sm: 4px; --r-md: 8px; --r-lg: 14px; --r-xl: 20px; --r-full: 999px;
+  --r-sm: 6px; --r-md: 10px; --r-lg: 16px; --r-full: 999px;
 
-  --ease:      cubic-bezier(.2, .7, .2, 1);
-  --ease-out:  cubic-bezier(.16, 1, .3, 1);
-  --dur-fast: 130ms;
-  --dur:      220ms;
-  --dur-slow: 480ms;
+  --ease: cubic-bezier(.2, .7, .2, 1);
+  --dur:  180ms;
 
-  --rail-w:   248px;
-  --topbar-h: 64px;
-  --measure:  36em;
+  --bar-h: 60px;
+  --col:   720px;   /* the reading column */
+  --wide:  1080px;  /* grids and tables */
 }
 
-/* --- Dark: the wine deepens rather than inverting ------------------------ */
 :root[data-theme="dark"] {
-  --wine:        #45080f;
-  --wine-deep:   #2c050a;
-  --wine-soft:   #5e0b14;
-  --crimson:     #e2707a;
-  --ember:       #ee8a92;
-  --blush:       #2a1418;
-  --blush-2:     #3a1a20;
+  --red:        #f0808e;
+  --red-dark:   #f79aa5;
+  --red-tint:   #2b171b;
+  --red-tint-2: #3d2126;
 
-  --paper:       #171214;
-  --bone:        #120e10;
-  --surface:     #1c1618;
-  --surface-2:   #241d1f;
-  --surface-3:   #2f2528;
+  --page:     #161417;
+  --panel:    #1d1a20;
+  --panel-2:  #262229;
 
-  --ink:         #f6efee;
-  --ink-2:       #cfc3c4;
-  --ink-3:       #9b8d8f;
-  --ink-4:       #756a6c;
+  --ink:      #f4f1f4;
+  --ink-2:    #c5bfc7;
+  --ink-3:    #948d97;
+  --ink-4:    #6f6873;
 
-  --line:        #2f2528;
-  --line-2:      #403336;
-  --rule:        #4a3b3e;         /* a near-white rule shouts in the dark */
+  --line:     #2c272f;
+  --line-2:   #3d3742;
 
-  --on-wine:     #fdf6f5;
-  --on-wine-2:   #dcbabd;
-  --on-wine-3:   #a8848a;
-  --wine-line:   rgba(253, 246, 245, .12);
+  --ok:       #6fbc95;
+  --ok-tint:  #182620;
+  --warn:     #d0a163;
+  --warn-tint:#282016;
 
-  --ok:          #7fb99b;
-  --ok-soft:     #1b2a23;
-  --warn:        #d3a463;
-  --warn-soft:   #2a2016;
-  --danger:      #e2707a;
-  --danger-soft: #2a1418;
-
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, .5);
-  --shadow-md: 0 6px 20px rgba(0, 0, 0, .45);
-  --shadow-lg: 0 20px 50px rgba(0, 0, 0, .6);
-  --shadow-wine: 0 12px 32px rgba(0, 0, 0, .5);
+  --shadow-1: 0 1px 2px rgba(0, 0, 0, .5);
+  --shadow-2: 0 4px 14px rgba(0, 0, 0, .45);
+  --shadow-3: 0 16px 40px rgba(0, 0, 0, .6);
 }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: .01ms !important;
-    animation-iteration-count: 1 !important;
     transition-duration: .01ms !important;
     scroll-behavior: auto !important;
   }

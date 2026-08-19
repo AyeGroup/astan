@@ -1,33 +1,26 @@
-/* §12–16 · §61 — Home. The page opens with one thing that matters, not a
-   uniform list: a lead insight, then the rest of the brief, numbered. */
+/* §12–16 · §61 — Home. One column, read top to bottom, no dashboard puzzle. */
 import { esc, icon, greeting, num, todayLong } from '../ui.js';
-import { BRIEF, TOPICS, topicName } from '../data.js';
+import { BRIEF, TOPICS } from '../data.js';
 import * as store from '../store.js';
-import { sectionHead, leadInsight, briefItem, articleCard, emptyState } from './components.js';
+import { sectionHead, briefStory, mini, emptyState } from './components.js';
 
 export function home() {
   const s = store.get();
   const name = s.account?.name?.split(' ')[0] || 'دوست من';
   const ranked = store.feed();
-  const mustRead = ranked.slice(0, 3);
-
   const unread = ranked.filter(a => !store.isRead(a.id));
   const high = unread.filter(a => a.score >= 85).length;
-  const mid = unread.filter(a => a.score >= 70 && a.score < 85).length;
-  const low = Math.max(0, unread.length - high - mid);
-  const total = Math.max(1, unread.length);
 
-  const momentum = [...TOPICS].sort((a, b) => b.momentum - a.momentum).slice(0, 4);
-  const topics = store.rankedTopics().slice(0, 5);
-  const maxWeight = Math.max(1, ...topics.map(t => t.weight));
+  const momentum = [...TOPICS].sort((a, b) => b.momentum - a.momentum).slice(0, 3);
+  const topics = store.rankedTopics().slice(0, 4);
+  const maxW = Math.max(1, ...topics.map(t => t.weight));
 
-  const continueList = [
-    ...s.read.slice(0, 2).map(id => ({ label: 'ادامه مطالعه', a: store.findArticle(id) })),
-    ...s.saved.slice(0, 2).map(id => ({ label: 'ذخیره‌شده', a: store.findArticle(id) })),
-  ].filter(x => x.a).slice(0, 4);
+  const later = [
+    ...s.read.slice(0, 2).map(id => ({ label: 'ادامه بدهید', a: store.findArticle(id) })),
+    ...s.saved.slice(0, 2).map(id => ({ label: 'ذخیره کرده‌اید', a: store.findArticle(id) })),
+  ].filter(x => x.a).slice(0, 3);
 
   const brief = BRIEF.filter(b => !s.dismissed.includes(b.articleId));
-  const [lead, ...rest] = brief;
 
   return {
     layout: 'app',
@@ -36,120 +29,93 @@ export function home() {
       <div class="page fade-in">
 
         <header class="page-head">
-          <span class="eyebrow">${esc(todayLong())}</span>
+          <span class="label-quiet">${esc(todayLong())}</span>
           <h1 class="h1">${esc(greeting())}، ${esc(name)}</h1>
-          <p class="lead">آنچه امروز برای شما مهم است — ${num(brief.length)} بینش،
-            گزیده از ${num(new Set(store.allArticles().map(a => a.source)).size)} منبع.</p>
+          <p class="muted">${brief.length
+            ? `${num(brief.length)} چیز هست که امروز بهتر است بدانید.`
+            : 'امروز چیز مهمی پیدا نشد.'}</p>
         </header>
 
-        <!-- Section A — Daily Intelligence -->
+        <!-- Section A — the brief itself, no wrapper needed -->
         <section class="section">
-          ${lead ? leadInsight(lead) : emptyState({
-            title: 'امروز خلاصه‌ای نیست',
-            body: 'از آخرین بازدید شما هیچ مطلبی از آستانه ارتباط عبور نکرد. این خودش یک نتیجه است، نه یک خلأ.',
-            cta: 'رفتن به کشف', act: 'nav:go', arg: '/discover', iconName: 'compass',
-          })}
-
-          ${rest.length ? `
-            <div class="mt-7">
-              ${sectionHead('بقیه خلاصه امروز', '', 'خلاصه روزانه')}
-              <div class="stagger">
-                ${rest.map((b, i) => briefItem(b, i + 2)).join('')}
-              </div>
-            </div>` : ''}
+          ${brief.length ? brief.map((b, i) => briefStory(b, { lead: i === 0 })).join('')
+            : emptyState({
+                title: 'امروز خبر مهمی نبود',
+                body: 'از آخرین بازدید شما چیزی به‌اندازه کافی مرتبط پیدا نشد. این یعنی چیز مهمی را از دست نداده‌اید.',
+                cta: 'دیدن پیشنهادها', act: 'nav:go', arg: '/discover',
+              })}
         </section>
 
-        <!-- Section B — Worth Your Time -->
+        <!-- Section B — Worth your time -->
         <section class="section">
-          ${sectionHead('ارزش وقت شما',
-            `<button class="btn btn-sm btn-ghost" data-act="nav:go" data-id="/discover">همه پیشنهادها ${icon('left', 13)}</button>`,
-            'حداکثر پنج مقاله')}
-          <div class="grid grid-auto stagger">
-            ${mustRead.map(a => articleCard(a)).join('')}
+          ${sectionHead('ارزش وقت شماست',
+            `<button class="btn btn-sm btn-ghost" data-act="nav:go" data-id="/discover">همه ${icon('left', 13)}</button>`,
+            'مقاله‌هایی که با موضوع‌های شما جور است')}
+          <div class="grid grid-auto">
+            ${ranked.slice(0, 3).map(mini).join('')}
           </div>
         </section>
 
-        <div class="grid grid-2 gap-7">
-          <!-- Section C — What's New -->
-          <section class="section">
-            ${sectionHead('از آخرین بازدید شما')}
-            <div class="card">
-              <div class="row gap-4" style="align-items:baseline">
-                <span class="stat"><b class="tnum">${num(unread.length)}</b></span>
-                <span class="muted">مقاله تازه جمع‌آوری شد</span>
+        <!-- Section C + D — what arrived, what is heating up -->
+        <section class="section">
+          ${sectionHead('از آخرین باری که آمدید')}
+          <div class="card card-quiet">
+            <div class="row gap-4 wrap between">
+              <div>
+                <p><b class="h1 tnum">${num(unread.length)}</b> مقاله تازه رسید</p>
+                <p class="small muted mt-2">${num(high)} تای آن‌ها به کار شما می‌آید. بقیه فقط ذخیره شده‌اند.</p>
               </div>
-              <div class="dist mt-5">
-                <i class="hi"  style="width:${(high / total) * 100}%"></i>
-                <i class="mid" style="width:${(mid / total) * 100}%"></i>
-                <i class="low" style="width:${(low / total) * 100}%"></i>
-              </div>
-              <div class="dist-key">
-                <span><i class="hi" style="background:var(--wine)"></i> ارتباط بالا · ${num(high)}</span>
-                <span><i class="mid" style="background:var(--crimson)"></i> مرتبط · ${num(mid)}</span>
-                <span><i class="low" style="background:var(--blush-2)"></i> اولویت پایین · ${num(low)}</span>
-              </div>
-              <p class="xs muted-2 mt-5">موارد کم‌اولویت جمع‌آوری می‌شوند اما هرگز اعلان نمی‌گیرند.</p>
+              <button class="btn btn-sm" data-act="nav:go" data-id="/library">دیدن کتابخانه</button>
             </div>
-          </section>
 
-          <!-- Section D — Emerging Topics -->
-          <section class="section">
-            ${sectionHead('موضوع‌های در حال شتاب')}
-            <div class="card">
+            <div class="divider mt-5"></div>
+
+            <p class="label mt-5">این هفته بیشتر درباره این‌ها نوشته شده</p>
+            <div class="mt-4">
               ${momentum.map(t => `
-                <div class="trend">
-                  <button class="link" data-act="nav:go" data-id="/topics/${t.id}">${esc(t.name)}</button>
-                  <span class="${t.momentum >= 0 ? 'trend-up' : 'muted small'}">
+                <div class="kv">
+                  <button class="link-ink" data-act="nav:go" data-id="/topics/${t.id}">${esc(t.name)}</button>
+                  <span class="small ${t.momentum >= 0 ? 'link' : 'muted'}">
                     ${t.momentum >= 0 ? '+' : '−'}٪${num(Math.abs(t.momentum))}
                   </span>
                 </div>`).join('')}
-              <p class="xs muted-2 mt-4">از مطالب تازه منابع شما، وزن‌دهی‌شده با آنچه می‌خوانید.</p>
             </div>
-          </section>
-        </div>
+          </div>
+        </section>
 
-        <!-- §54 — the product shows it is learning -->
+        <!-- §54 — show the product is learning, in plain words -->
         <section class="section">
-          ${sectionHead('موضوع‌های شما',
-            `<button class="btn btn-sm btn-ghost" data-act="nav:go" data-id="/settings">تنظیم علاقه‌مندی‌ها</button>`,
-            'آنچه یاد گرفته‌ایم')}
+          ${sectionHead('چیزهایی که درباره شما یاد گرفتیم',
+            `<button class="btn btn-sm btn-ghost" data-act="nav:go" data-id="/settings">تغییر بدهید</button>`)}
           <div class="card">
-            <div class="meter">
+            <div class="bars">
               ${topics.map(t => `
-                <div class="meter-track"><i style="width:${(t.weight / maxWeight) * 100}%"></i></div>
-                <button class="link small" data-act="nav:go" data-id="/topics/${t.id}"
-                  style="min-width:150px;text-align:start;border:0">${esc(t.name)}</button>
-              `).join('')}
+                <div class="bar-row">
+                  <button class="link-ink small clamp-1" data-act="nav:go" data-id="/topics/${t.id}"
+                    style="text-align:start;border:0;background:none;cursor:pointer;padding:0">${esc(t.name)}</button>
+                  <span class="bar-track"><i style="width:${(t.weight / maxW) * 100}%"></i></span>
+                  <span class="xs muted tnum">${num(t.weight)}</span>
+                </div>`).join('')}
             </div>
-            <p class="xs muted-2 mt-5">
-              ${topics[0] ? `بیشترین علاقه شما به «${esc(topics[0].name)}» است. ` : ''}پیشنهادها با هر مطالعه دقیق‌تر می‌شوند.
+            <p class="small muted mt-5">
+              ${topics[0] ? `بیشتر از همه «${esc(topics[0].name)}» را می‌خوانید. ` : ''}هر بار چیزی می‌خوانید یا ذخیره می‌کنید، این‌ها دقیق‌تر می‌شوند.
             </p>
           </div>
         </section>
 
-        <!-- Section E — Continue Researching -->
-        <section class="section">
-          ${sectionHead('ادامه پژوهش')}
-          ${continueList.length ? `
+        <!-- Section E — pick the thread back up -->
+        ${later.length ? `
+          <section class="section">
+            ${sectionHead('نیمه‌کاره مانده')}
             <div class="grid grid-auto">
-              ${continueList.map(({ label, a }) => `
-                <button class="card card-hover card-tight" data-act="article:open" data-id="${a.id}"
-                  style="text-align:start;display:grid;gap:var(--s-3);border-width:1px">
-                  <span class="eyebrow">${esc(label)}</span>
-                  <span class="editorial" style="font-size:1.125rem;line-height:1.55">${esc(a.title)}</span>
-                  <span class="meta">
-                    <span class="badge badge-topic">${esc(topicName(a.topic))}</span>
-                    <span>${num(a.minutes)} دقیقه</span>
-                  </span>
+              ${later.map(({ label, a }) => `
+                <button class="mini" data-act="article:open" data-id="${a.id}" style="cursor:pointer;text-align:start">
+                  <span class="label-quiet">${esc(label)}</span>
+                  <h3>${esc(a.title)}</h3>
+                  <span class="meta">${num(a.minutes)} دقیقه</span>
                 </button>`).join('')}
-            </div>`
-            : emptyState({
-                title: 'هنوز چیزی در جریان نیست',
-                body: 'مقاله‌هایی که باز یا ذخیره می‌کنید اینجا می‌آیند تا رشته کار را دوباره بگیرید.',
-                cta: 'باز کردن مهم‌ترین خبر امروز', act: 'article:open', arg: BRIEF[0].articleId,
-                iconName: 'book',
-              })}
-        </section>
+            </div>
+          </section>` : ''}
       </div>`,
   };
 }

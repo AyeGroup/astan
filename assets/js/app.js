@@ -17,98 +17,62 @@ import { notifications, settings, registerMiscActions } from './views/misc.js';
 import { registerAddActions } from './views/add.js';
 
 const NAV = [
-  { path: '/home',          label: 'خانه',     icon: 'home',     mobile: true },
-  { path: '/discover',      label: 'کشف',      icon: 'compass',  mobile: true },
-  { path: '/library',       label: 'کتابخانه', icon: 'book',     mobile: true },
-  { path: '/topics',        label: 'موضوع‌ها', icon: 'hash',     mobile: true },
-  { path: '/sources',       label: 'منابع',    icon: 'layers' },
-  { path: '/research',      label: 'پژوهش عمیق', icon: 'search' },
+  { path: '/home',     label: 'خانه',      icon: 'home',    mobile: true },
+  { path: '/discover', label: 'پیشنهادها', icon: 'compass', mobile: true },
+  { path: '/library',  label: 'کتابخانه',  icon: 'book',    mobile: true },
+  { path: '/topics',   label: 'موضوع‌ها',  icon: 'hash',    mobile: true },
+  { path: '/sources',  label: 'منبع‌ها',   icon: 'layers' },
+  { path: '/research', label: 'پرسیدن',    icon: 'search' },
 ];
 
 const app = document.getElementById('app');
 let currentView = null;
 
 /* ------------------------------------------------------------------ Shell */
-function rail(active) {
+function topbar(active) {
   const s = store.get();
-  const unread = store.notifications().filter(n => n.unread).length;
-  const topics = store.rankedTopics().slice(0, 4);
-  const maxWeight = Math.max(1, ...topics.map(t => t.weight));
-
-  return `
-    <aside class="rail">
-      <a class="brand" href="#/home">
-        <span class="brand-mark">پ</span>
-        <span>
-          <span class="brand-name">پژوهش</span>
-          <span class="brand-sub">هوشمندی پژوهش شخصی</span>
-        </span>
-      </a>
-
-      <button class="rail-cta" data-act="add:menu">${icon('plus', 16)} افزودن منبع</button>
-
-      <nav class="nav">
-        ${NAV.map(n => `
-          <a class="nav-item" href="#${n.path}" ${active === n.path ? 'aria-current="page"' : ''}>
-            ${icon(n.icon)} <span>${n.label}</span>
-          </a>`).join('')}
-        <a class="nav-item" href="#/notifications" ${active === '/notifications' ? 'aria-current="page"' : ''}>
-          ${icon('bell')} <span>اعلان‌ها</span>
-          ${unread ? `<span class="nav-count">${num(unread)}</span>` : ''}
-        </a>
-      </nav>
-
-      <div class="nav" style="margin-top:var(--s-5)">
-        <span class="nav-label">موضوع‌های شما</span>
-        <div class="rail-topics">
-          ${topics.map(t => `
-            <button class="rail-topic" data-act="nav:go" data-id="/topics/${t.id}">
-              <span class="bar"><i style="width:${(t.weight / maxWeight) * 100}%"></i></span>
-              <span class="clamp-1">${esc(t.name)}</span>
-            </button>`).join('')}
-        </div>
-      </div>
-
-      <div class="rail-foot">
-        <a class="nav-item" href="#/settings" ${active === '/settings' ? 'aria-current="page"' : ''}>
-          ${icon('settings')} <span>تنظیمات</span>
-        </a>
-        <button class="nav-item" data-act="help">${icon('help')} <span>راهنما</span></button>
-        <button class="user-chip mt-2" data-act="nav:go" data-id="/settings">
-          <span class="avatar">${esc((s.account?.name || 'م').slice(0, 1))}</span>
-          <span class="grow" style="min-width:0">
-            <span class="small strong clamp-1" style="display:block">${esc(s.account?.name || 'مهمان')}</span>
-            <span class="xs clamp-1 latin" style="display:block;color:var(--on-wine-3)">${esc(s.account?.email || '—')}</span>
-          </span>
-        </button>
-      </div>
-    </aside>`;
-}
-
-function topbar() {
   const unread = store.notifications().filter(n => n.unread).length;
   return `
     <header class="topbar">
-      <button class="search-trigger" data-act="palette:open">
-        ${icon('search', 14)}
-        <span>جست‌وجو یا پرسش از پژوهش شما…</span>
-        <span class="kbd">⌘K</span>
-      </button>
-      <span class="grow"></span>
-      <button class="btn btn-ghost btn-icon" data-act="theme:toggle" aria-label="تغییر پوسته">
-        ${icon(store.resolvedTheme() === 'dark' ? 'sun' : 'moon')}
-      </button>
-      <a class="btn btn-ghost btn-icon" href="#/notifications" aria-label="اعلان‌ها" style="position:relative">
-        ${icon('bell')}
-        ${unread ? `<span style="position:absolute;top:4px;inset-inline-end:4px;min-width:16px;height:16px;
-          padding:0 4px;border-radius:999px;background:var(--crimson);color:#fff;font-size:10px;font-weight:700;
-          display:grid;place-items:center">${num(unread)}</span>` : ''}
-      </a>
+      <div class="topbar-inner">
+        <a class="brand" href="#/home">
+          <span class="brand-mark">پ</span>
+          <span class="brand-name">پژوهش</span>
+        </a>
+
+        <nav class="nav">
+          ${NAV.map(n => `
+            <a class="nav-item" href="#${n.path}" ${active === n.path ? 'aria-current="page"' : ''}>
+              ${icon(n.icon, 15)} <span>${n.label}</span>
+            </a>`).join('')}
+        </nav>
+
+        <span class="grow"></span>
+
+        <button class="bar-search" data-act="palette:open">
+          ${icon('search', 14)}
+          <span>جست‌وجو</span>
+          <span class="kbd">⌘K</span>
+        </button>
+
+        <button class="btn btn-sm btn-primary" data-act="add:menu">${icon('plus', 14)} افزودن</button>
+
+        <a class="btn btn-ghost btn-icon btn-sm" href="#/notifications" aria-label="اعلان‌ها" style="position:relative">
+          ${icon('bell', 16)}
+          ${unread ? `<span class="bar-count">${num(unread)}</span>` : ''}
+        </a>
+        <button class="btn btn-ghost btn-icon btn-sm" data-act="theme:toggle" aria-label="روشن یا تاریک">
+          ${icon(store.resolvedTheme() === 'dark' ? 'sun' : 'moon', 16)}
+        </button>
+        <button class="avatar" data-act="nav:go" data-id="/settings" aria-label="تنظیمات">
+          ${esc((s.account?.name || 'م').slice(0, 1))}
+        </button>
+      </div>
     </header>`;
 }
 
 function mobileNav(active) {
-  const items = [...NAV.filter(n => n.mobile), { path: '/settings', label: 'نمایه', icon: 'user' }];
+  const items = [...NAV.filter(n => n.mobile), { path: '/settings', label: 'شما', icon: 'user' }];
   return `
     <nav class="mobile-nav">
       ${items.map(n => `
@@ -116,7 +80,7 @@ function mobileNav(active) {
           ${icon(n.icon, 18)}<span>${n.label}</span>
         </a>`).join('')}
     </nav>
-    <button class="fab" data-act="add:menu" aria-label="افزودن منبع">${icon('plus', 20)}</button>`;
+    <button class="fab" data-act="add:menu" aria-label="افزودن">${icon('plus', 20)}</button>`;
 }
 
 function render(view) {
@@ -129,13 +93,8 @@ function render(view) {
   }
   const active = '/' + (currentRoute().segments[0] || '');
   app.innerHTML = `
-    <div class="shell">
-      ${rail(active)}
-      <div class="main">
-        ${topbar()}
-        ${view.html}
-      </div>
-    </div>
+    ${topbar(active)}
+    <main>${view.html}</main>
     ${mobileNav(active)}`;
 }
 
@@ -168,9 +127,9 @@ const handlers = {
   settings: requireAccount(() => render(settings())),
   __notfound: () => render({
     layout: 'app', title: 'پیدا نشد',
-    html: `<div class="page"><h1 class="h1">صفحه پیدا نشد</h1>
-      <p class="lead mt-3">چنین نشانی‌ای وجود ندارد.</p>
-      <button class="btn btn-primary mt-5" data-act="nav:go" data-id="/home">بازگشت به خانه</button></div>`,
+    html: `<div class="page"><h1 class="h1">این صفحه وجود ندارد</h1>
+      <p class="muted mt-3">شاید نشانی را اشتباه وارد کرده‌اید.</p>
+      <button class="btn btn-primary mt-5" data-act="nav:go" data-id="/home">برگردید به خانه</button></div>`,
   }),
 };
 
@@ -191,28 +150,27 @@ on('nav:go', ({ id }) => go(id));
 on('nav:back', () => (history.length > 1 ? history.back() : go('/home')));
 on('theme:toggle', () => { store.toggleTheme(); rerender(); });
 on('help', () => openModal({
-  title: 'پژوهش چطور کار می‌کند',
+  title: 'پژوهش چه کار می‌کند؟',
   body: `
-    <div class="col gap-5">
+    <div class="col gap-6">
       <div>
-        <span class="eyebrow">ایده اصلی</span>
-        <p class="mt-2">شما نباید مجبور باشید دنبال دانش بگردید. پژوهش را به منابع و موضوع‌هایی
-          که برایتان مهم‌اند وصل کنید تا مطالب مرتبط خودشان سراغتان بیایند — خلاصه‌شده،
-          توضیح‌داده‌شده و پیوندخورده با آنچه از پیش می‌دانید.</p>
+        <span class="label">کار اصلی</span>
+        <p class="mt-2">سایت‌ها و موضوع‌هایی را که برایتان مهم است اضافه می‌کنید.
+          ما مقاله‌های مرتبط را پیدا می‌کنیم، خلاصه می‌کنیم و می‌گوییم چرا به درد شما می‌خورد.</p>
       </div>
       <div>
-        <span class="eyebrow">هر پیشنهاد دلیل خودش را می‌گوید</span>
-        <p class="mt-2">هر کارتی که دکمه «چرا این؟» دارد دقیقاً می‌گوید کدام سیگنال‌ها آن را
-          جلوی چشم شما گذاشته‌اند، و همان‌جا می‌توانید اصلاحش کنید.</p>
+        <span class="label">هر پیشنهاد دلیل دارد</span>
+        <p class="mt-2">زیر هر مقاله نوشته‌ایم چرا آن را به شما نشان داده‌ایم.
+          اگر اشتباه بود، همان‌جا بگویید تا دفعه بعد بهتر شود.</p>
       </div>
       <div>
-        <span class="eyebrow">وقتی نمی‌دانیم</span>
-        <p class="mt-2">اگر منابع مطمئن نباشند یا کتابخانه شما کم‌مایه باشد، محصول همین را می‌گوید.
-          شکاف را با زبان قاطع پر نمی‌کند.</p>
+        <span class="label">وقتی مطمئن نیستیم</span>
+        <p class="mt-2">اگر جواب روشنی نداشته باشیم، همین را می‌گوییم.
+          چیزی از خودمان نمی‌سازیم.</p>
       </div>
       <div>
-        <span class="eyebrow">میان‌برها</span>
-        <p class="mt-3"><span class="kbd">⌘K</span> جست‌وجو یا پرسش · <span class="kbd">Esc</span> بستن</p>
+        <span class="label">میان‌برها</span>
+        <p class="mt-3"><span class="kbd">⌘K</span> جست‌وجو · <span class="kbd">Esc</span> بستن</p>
       </div>
     </div>`,
 }));
@@ -222,13 +180,13 @@ on('article:open', ({ id }) => { resetReader(); go(`/article/${id}`); });
 
 on('article:save', ({ id }) => {
   const saved = store.toggleSave(id);
-  toast(saved ? 'در کتابخانه شما ذخیره شد' : 'از ذخیره‌ها حذف شد');
+  toast(saved ? 'ذخیره شد' : 'از ذخیره‌ها برداشته شد');
   rerender();
 });
 
 on('article:dismiss', ({ id }) => {
   store.dismiss(id);
-  toast('کمتر از این‌ها. فید شما تنظیم شد.');
+  toast('باشد، از این‌ها کمتر نشان می‌دهیم');
   rerender();
 });
 
@@ -249,26 +207,26 @@ on('article:why', ({ id }) => {
   if (!a) return;
   const weight = store.get().topicWeights[a.topic] ?? 50;
   openModal({
-    title: 'چرا این را می‌بینید',
-    subtitle: `٪${num(store.personalRelevance(a))} مرتبط · ${esc(topicName(a.topic))}`,
+    title: 'چرا این را به شما نشان دادیم',
+    subtitle: `${esc(topicName(a.topic))} · ٪${num(store.personalRelevance(a))} مرتبط`,
     body: `
-      <p class="editorial" style="font-size:1.25rem;line-height:1.55">${esc(a.title)}</p>
-      <ul class="reasons mt-5">
-        ${a.reasons.map(r => `<li>${esc(r)}</li>`).join('')}
-        <li>وزن علاقه شما به «${esc(topicName(a.topic))}» برابر ${num(weight)} از ۱۰۰ است</li>
-        <li>از ${esc(sourceName(a.source))}، منبعی که پایش می‌کنید</li>
+      <p class="h2" style="line-height:1.6">${esc(a.title)}</p>
+      <ul class="mt-5" style="display:grid;gap:var(--s-3)">
+        ${a.reasons.map(r => `<li class="row gap-3"><span class="dot dot-ok"></span><span>${esc(r)}</span></li>`).join('')}
+        <li class="row gap-3"><span class="dot dot-ok"></span><span>علاقه شما به این موضوع: ${num(weight)} از ۱۰۰</span></li>
+        <li class="row gap-3"><span class="dot dot-ok"></span><span>از <span class="latin">${esc(sourceName(a.source))}</span> که دنبالش می‌کنید</span></li>
       </ul>
       <div class="divider mt-5"></div>
       <div class="mt-5">
-        <span class="eyebrow">این مفید بود؟</span>
+        <span class="label">این پیشنهاد خوب بود؟</span>
         <div class="row wrap gap-2 mt-3">
-          <button class="btn btn-sm btn-crimson" data-act="fb:up" data-id="${a.id}">${icon('thumbUp', 14)} مرتبط بود</button>
-          <button class="btn btn-sm" data-act="fb:down" data-id="${a.id}">${icon('thumbDn', 14)} مرتبط نبود</button>
-          <button class="btn btn-sm btn-ghost" data-act="fb:more" data-id="${a.id}">بیشتر از این‌ها</button>
-          <button class="btn btn-sm btn-ghost" data-act="fb:less" data-id="${a.id}">کمتر از این‌ها</button>
-          <button class="btn btn-sm btn-ghost" data-act="fb:hide" data-id="${a.source}">پنهان‌کردن ${esc(sourceName(a.source))}</button>
+          <button class="btn btn-sm btn-primary" data-act="fb:up" data-id="${a.id}">${icon('thumbUp', 14)} بله</button>
+          <button class="btn btn-sm" data-act="fb:down" data-id="${a.id}">${icon('thumbDn', 14)} نه</button>
+          <button class="btn btn-sm btn-ghost" data-act="fb:more" data-id="${a.id}">از این‌ها بیشتر</button>
+          <button class="btn btn-sm btn-ghost" data-act="fb:less" data-id="${a.id}">از این‌ها کمتر</button>
+          <button class="btn btn-sm btn-ghost" data-act="fb:hide" data-id="${a.source}">دیگر از این منبع نشان نده</button>
         </div>
-        <p class="xs muted-2 mt-4">بازخورد شما مستقیم وارد پیشنهادها می‌شود — اثرش را در بازدید بعدی از خانه می‌بینید.</p>
+        <p class="xs muted-2 mt-4">دفعه بعد که سر بزنید، اثرش را می‌بینید.</p>
       </div>`,
   });
 });
@@ -281,14 +239,14 @@ const feedback = (kind, id, message) => {
   rerender();
 };
 
-on('fb:up',   ({ id }) => feedback('save', id, 'ثبت شد — بیشتر از این‌ها'));
-on('fb:down', ({ id }) => feedback('notInterested', id, 'ثبت شد — کمتر از این‌ها'));
-on('fb:more', ({ id }) => feedback('followTopic', id, 'بیشتر از این موضوع در فید شما'));
-on('fb:less', ({ id }) => feedback('skip', id, 'کمتر از این موضوع در فید شما'));
+on('fb:up',   ({ id }) => feedback('save', id, 'ممنون — از این‌ها بیشتر نشان می‌دهیم'));
+on('fb:down', ({ id }) => feedback('notInterested', id, 'ممنون — از این‌ها کمتر نشان می‌دهیم'));
+on('fb:more', ({ id }) => feedback('followTopic', id, 'از این موضوع بیشتر نشان می‌دهیم'));
+on('fb:less', ({ id }) => feedback('skip', id, 'از این موضوع کمتر نشان می‌دهیم'));
 on('fb:hide', ({ id }) => {
   store.hideSource(id);
   closeModal();
-  toast(`${sourceName(id)} از فید شما پنهان شد`);
+  toast(`دیگر از ${sourceName(id)} چیزی نشان نمی‌دهیم`);
   rerender();
 });
 
@@ -302,7 +260,7 @@ on('palette:open', () => {
   const modal = qs('.modal', overlay);
   modal.classList.add('palette');
   modal.innerHTML = `
-    <input class="palette-input" id="paletteInput" placeholder="در پژوهش خود بگردید، یا پرسشی بپرسید…"
+    <input class="palette-input" id="paletteInput" placeholder="دنبال چه می‌گردید؟"
       autocomplete="off" data-act-enter="palette:search">
     <div class="palette-results" id="paletteResults"></div>`;
   const input = qs('#paletteInput', modal);
@@ -323,33 +281,33 @@ function paletteRender(q) {
 
   out.innerHTML = `
     ${query ? `
-      <div class="palette-group eyebrow">پرسش از پژوهش</div>
+      <div class="palette-group">این را از کتابخانه‌تان بپرسید</div>
       <button class="palette-item" data-act="palette:ask" data-q="${esc(query)}">
-        <span class="palette-icon">${icon('spark', 15)}</span>
+        <span class="palette-ico">${icon('spark', 15)}</span>
         <span class="grow"><b class="small">${esc(query)}</b>
-          <span class="xs muted" style="display:block">پاسخ از کل کتابخانه شما</span></span>
+          <span class="xs muted" style="display:block">جواب را از همه مقاله‌های شما می‌سازیم</span></span>
       </button>` : ''}
 
-    <div class="palette-group eyebrow">${query ? 'در کتابخانه شما' : 'پیشنهاد برای شما'}</div>
+    <div class="palette-group">${query ? 'در کتابخانه شما' : 'پیشنهاد برای شما'}</div>
     ${articles.length ? articles.map(a => `
       <button class="palette-item" data-act="palette:article" data-id="${a.id}">
-        <span class="palette-icon">${icon('file', 15)}</span>
+        <span class="palette-ico">${icon('file', 15)}</span>
         <span class="grow"><b class="small clamp-1">${esc(a.title)}</b>
           <span class="xs muted">${esc(sourceName(a.source))} · ${esc(topicName(a.topic))}</span></span>
       </button>`).join('')
-      : '<p class="small muted" style="padding:var(--s-3)">مقاله‌ای پیدا نشد. به‌جایش از «پژوهش» بپرسید.</p>'}
+      : '<p class="small muted" style="padding:var(--s-4)">چیزی پیدا نشد. سؤالتان را از کتابخانه بپرسید.</p>'}
 
     ${topics.length ? `
-      <div class="palette-group eyebrow">موضوع‌ها</div>
+      <div class="palette-group">موضوع‌ها</div>
       ${topics.map(t => `
         <button class="palette-item" data-act="palette:topic" data-id="${t.id}">
-          <span class="palette-icon">${icon('hash', 15)}</span> <span class="small">${esc(t.name)}</span>
+          <span class="palette-ico">${icon('hash', 15)}</span> <span class="small">${esc(t.name)}</span>
         </button>`).join('')}` : ''}
 
     ${query ? `
-      <div class="palette-group eyebrow">جست‌وجوی محتوا</div>
+      <div class="palette-group">جست‌وجو در متن</div>
       <button class="palette-item" data-act="palette:library" data-q="${esc(query)}">
-        <span class="palette-icon">${icon('book', 15)}</span> <span class="small">دیدن همه نتایج در کتابخانه</span>
+        <span class="palette-ico">${icon('book', 15)}</span> <span class="small">دیدن همه نتیجه‌ها</span>
       </button>` : ''}`;
 }
 

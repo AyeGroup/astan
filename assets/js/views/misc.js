@@ -7,9 +7,9 @@ import { sectionHead, emptyState, tabBar } from './components.js';
 const KINDS = [
   { id: 'all', label: 'همه' },
   { id: 'important', label: 'مهم' },
-  { id: 'article', label: 'مقاله‌های تازه' },
-  { id: 'topic', label: 'به‌روزرسانی موضوع' },
-  { id: 'source', label: 'به‌روزرسانی منبع' },
+  { id: 'article', label: 'مقاله تازه' },
+  { id: 'topic', label: 'موضوع‌ها' },
+  { id: 'source', label: 'منبع‌ها' },
 ];
 
 const nstate = { tab: 'all' };
@@ -28,9 +28,9 @@ export function notifications() {
           <div class="row between wrap gap-4">
             <div>
               <h1 class="h1">اعلان‌ها</h1>
-              <p class="lead">${unread ? `${num(unread)} نخوانده` : 'همه‌چیز را دیده‌اید'}</p>
+              <p class="muted">${unread ? `${num(unread)} تا خوانده نشده` : 'همه را دیده‌اید'}</p>
             </div>
-            ${unread ? '<button class="btn btn-sm" data-act="notif:readAll">علامت‌زدن همه به‌عنوان خوانده‌شده</button>' : ''}
+            ${unread ? '<button class="btn btn-sm" data-act="notif:readAll">همه را خوانده‌شده کن</button>' : ''}
           </div>
         </header>
 
@@ -52,16 +52,15 @@ export function notifications() {
               </div>`).join('')}
           </div>`
           : emptyState({
-              title: 'اینجا چیزی نیست',
-              body: 'اعلان تنها وقتی می‌رسد که اهمیت، ارتباط شخصی و تازگی هر سه به‌اندازه کافی بالا باشند. سکوت، حالت مطلوب است.',
+              title: 'خبری نیست',
+              body: 'فقط وقتی خبر می‌دهیم که واقعاً مهم باشد. سکوت یعنی چیز مهمی نبوده.',
             })}
 
         <div class="card mt-6" style="background:transparent;border-style:dashed">
-          <span class="eyebrow">اعلان‌ها چطور تصمیم‌گیری می‌شوند</span>
-          <p class="small muted mt-3" style="max-width:var(--measure)">
-            هیچ‌چیز صرفاً به‌خاطر تازه‌بودن فرستاده نمی‌شود. هر نامزد با فرمول
-            <b>اهمیت × ارتباط شخصی × تازگی</b> امتیاز می‌گیرد و هرچه زیر آستانه باشد
-            بی‌سروصدا وارد کتابخانه شما می‌شود.
+          <span class="label">چرا اعلان‌ها کم است؟</span>
+          <p class="small muted mt-3">
+            چون فقط تازه‌بودن کافی نیست. یک مطلب باید هم مهم باشد، هم به کار شما بیاید،
+            هم چیز تازه‌ای بگوید. بقیه بدون مزاحمت وارد کتابخانه‌تان می‌شوند.
           </p>
         </div>
       </div>`,
@@ -81,37 +80,37 @@ export function settings() {
       <div class="page narrow fade-in">
         <header class="page-head">
           <h1 class="h1">تنظیمات</h1>
-          <p class="lead">آنچه درباره پژوهش شما می‌دانیم، و راه تغییرش.</p>
+          <p class="muted">هر چیزی که درباره شما می‌دانیم، و راه عوض‌کردنش.</p>
         </header>
 
         <section class="section">
-          ${sectionHead('حساب کاربری')}
+          ${sectionHead('حساب شما')}
           <div class="row gap-4">
             <span class="avatar lg">${esc((s.account?.name || 'R').slice(0, 1).toUpperCase())}</span>
             <div class="grow">
               <b>${esc(s.account?.name || 'مهمان')}</b>
               <p class="small muted latin">${esc(s.account?.email || '—')}</p>
             </div>
-            <button class="btn btn-sm" data-act="account:signout">خروج</button>
+            <button class="btn btn-sm" data-act="account:signout">خروج از حساب</button>
           </div>
         </section>
 
         <section class="section">
-          ${sectionHead('علاقه‌مندی‌ها', '<span class="xs muted-2">انتخاب‌شده در راه‌اندازی</span>')}
+          ${sectionHead('موضوع‌های شما')}
           <div class="row wrap gap-2">
             ${(s.interests.length ? s.interests : ['هوش مصنوعی', 'فناوری']).map(i => `<span class="chip" aria-pressed="true">${esc(i)}</span>`).join('')}
           </div>
           <p class="small muted mt-4">
             شما از پژوهش برای <b>${esc({
-              updated: 'به‌روز ماندن', deep: 'پژوهش عمیق', industry: 'دنبال‌کردن یک صنعت',
-              learn: 'یادگیری یک موضوع', track: 'پایش سایت‌های مشخص',
-            }[s.intent] || 'به‌روز ماندن')}</b> استفاده می‌کنید.
+              updated: 'دانستن خبرها', deep: 'دنبال‌کردن عمیق', industry: 'دنبال‌کردن یک صنعت',
+              learn: 'یادگیری یک موضوع', track: 'پاییدن چند سایت',
+            }[s.intent] || 'دانستن خبرها')}</b> استفاده می‌کنید.
           </p>
-          <button class="btn btn-sm mt-4" data-act="account:redo-onboarding">تنظیم علاقه‌مندی‌ها</button>
+          <button class="btn btn-sm mt-4" data-act="account:redo-onboarding">عوض کردن موضوع‌ها</button>
         </section>
 
         <section class="section">
-          ${sectionHead('آنچه یاد گرفته‌ایم', '<span class="xs muted-2">با مطالعه شما به‌روز می‌شود</span>')}
+          ${sectionHead('چه چیزی یاد گرفته‌ایم', '', 'هر بار چیزی می‌خوانید این‌ها عوض می‌شود')}
           <div class="meter">
             ${topics.map(t => `
               <div class="meter-track"><i style="width:${t.weight}%"></i></div>
@@ -119,13 +118,12 @@ export function settings() {
             `).join('')}
           </div>
           <p class="xs muted-2 mt-4">
-            ${topics[0] ? `شما علاقه پررنگی به «${esc(topics[0].name)}» نشان داده‌اید.` : ''}
-            وزن‌ها با هر ذخیره، مطالعه و رد کردن تغییر می‌کنند.
+            ${topics[0] ? `بیشتر از همه «${esc(topics[0].name)}» را می‌خوانید.` : ''}
           </p>
         </section>
 
         <section class="section">
-          ${sectionHead('سیگنال‌های اخیر', '<span class="xs muted-2">هرچه فید شما را شکل می‌دهد</span>')}
+          ${sectionHead('کارهای اخیر شما', '', 'همین‌ها پیشنهادها را می‌سازند')}
           ${recent.length ? `
             <div class="rows">
               ${recent.map(sig => `
@@ -137,7 +135,7 @@ export function settings() {
                   <span class="xs ${sig.weight >= 0 ? 'trend-up' : 'muted'}">${sig.weight >= 0 ? '+' : '−'}${num(Math.abs(sig.weight))}</span>
                 </div>`).join('')}
             </div>`
-            : '<p class="small muted">هنوز چیزی ثبت نشده. چیزی بخوانید یا ذخیره کنید تا اینجا بیاید.</p>'}
+            : '<p class="small muted">هنوز کاری نکرده‌اید. چیزی بخوانید یا ذخیره کنید.</p>'}
         </section>
 
         <section class="section">
@@ -145,7 +143,7 @@ export function settings() {
           <div class="settings-row">
             <div>
               <b>حالت تاریک</b>
-              <p class="xs muted mt-2">سطحی آرام‌تر برای مطالعه‌های طولانی.</p>
+              <p class="xs muted mt-2">برای خواندن طولانی راحت‌تر است.</p>
             </div>
             <button class="switch" role="switch" aria-checked="${store.resolvedTheme() === 'dark'}" data-act="theme:toggle"></button>
           </div>
@@ -155,10 +153,10 @@ export function settings() {
           ${sectionHead('داده‌ها')}
           <div class="settings-row">
             <div>
-              <b>بازنشانی این نمونه</b>
-              <p class="xs muted mt-2">حساب، مقاله‌های ذخیره‌شده، سیگنال‌ها و منابع را از این مرورگر پاک می‌کند.</p>
+              <b>پاک‌کردن همه‌چیز</b>
+              <p class="xs muted mt-2">حساب، ذخیره‌ها و منبع‌ها را از این مرورگر پاک می‌کند.</p>
             </div>
-            <button class="btn btn-sm" data-act="account:reset">بازنشانی</button>
+            <button class="btn btn-sm" data-act="account:reset">پاک کن</button>
           </div>
         </section>
       </div>`,
@@ -167,7 +165,7 @@ export function settings() {
 
 export function registerMiscActions(rerender) {
   on('notif:tab', ({ id }) => { nstate.tab = id; rerender(); });
-  on('notif:readAll', () => { store.readAllNotifications(); rerender(); toast('همه اعلان‌ها خوانده‌شده علامت خوردند'); });
+  on('notif:readAll', () => { store.readAllNotifications(); rerender(); toast('همه خوانده‌شده شدند'); });
   on('notif:open', ({ id, article, topic, source }) => {
     store.readNotification(id);
     if (article) location.hash = `#/article/${article}`;
@@ -182,6 +180,6 @@ export function registerMiscActions(rerender) {
     store.reset();
     store.applyTheme(null);
     location.hash = '#/';
-    toast('نمونه بازنشانی شد');
+    toast('همه‌چیز پاک شد');
   });
 }

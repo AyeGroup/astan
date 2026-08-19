@@ -2,7 +2,7 @@
 import { esc, icon, on, num } from '../ui.js';
 import { TOPICS, topicName, sourceName } from '../data.js';
 import * as store from '../store.js';
-import { sectionHead, articleCard, articleRow, emptyState, tabBar } from './components.js';
+import { sectionHead, mini, articleRow, emptyState, tabBar } from './components.js';
 
 /* ------------------------------------------------------------- Discover */
 export function discover() {
@@ -16,47 +16,47 @@ export function discover() {
 
   return {
     layout: 'app',
-    title: 'کشف — پژوهش',
+    title: 'پیشنهادها — پژوهش',
     html: `
       <div class="page fade-in">
         <header class="page-head">
-          <h1 class="h1">کشف</h1>
-          <p class="lead">مطالبی که هنوز در کتابخانه شما نیستند، رتبه‌بندی‌شده در برابر آنچه می‌دانید.</p>
+          <h1 class="h1">پیشنهادها</h1>
+          <p class="muted">مقاله‌هایی که هنوز نخوانده‌اید و فکر می‌کنیم به کارتان می‌آید.</p>
         </header>
 
         <section class="section">
-          ${sectionHead('برای شما', '<span class="xs muted-2">مرتب‌شده بر پایه ارتباط شخصی</span>')}
-          ${forYou.length ? `<div class="grid grid-auto">${forYou.map(a => articleCard(a)).join('')}</div>`
+          ${sectionHead('برای شما', '', 'بر اساس چیزهایی که خوانده‌اید')}
+          ${forYou.length ? `<div class="grid grid-auto">${forYou.map(mini).join('')}</div>`
             : emptyState({
-                title: 'به‌روز هستید',
-                body: 'هرچه در حال حاضر مرتبط بوده خوانده شده. با بررسی دوباره منابع، مطالب تازه می‌رسد.',
-                cta: 'افزودن منبع', act: 'add:open', arg: 'website',
+                title: 'همه را خوانده‌اید',
+                body: 'فعلاً چیز تازه‌ای نیست. به‌محض اینکه منابعتان مطلب جدید بگذارند، اینجا می‌آید.',
+                cta: 'یک منبع اضافه کنید', act: 'add:open', arg: 'website',
               })}
         </section>
 
         <section class="section">
-          ${sectionHead('داغ در موضوع‌های شما')}
-          <div class="grid grid-auto">${trending.map(a => articleCard(a, { showReasons: false })).join('')}</div>
+          ${sectionHead('این روزها بیشتر درباره‌شان می‌نویسند')}
+          <div class="grid grid-auto">${trending.map(mini).join('')}</div>
         </section>
 
         <section class="section">
-          ${sectionHead('تازه از منابع شما',
-            `<button class="btn btn-sm btn-ghost" data-act="nav:go" data-id="/sources">مدیریت منابع ${icon('left', 13)}</button>`)}
+          ${sectionHead('تازه‌ترین‌ها از منبع‌های شما',
+            `<button class="btn btn-sm btn-ghost" data-act="nav:go" data-id="/sources">منبع‌ها ${icon('left', 13)}</button>`)}
           <div class="rows">${fresh.map(articleRow).join('')}</div>
         </section>
 
         <section class="section">
-          ${sectionHead('کاوش موضوع‌ها')}
+          ${sectionHead('موضوع‌های دیگر')}
           <div class="grid grid-auto">
             ${TOPICS.map(t => `
-              <div class="card card-hover card-tight">
+              <div class="card card-tight">
                 <div class="row between">
                   <button class="link editorial" data-act="nav:go" data-id="/topics/${t.id}" style="font-size:1.25rem;border:0">${esc(t.name)}</button>
                   <span class="${t.momentum >= 0 ? 'trend-up' : 'muted small'}">${t.momentum >= 0 ? '+' : '−'}٪${num(Math.abs(t.momentum))}</span>
                 </div>
                 <p class="xs muted mt-2">${num(t.articles)} مقاله · ${num(t.sources)} منبع</p>
                 <button class="btn btn-sm mt-4" data-act="topic:follow" data-id="${t.id}">
-                  ${followed.includes(t.id) ? `${icon('check', 13)} دنبال می‌کنید` : 'دنبال کردن'}
+                  ${followed.includes(t.id) ? `${icon('check', 13)} دنبال می‌کنید` : 'دنبال کنید'}
                 </button>
               </div>`).join('')}
           </div>
@@ -105,20 +105,20 @@ export function library() {
       <div class="page fade-in">
         <header class="page-head">
           <h1 class="h1">کتابخانه</h1>
-          <p class="lead">هرچه جمع‌آوری، مطالعه یا وارد کرده‌اید.</p>
+          <p class="muted">هر چیزی که ذخیره کرده‌اید یا خوانده‌اید، همین‌جاست.</p>
         </header>
 
         ${tabBar([
           { id: 'all', label: 'همه', count: byTab.all.length },
           { id: 'saved', label: 'ذخیره‌شده', count: byTab.saved.length },
           { id: 'read', label: 'خوانده‌شده', count: byTab.read.length },
-          { id: 'unread', label: 'نخوانده', count: byTab.unread.length },
-          { id: 'imported', label: 'واردشده', count: byTab.imported.length },
+          { id: 'unread', label: 'نخوانده‌ها', count: byTab.unread.length },
+          { id: 'imported', label: 'خودم اضافه کردم', count: byTab.imported.length },
         ], lib.tab, 'lib:tab')}
 
         <div class="row wrap gap-2" style="margin-bottom:var(--s-5)">
           <div class="grow" style="min-width:220px;position:relative">
-            <input class="input" id="libSearch" placeholder="جست‌وجو در پژوهش شما…" value="${esc(lib.q)}"
+            <input class="input" id="libSearch" placeholder="دنبال چه می‌گردید؟" value="${esc(lib.q)}"
               data-act-enter="lib:search" autocomplete="off">
           </div>
           <select class="select" style="width:auto" data-act="lib:topic" id="libTopic">
@@ -141,9 +141,9 @@ export function library() {
           <p class="xs muted-2" style="margin-bottom:var(--s-2)">${num(list.length)} مورد</p>
           <div class="rows">${list.map(articleRow).join('')}</div>`
           : emptyState({
-              title: 'کتابخانه پژوهش شما منتظر است.',
-              body: 'یک مقاله یا سایت اضافه کنید تا ساختن پایگاه دانش شخصی شما را آغاز کنیم.',
-              cta: 'افزودن نخستین منبع', act: 'add:open', arg: 'article',
+              title: 'کتابخانه‌تان هنوز خالی است',
+              body: 'یک مقاله یا یک سایت اضافه کنید تا شروع کنیم.',
+              cta: 'اولین منبع را اضافه کنید', act: 'add:open', arg: 'article',
             })}
       </div>`,
   };

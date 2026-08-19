@@ -10,16 +10,16 @@ export function sourcesIndex() {
 
   return {
     layout: 'app',
-    title: 'منابع — پژوهش',
+    title: 'منبع‌ها — پژوهش',
     html: `
       <div class="page fade-in">
         <header class="page-head">
           <div class="row between wrap gap-4">
             <div>
-              <h1 class="h1">منابع</h1>
-              <p class="lead">سایت‌ها و سندهایی که به‌جای شما پایش می‌شوند.</p>
+              <h1 class="h1">منبع‌ها</h1>
+              <p class="muted">سایت‌ها و فایل‌هایی که برایتان چک می‌کنیم.</p>
             </div>
-            <button class="btn btn-primary" data-act="add:open" data-kind="website">${icon('plus', 14)} افزودن منبع</button>
+            <button class="btn btn-primary" data-act="add:open" data-kind="website">${icon('plus', 14)} منبع تازه</button>
           </div>
         </header>
 
@@ -29,11 +29,11 @@ export function sourcesIndex() {
               const cfg = st[s.id] || {};
               const paused = cfg.status === 'paused';
               return `
-                <div class="card card-hover">
+                <div class="card">
                   <div class="row between">
                     <div class="row gap-2">
                       <i class="dot ${paused ? 'dot-warn' : 'dot-live'}"></i>
-                      <span class="xs muted">${paused ? 'متوقف' : 'در حال پایش'} · ${esc(cfg.frequency || s.frequency)}</span>
+                      <span class="xs muted">${paused ? 'متوقف است' : 'فعال'} · ${esc(cfg.frequency || s.frequency)}</span>
                     </div>
                     <button class="btn btn-ghost btn-icon btn-sm" data-act="source:menu" data-id="${s.id}" aria-label="اقدامات منبع">${icon('more', 14)}</button>
                   </div>
@@ -42,25 +42,25 @@ export function sourcesIndex() {
                   <p class="xs muted-2 latin">${esc(s.domain)}</p>
 
                   <div class="row gap-5 mt-5">
-                    ${statBlock('مرتبط', num(s.relevant))}
+                    ${statBlock('مقاله به‌دردبخور', num(s.relevant))}
                     ${statBlock('تازه این هفته', num(s.newThisWeek))}
                   </div>
 
                   <div class="row wrap gap-2 mt-4">
-                    ${(s.topics || []).map(t => `<span class="badge badge-topic">${esc(topicName(t))}</span>`).join('')}
+                    ${(s.topics || []).map(t => `<span class="tag tag-red">${esc(topicName(t))}</span>`).join('')}
                   </div>
 
                   <div class="row between mt-5" style="padding-top:var(--s-3);border-top:1px solid var(--line)">
-                    <span class="xs muted-2">آخرین بررسی ${esc(s.lastChecked)}</span>
+                    <span class="xs muted-2">آخرین بار: ${esc(s.lastChecked)}</span>
                     <button class="btn btn-sm btn-ghost" data-act="nav:go" data-id="/sources/${s.id}">باز کردن ${icon('left', 13)}</button>
                   </div>
                 </div>`;
             }).join('')}
           </div>`
           : emptyState({
-              title: 'هنوز منبعی نیست.',
-              body: 'یک سایت به ما نشان دهید تا ساختارش را نقشه‌برداری کنیم، مقاله‌های هم‌خوان با موضوع‌های شما را پیدا کنیم و پایشش را ادامه دهیم.',
-              cta: 'افزودن نخستین منبع', act: 'add:open', arg: 'website',
+              title: 'هنوز منبعی اضافه نکرده‌اید',
+              body: 'نشانی یک سایت را بدهید. ما مقاله‌هایش را می‌گردیم و هر روز چکش می‌کنیم.',
+              cta: 'اولین منبع را اضافه کنید', act: 'add:open', arg: 'website',
             })}
       </div>`,
   };
@@ -74,8 +74,8 @@ export function sourceDetail(segments) {
     return {
       layout: 'app', title: 'منبع پیدا نشد',
       html: `<div class="page">${emptyState({
-        title: 'منبع پیدا نشد', body: 'این منبع در فضای کاری شما نیست.',
-        cta: 'بازگشت به منابع', act: 'nav:go', arg: '/sources',
+        title: 'این منبع پیدا نشد', body: 'شاید حذفش کرده‌اید.',
+        cta: 'برگردید به منبع‌ها', act: 'nav:go', arg: '/sources',
       })}</div>`,
     };
   }
@@ -87,7 +87,7 @@ export function sourceDetail(segments) {
   const panes = {
     articles: articles.length
       ? `<div class="rows">${articles.map(articleRow).join('')}</div>`
-      : '<p class="muted small">هنوز مقاله‌ای از این منبع جمع‌آوری نشده است.</p>',
+      : '<p class="muted small">هنوز از این منبع مقاله‌ای جمع نشده.</p>',
     topics: `
       <div class="grid grid-auto">
         ${(s.categories || []).map(c => `
@@ -99,17 +99,17 @@ export function sourceDetail(segments) {
             <label class="checkbox mt-3">
               <input type="checkbox" data-act="source:track" data-id="${s.id}" data-cat="${esc(c.name)}"
                 ${(cfg.tracked || []).includes(c.name) ? 'checked' : ''}>
-              <span class="small">پایش این دسته</span>
+              <span class="small">این دسته را دنبال کن</span>
             </label>
           </div>`).join('')}
       </div>`,
     activity: `
       <div class="rows">
         ${[
-          ['بررسی مقاله‌های تازه', s.lastChecked, `${num(s.newThisWeek)} مورد تازه این هفته`],
-          ['اعمال فیلتر ارتباط', 'دیروز', `${num(s.total - s.relevant)} مورد به‌دلیل ارتباط پایین کنار گذاشته شد`],
-          ['نقشه‌برداری دوباره ساختار', '۳ روز پیش', `${num((s.categories || []).length)} دسته شناسایی شد`],
-          ['آغاز پایش', '۳ هفته پیش', `زمان‌بندی ${esc(cfg.frequency || s.frequency)}`],
+          ['دنبال مقاله تازه گشتیم', s.lastChecked, `${num(s.newThisWeek)} تا پیدا شد`],
+          ['مقاله‌های بی‌ربط را کنار گذاشتیم', 'دیروز', `${num(s.total - s.relevant)} مقاله`],
+          ['ساختار سایت را دوباره بررسی کردیم', '۳ روز پیش', `${num((s.categories || []).length)} دسته پیدا شد`],
+          ['شروع کردیم به دنبال‌کردن', '۳ هفته پیش', `هر ${esc(cfg.frequency || s.frequency)}`],
         ].map(([t, when, note]) => `
           <div class="list-row" style="cursor:default">
             <div class="grow">
@@ -123,15 +123,15 @@ export function sourceDetail(segments) {
       <div style="max-width:520px">
         <div class="settings-row">
           <div>
-            <b>پایش</b>
-            <p class="xs muted mt-2">${paused ? 'متوقف — چیزی جمع‌آوری نمی‌شود.' : 'فعال — مقاله‌های تازه جمع‌آوری و امتیازدهی می‌شوند.'}</p>
+            <b>دنبال‌کردن این منبع</b>
+            <p class="xs muted mt-2">${paused ? 'الان متوقف است و چیزی جمع نمی‌شود.' : 'فعال است — مقاله‌های تازه را می‌آوریم.'}</p>
           </div>
           <button class="switch" role="switch" aria-checked="${!paused}" data-act="source:pause" data-id="${s.id}"></button>
         </div>
         <div class="settings-row">
           <div>
-            <b>دوره به‌روزرسانی</b>
-            <p class="xs muted mt-2">هر چند وقت این منبع را دوباره بررسی کنیم.</p>
+            <b>هر چند وقت چک کنیم؟</b>
+            <p class="xs muted mt-2">هر بار که چک کنیم، مقاله‌های تازه را می‌آوریم.</p>
           </div>
           <select class="select" style="width:auto" data-source-freq="${s.id}">
             ${['روزانه', 'هر ۶ ساعت', 'هفتگی', 'دستی'].map(f =>
@@ -140,8 +140,8 @@ export function sourceDetail(segments) {
         </div>
         <div class="settings-row">
           <div>
-            <b>حذف منبع</b>
-            <p class="xs muted mt-2">مقاله‌های جمع‌آوری‌شده در کتابخانه شما می‌مانند.</p>
+            <b>حذف این منبع</b>
+            <p class="xs muted mt-2">مقاله‌هایی که تا حالا جمع شده در کتابخانه‌تان می‌ماند.</p>
           </div>
           <button class="btn btn-sm" data-act="source:remove" data-id="${s.id}">${icon('trash', 14)} حذف</button>
         </div>
@@ -164,8 +164,8 @@ export function sourceDetail(segments) {
           <a class="link small latin" href="https://${esc(s.domain)}" target="_blank" rel="noopener">${esc(s.domain)} ${icon('external', 12)}</a>
 
           <div class="row wrap gap-6 mt-5">
-            ${statBlock('مقاله یافت‌شده', num(s.total))}
-            ${statBlock('مرتبط با شما', num(s.relevant))}
+            ${statBlock('کل مقاله‌ها', num(s.total))}
+            ${statBlock('به درد شما می‌خورد', num(s.relevant))}
             ${statBlock('تازه این هفته', num(s.newThisWeek))}
             ${statBlock('موضوع', num((s.topics || []).length))}
           </div>
@@ -174,7 +174,7 @@ export function sourceDetail(segments) {
         ${tabBar([
           { id: 'articles', label: 'مقاله‌ها', count: articles.length },
           { id: 'topics', label: 'موضوع‌ها' },
-          { id: 'activity', label: 'فعالیت' },
+          { id: 'activity', label: 'چه کارهایی کردیم' },
           { id: 'settings', label: 'تنظیمات' },
         ], state.tab, 'source:tab')}
 
@@ -190,7 +190,7 @@ export function registerSourceActions(rerender) {
     const cur = store.get().sourceState[id] || {};
     const next = cur.status === 'paused' ? 'monitoring' : 'paused';
     store.setSourceState(id, { status: next });
-    toast(next === 'paused' ? 'پایش متوقف شد' : 'پایش از سر گرفته شد');
+    toast(next === 'paused' ? 'متوقف شد' : 'دوباره شروع شد');
     rerender();
   });
 
@@ -203,7 +203,7 @@ export function registerSourceActions(rerender) {
 
   on('source:remove', ({ id }) => {
     store.hideSource(id);
-    toast('منبع حذف شد. مقاله‌هایش در کتابخانه شما می‌مانند.');
+    toast('حذف شد. مقاله‌هایش سر جایشان هستند.');
     location.hash = '#/sources';
     rerender();
   });
@@ -214,7 +214,7 @@ export function registerSourceActions(rerender) {
     const el = e.target;
     if (el.dataset && el.dataset.sourceFreq) {
       store.setSourceState(el.dataset.sourceFreq, { frequency: el.value });
-      toast(`دوره به‌روزرسانی روی «${el.value}» تنظیم شد`);
+      toast(`از این به بعد ${el.value} چک می‌کنیم`);
     }
     if (el.matches?.('input[data-act="source:track"]')) {
       const { id, cat } = el.dataset;
@@ -222,7 +222,7 @@ export function registerSourceActions(rerender) {
       const tracked = new Set(cur.tracked || []);
       if (el.checked) tracked.add(cat); else tracked.delete(cat);
       store.setSourceState(id, { tracked: [...tracked] });
-      toast(el.checked ? `«${cat}» پایش می‌شود` : `پایش «${cat}» متوقف شد`);
+      toast(el.checked ? `«${cat}» را دنبال می‌کنیم` : `دیگر «${cat}» را دنبال نمی‌کنیم`);
     }
   });
 }

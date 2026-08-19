@@ -1,9 +1,9 @@
 /* §28–35 · §50 — Article Reader. Order follows §53 content hierarchy:
    what happened → why it matters → what is new → what it relates to → source. */
-import { esc, icon, on, toast, fmtDate, num, words, relevanceBar, openModal, closeModal } from '../ui.js';
+import { esc, icon, on, toast, fmtDate, num, words, openModal, closeModal } from '../ui.js';
 import { topicName, sourceName, ARTICLE_QA } from '../data.js';
 import * as store from '../store.js';
-import { sectionHead, articleCard, emptyState } from './components.js';
+import { sectionHead, mini, emptyState, score } from './components.js';
 
 const state = { lang: 'fa', mode: 'full', askOpen: false, thread: [] };
 
@@ -13,9 +13,9 @@ export function reader(segments) {
     return {
       layout: 'app', title: 'مقاله پیدا نشد',
       html: `<div class="page">${emptyState({
-        title: 'مقاله پیدا نشد',
-        body: 'این مقاله در کتابخانه شما نیست. ممکن است حذف شده باشد.',
-        cta: 'بازگشت به خانه', act: 'nav:go', arg: '/home',
+        title: 'این مقاله پیدا نشد',
+        body: 'شاید حذفش کرده‌اید.',
+        cta: 'برگردید به خانه', act: 'nav:go', arg: '/home',
       })}</div>`,
     };
   }
@@ -40,10 +40,10 @@ export function reader(segments) {
         <header class="reader-head mt-4">
           <div class="row wrap gap-2 between">
             <div class="row wrap gap-2">
-              <span class="badge badge-topic">${esc(topicName(a.topic))}</span>
-              <button class="badge latin" data-act="nav:go" data-id="/sources/${a.source}">${esc(sourceName(a.source))}</button>
+              <span class="tag tag-red">${esc(topicName(a.topic))}</span>
+              <button class="tag latin" data-act="nav:go" data-id="/sources/${a.source}">${esc(sourceName(a.source))}</button>
             </div>
-            ${relevanceBar(store.personalRelevance(a))}
+            ${score(store.personalRelevance(a))}
           </div>
           <h1 class="reader-title">${esc(a.title)}</h1>
           <div class="meta">
@@ -51,20 +51,20 @@ export function reader(segments) {
             <span>${esc(fmtDate(a.date))}</span><span class="sep">·</span>
             <span>${num(a.minutes)} دقیقه مطالعه</span>
           </div>
-          ${a.titleOriginal ? `<p class="reader-original mt-4 latin">${esc(a.titleOriginal)}</p>` : ''}
+          ${a.titleOriginal ? `<p class="reader-orig mt-4 latin">${esc(a.titleOriginal)}</p>` : ''}
         </header>
 
         <!-- Toolbar: actions + translation -->
-        <div class="reader-toolbar">
+        <div class="reader-bar">
           <button class="btn btn-sm" data-act="article:save" data-id="${a.id}" aria-pressed="${saved}">
             ${icon('bookmark', 14)} ${saved ? 'ذخیره شد' : 'ذخیره'}
           </button>
-          <div class="segmented" role="group" aria-label="زبان">
+          <div class="seg" role="group" aria-label="زبان">
             <button data-act="reader:lang" data-id="fa" aria-pressed="${state.lang === 'fa'}">فارسی</button>
             <button data-act="reader:lang" data-id="en" aria-pressed="${state.lang === 'en'}">اصلی</button>
           </div>
           ${state.lang === 'fa' ? `
-            <div class="segmented" role="group" aria-label="حالت ترجمه">
+            <div class="seg" role="group" aria-label="حالت ترجمه">
               ${[['full', 'کامل'], ['paragraph', 'بند به بند'], ['summary', 'خلاصه']].map(([id, label]) =>
                 `<button data-act="reader:mode" data-id="${id}" aria-pressed="${state.mode === id}">${label}</button>`).join('')}
             </div>` : ''}
@@ -73,47 +73,38 @@ export function reader(segments) {
           <button class="btn btn-sm btn-ghost" data-act="article:why" data-id="${a.id}">چرا این؟</button>
         </div>
 
-        <!-- §30 TL;DR — readable in under 15 seconds -->
-        <div class="tldr-card">
-          <span class="eyebrow">در یک نگاه</span>
-          <p class="tldr">${esc(a.tldr)}</p>
+        <!-- §30 — readable in 15 seconds -->
+        <div class="block block-red">
+          <span class="label">خلاصه در ۳ خط</span>
+          <p class="big">${esc(a.tldr)}</p>
         </div>
 
         <!-- §31 Key insights -->
-        <section class="section">
-          ${sectionHead('نکته‌های کلیدی', '', 'حداکثر هفت نکته')}
-          <ol class="insight-list">
+        <div class="block">
+          <span class="label">نکته‌های مهم</span>
+          <ol class="points mt-4">
             ${a.insights.map(i => `<li><div><h4>${esc(i.h)}</h4><p>${esc(i.p)}</p></div></li>`).join('')}
           </ol>
-        </section>
+        </div>
 
         <!-- §32 Why it matters — personalized -->
-        <section class="section">
-          <div class="callout callout-wine">
-            <span class="eyebrow">چرا برای شما مهم است</span>
-            <p class="mt-3" style="max-width:var(--measure);font-size:1.0625rem;line-height:1.9">${esc(a.why)}</p>
-            <p class="xs muted-2 mt-4">بر پایه تاریخچه مطالعه و مقاله‌های ذخیره‌شده شما.</p>
-          </div>
-        </section>
+        <div class="block">
+          <span class="label">چرا این را به شما نشان دادیم</span>
+          <p>${esc(a.why)}</p>
+        </div>
 
         <!-- §33 What changed -->
-        <section class="section">
-          <div class="callout">
-            <span class="eyebrow">چه چیزی تازه است</span>
-            <p class="mt-3" style="max-width:var(--measure)">${esc(a.changed)}</p>
-            ${a.changed === 'تغییر معناداری تشخیص داده نشد.'
-              ? '<p class="xs muted-2 mt-3">فقط تفاوت‌هایی را گزارش می‌کنیم که بتوانیم در کتابخانه شما نشانشان دهیم.</p>' : ''}
-          </div>
-        </section>
+        <div class="block">
+          <span class="label">نسبت به چیزهایی که خوانده‌اید</span>
+          <p>${esc(a.changed)}</p>
+        </div>
 
-        <!-- §35 Ask AI — collapsed by default, per §60 -->
-        <section class="section">
-          ${askPanel(a)}
-        </section>
+        <!-- §35 · §60 — collapsed until the reader wants it -->
+        <div style="margin-bottom:var(--s-6)">${askPanel(a)}</div>
 
         <!-- Article body -->
         <section class="section">
-          ${sectionHead(state.lang === 'fa' ? 'ترجمه' : 'متن اصلی')}
+          ${sectionHead(state.lang === 'fa' ? 'متن کامل' : 'متن اصلی')}
           ${body(a)}
           <p class="xs muted-2 mt-6">
             منبع: <a class="link latin" href="https://${esc((store.findSource(a.source) || {}).domain || 'example.com')}" target="_blank" rel="noopener">${esc(sourceName(a.source))} ${icon('external', 12)}</a>
@@ -124,7 +115,7 @@ export function reader(segments) {
         <!-- Related -->
         ${fromLibrary.length ? `
           <section class="section">
-            ${sectionHead('مرتبط با پژوهش شما')}
+            ${sectionHead('از چیزهایی که قبلاً خوانده‌اید')}
             <div class="rows">
               ${fromLibrary.map(x => `
                 <div class="list-row" data-act="article:open" data-id="${x.id}">
@@ -138,13 +129,13 @@ export function reader(segments) {
           </section>` : ''}
 
         <section class="section">
-          ${sectionHead('مقاله‌های مرتبط', '', 'از همین موضوع و منبع')}
-          <div class="grid grid-auto">${related.map(x => articleCard(x, { showReasons: false })).join('')}</div>
+          ${sectionHead('مقاله‌های شبیه این')}
+          <div class="grid grid-auto">${related.map(mini).join('')}</div>
         </section>
       </article>
 
       <!-- §50 mobile bottom actions -->
-      <div class="reader-actions-mobile">
+      <div class="reader-mobile">
         <button class="btn btn-sm" data-act="article:save" data-id="${a.id}">${icon('bookmark', 14)} ${saved ? 'ذخیره شد' : 'ذخیره'}</button>
         <button class="btn btn-sm" data-act="reader:lang" data-id="${state.lang === 'fa' ? 'en' : 'fa'}">${icon('globe', 14)} ${state.lang === 'fa' ? 'اصلی' : 'ترجمه'}</button>
         <button class="btn btn-sm" data-act="reader:ask-open">${icon('spark', 14)} پرسش</button>
@@ -164,9 +155,9 @@ function body(a) {
   /* The source language, shown exactly as published. */
   if (state.lang === 'en') {
     return `
-      <div class="callout" style="margin-bottom:var(--s-5)">
-        <span class="eyebrow">متن اصلی</span>
-        <p class="xs muted mt-2">این متن به زبان انتشار اصلی است و ترجمه نشده.</p>
+      <div class="block">
+        <span class="label">متن اصلی</span>
+        <p class="xs muted mt-2">این متن ترجمه نشده و به زبان اصلی است.</p>
       </div>
       <div class="prose" dir="ltr" lang="en">${render(en)}</div>`;
   }
@@ -174,9 +165,9 @@ function body(a) {
   if (state.mode === 'summary') {
     const gist = fa.filter(p => !p.startsWith('## ') && !p.startsWith('> ')).slice(0, 2);
     return `
-      <div class="callout" style="margin-bottom:var(--s-5)">
-        <span class="eyebrow">حالت خلاصه</span>
-        <p class="xs muted mt-2">فقط مغز مطلب، نه ترجمه کامل.</p>
+      <div class="block">
+        <span class="label">فقط خلاصه</span>
+        <p class="xs muted mt-2">کوتاه‌شده — نه ترجمه کامل.</p>
       </div>
       <div class="prose">${render(gist)}</div>`;
   }
@@ -199,13 +190,13 @@ function body(a) {
 function askPanel(a) {
   const presets = Object.keys(ARTICLE_QA);
   return `
-    <div class="ask-panel">
+    <div class="ask">
       <button class="ask-head" data-act="reader:ask-toggle">
         <span class="row gap-4">
-          <span class="ask-icon">${icon('spark', 18)}</span>
+          <span class="ask-ico">${icon('spark', 17)}</span>
           <span>
-            <b style="font-size:1.0625rem;display:block">درباره این مقاله بپرسید</b>
-            <span class="xs muted">پاسخ فقط از متن همین مقاله</span>
+            <b style="display:block">سؤالی درباره این مقاله دارید؟</b>
+            <span class="xs muted">جواب فقط از متن همین مقاله می‌آید</span>
           </span>
         </span>
         <span class="row gap-2 xs muted">${state.askOpen ? 'بستن' : 'باز کردن'} ${icon('down', 13)}</span>
@@ -214,22 +205,22 @@ function askPanel(a) {
         <div class="ask-body">
           <div class="ask-thread">
             ${state.thread.length ? state.thread.map(m => `
-              <div class="ask-msg ${m.role}">
+              <div class="msg ${m.role}">
                 <span class="who">${m.role === 'user' ? 'شما' : 'پژوهش'}</span>
                 <p>${esc(m.text)}</p>
                 ${m.role === 'ai' ? `
                   <div class="ask-sources">
-                    <button class="badge" data-act="article:open" data-id="${a.id}">${icon('file', 12)} ${esc(a.title.slice(0, 44))}${a.title.length > 44 ? '…' : ''}</button>
+                    <button class="tag" data-act="article:open" data-id="${a.id}">${icon('file', 12)} ${esc(a.title.slice(0, 44))}${a.title.length > 44 ? '…' : ''}</button>
                   </div>
-                  <p class="xs muted-2">فقط از روی همین مقاله پاسخ داده شد. از هیچ منبع دیگری استفاده نشد.</p>` : ''}
+                  <p class="xs muted-2 mt-2">فقط از متن همین مقاله.</p>` : ''}
               </div>`).join('')
-              : '<p class="small muted">پاسخ‌ها فقط از همین مقاله می‌آیند. اگر پاسخ در متن نباشد، همین را می‌گوییم.</p>'}
+              : '<p class="small muted">یکی از سؤال‌های آماده را بزنید یا خودتان بپرسید.</p>'}
           </div>
           <div class="row wrap gap-2" style="margin-bottom:var(--s-4)">
             ${presets.map(q => `<button class="chip" data-act="reader:preset" data-id="${a.id}" data-q="${esc(q)}">${esc(q)}</button>`).join('')}
           </div>
           <div class="row gap-2">
-            <input class="input" id="askInput" placeholder="هرچه درباره این مقاله می‌خواهید بپرسید…"
+            <input class="input" id="askInput" placeholder="سؤالتان را بنویسید…"
               data-act-enter="reader:ask-send" data-id="${a.id}" autocomplete="off">
             <button class="btn btn-primary" data-act="reader:ask-send" data-id="${a.id}">بپرس</button>
           </div>
@@ -253,8 +244,8 @@ export function registerReaderActions(rerender) {
     const hay = `${a.title} ${a.summary} ${a.tldr} ${a.insights.map(i => i.h + i.p).join(' ')}`.toLowerCase();
     const hit = words(q).filter(w => w.length > 3).some(w => hay.includes(w));
     return hit
-      ? `از همین مقاله: ${a.tldr} متن مستقیماً این را پشتیبانی می‌کند؛ هرچه فراتر از آن باشد در منبع نیست، پس اینجا نیامده.`
-      : 'این مقاله برای پاسخ به این پرسش به‌اندازه کافی مطلب ندارد. به‌جای حدس‌زدن، «پژوهش» را امتحان کنید که می‌تواند از کل کتابخانه شما استفاده کند.';
+      ? `${a.tldr}`
+      : 'این مقاله جواب این سؤال را ندارد. به‌جای حدس‌زدن، از کل کتابخانه‌تان بپرسید — دکمه «پرسیدن» بالای صفحه.';
   };
 
   const send = (id, q) => {

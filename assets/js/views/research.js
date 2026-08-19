@@ -7,11 +7,11 @@ import { sectionHead, articleRow, emptyState } from './components.js';
 const state = { question: '', result: null, running: false };
 
 const STEPS = [
-  { label: 'یافتن مقاله‌های مرتبط', note: '' },
-  { label: 'دسته‌بندی منابع', note: '' },
-  { label: 'ترکیب آنچه می‌گویند', note: '' },
-  { label: 'ساختن خط زمانی', note: '' },
-  { label: 'بررسی اختلاف‌نظرها', note: '' },
+  { label: 'پیدا کردن مقاله‌های مرتبط', note: '' },
+  { label: 'مرتب‌کردن منبع‌ها', note: '' },
+  { label: 'کنار هم گذاشتن حرف‌هایشان', note: '' },
+  { label: 'ساختن سیر اتفاق‌ها', note: '' },
+  { label: 'دیدن اینکه کجا با هم اختلاف دارند', note: '' },
 ];
 
 function match(q) {
@@ -29,25 +29,25 @@ export function research() {
 
   return {
     layout: 'app',
-    title: 'پژوهش عمیق — پژوهش',
+    title: 'پرسیدن — پژوهش',
     html: `
       <div class="page narrow fade-in">
         <header class="page-head">
-          <span class="eyebrow">هوشمندی عمیق</span>
-          <h1 class="h1 mt-3">از کتابخانه‌تان بپرسید</h1>
-          <p class="lead">پرسش‌ها از دل مقاله‌هایی که جمع کرده‌اید پاسخ می‌گیرند — همراه با منابع،
-            خط زمانی، و اختلاف‌نظرها که پنهان نمی‌شوند.</p>
+          <span class="label">از کتابخانه‌تان بپرسید</span>
+          <h1 class="h1 mt-3">سؤالتان را بپرسید</h1>
+          <p class="muted">جواب را از مقاله‌های خودتان می‌سازیم و می‌گوییم از کدام مقاله آمده.
+            اگر منبع‌ها با هم اختلاف داشتند، هر دو را نشان می‌دهیم.</p>
         </header>
 
         <div class="card">
           <div class="field">
-            <textarea class="textarea" id="researchInput" placeholder="در سه ماه گذشته در «عامل‌های هوش مصنوعی» چه تغییر کرد؟"
+            <textarea class="textarea" id="researchInput" placeholder="مثلاً: در سه ماه گذشته چه تغییری در عامل‌ها بوده؟"
               data-act-enter="research:run">${esc(state.question)}</textarea>
           </div>
           <div class="row between wrap gap-3 mt-4">
-            <span class="xs muted-2">اینتر برای پرسیدن · شیفت+اینتر برای خط تازه</span>
+            <span class="xs muted-2">اینتر = بپرس</span>
             <button class="btn btn-primary" data-act="research:run" ${state.running ? 'disabled' : ''}>
-              ${icon('spark', 14)} ${state.running ? 'در حال پژوهش…' : 'پژوهش'}
+              ${icon('spark', 14)} ${state.running ? 'دارم می‌گردم…' : 'بپرس'}
             </button>
           </div>
         </div>
@@ -60,11 +60,11 @@ export function research() {
 
         ${!state.running && !state.result && history.length ? `
           <section class="section mt-6">
-            ${sectionHead('پرسش‌های اخیر')}
+            ${sectionHead('سؤال‌های قبلی شما')}
             <div class="rows">
               ${history.map(h => `
                 <div class="list-row" data-act="research:ask" data-q="${esc(h.question)}">
-                  <div class="grow"><p>${esc(h.question)}</p><p class="xs muted-2 mt-2">${num(h.sources)} منبع استفاده شد</p></div>
+                  <div class="grow"><p>${esc(h.question)}</p><p class="xs muted-2 mt-2">از ${num(h.sources)} مقاله</p></div>
                   ${icon('left', 14)}
                 </div>`).join('')}
             </div>
@@ -78,11 +78,11 @@ function resultView() {
   if (!r) {
     return `
       <div class="card" style="border-style:dashed;background:transparent">
-        <span class="eyebrow">تفاوت این با جست‌وجو</span>
-        <p class="small muted mt-3" style="max-width:var(--measure)">
-          جست‌وجو مقاله‌هایی را پیدا می‌کند که واژه‌های شما در آن‌ها هست. پژوهش آن‌ها را کنار هم می‌خواند و
-          می‌گوید در مجموع چه می‌گویند — از جمله جایی که همدیگر را نقض می‌کنند. اگر کتابخانه شما برای پاسخ
-          کافی نباشد، همین را می‌گوید و پاسخی از خودش نمی‌سازد.
+        <span class="label">فرقش با جست‌وجو چیست؟</span>
+        <p class="small muted mt-3">
+          جست‌وجو مقاله‌هایی را پیدا می‌کند که کلمه شما در آن‌هاست.
+          اینجا مقاله‌ها را کنار هم می‌خوانیم و یک جواب می‌سازیم.
+          اگر جواب در مقاله‌های شما نباشد، همین را می‌گوییم و چیزی از خودمان نمی‌سازیم.
         </p>
       </div>`;
   }
@@ -90,13 +90,13 @@ function resultView() {
   if (!r.preset) {
     return `
       <div class="card fade-in">
-        <span class="eyebrow">کتابخانه شما کافی نیست</span>
+        <span class="label">جواب این را نداریم</span>
         <h2 class="h2 mt-3">«${esc(r.question)}»</h2>
-        <p class="lead mt-4">کتابخانه شما برای پاسخ‌دادن به این پرسش بدون حدس‌زدن مطلب کافی ندارد،
-          پس پاسخی داده نمی‌شود. ${num(r.candidates)} مقاله به موضوع نزدیک شده‌اند اما هیچ‌کدام مستقیماً به پرسش نپرداخته‌اند.</p>
+        <p class="muted mt-4">مقاله‌های شما جواب این سؤال را ندارند و ما هم چیزی از خودمان نمی‌سازیم.
+          ${num(r.candidates)} مقاله نزدیک بودند، ولی هیچ‌کدام دقیقاً به این سؤال جواب نمی‌دهند.</p>
         <div class="actions-inline mt-5">
-          <button class="btn" data-act="add:open" data-kind="website">افزودن منبعی درباره این موضوع</button>
-          <button class="btn btn-ghost" data-act="nav:go" data-id="/discover">رفتن به کشف</button>
+          <button class="btn" data-act="add:open" data-kind="website">یک منبع درباره‌اش اضافه کنید</button>
+          <button class="btn btn-ghost" data-act="nav:go" data-id="/discover">دیدن پیشنهادها</button>
         </div>
       </div>`;
   }
@@ -108,24 +108,24 @@ function resultView() {
     <div class="fade-in">
       <section class="section">
         ${sectionHead('پاسخ')}
-        <p class="lead" style="max-width:var(--measure)">${esc(p.answer)}</p>
-        <p class="xs muted-2 mt-4">${icon('layers', 12)} بر پایه ${num(p.sources.length)} منبع در کتابخانه شما.</p>
+        <p class="lead">${esc(p.answer)}</p>
+        <p class="xs muted-2 mt-4">${icon('layers', 12)} از ${num(p.sources.length)} مقاله در کتابخانه شما</p>
       </section>
 
       <section class="section">
-        ${sectionHead('یافته‌های کلیدی')}
-        <ol class="insight-list">
+        ${sectionHead('نکته‌های اصلی')}
+        <ol class="points">
           ${p.findings.map(f => `<li><div><p>${esc(f)}</p></div></li>`).join('')}
         </ol>
       </section>
 
       ${timeline.length ? `
         <section class="section">
-          ${sectionHead('خط زمانی')}
+          ${sectionHead('به ترتیب زمان')}
           <div class="timeline">
             ${timeline.map(e => `
               <div class="timeline-item" data-major="${!!e.major}">
-                <div class="timeline-month eyebrow">${esc(e.month)}</div>
+                <div class="timeline-when">${esc(e.month)}</div>
                 <p>${esc(e.text)}</p>
                 <button class="link small mt-2" data-act="article:open" data-id="${e.source}">منبع</button>
               </div>`).join('')}
@@ -133,7 +133,7 @@ function resultView() {
         </section>` : ''}
 
       <section class="section">
-        ${sectionHead('منابع استفاده‌شده')}
+        ${sectionHead('این جواب از کجا آمد')}
         <div class="rows">
           ${p.sources.map(id => {
             const a = store.findArticle(id);
@@ -144,15 +144,15 @@ function resultView() {
 
       ${p.conflicts ? `
         <section class="section">
-          ${sectionHead('دیدگاه‌های متعارض')}
-          <div class="callout" style="border-color:color-mix(in srgb, var(--warn) 35%, var(--line));background:var(--warn-soft)">
+          ${sectionHead('اینجا منبع‌ها با هم اختلاف دارند')}
+          <div class="block block-red">
             <p style="max-width:var(--measure)">${esc(p.conflicts)}</p>
-            <p class="xs muted-2 mt-3">هر دو ادعا در کتابخانه شما می‌مانند. هیچ‌چیز به‌جای شما فیصله داده نشده است.</p>
+            <p class="xs muted-2 mt-3">ما به‌جای شما تصمیم نمی‌گیریم کدام درست است.</p>
           </div>
         </section>` : ''}
 
       <section class="section">
-        ${sectionHead('برای مطالعه بیشتر')}
+        ${sectionHead('اگر بیشتر خواستید')}
         <div class="rows">
           ${p.further.map(id => { const a = store.findArticle(id); return a ? articleRow(a) : ''; }).join('')}
         </div>
