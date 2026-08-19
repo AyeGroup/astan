@@ -39,7 +39,7 @@ export function story(a, { lead = false } = {}) {
 
       <div class="story-why">
         ${icon('spark', 15)}
-        <span><b>چرا برای شما؟</b> ${esc(a.reasons[0] || 'با موضوع‌های شما جور است')}</span>
+        <span><b>چرا این را انتخاب کردیم؟</b> ${esc(a.reasons[0] || 'چون با موضوع‌های شما هم‌خوانی دارد')}</span>
       </div>
 
       <div class="story-foot">
@@ -49,9 +49,9 @@ export function story(a, { lead = false } = {}) {
           <button class="btn btn-sm btn-ghost" data-act="article:save" data-id="${a.id}" aria-pressed="${saved}">
             ${icon('bookmark', 14)} ${saved ? 'ذخیره شد' : 'ذخیره'}
           </button>
-          <button class="btn btn-sm btn-ghost" data-act="article:why" data-id="${a.id}">جزئیات</button>
+          <button class="btn btn-sm btn-ghost" data-act="article:why" data-id="${a.id}">چرا این؟</button>
           <button class="btn btn-ghost btn-icon btn-sm" data-act="article:dismiss" data-id="${a.id}"
-            title="این را نمی‌خواهم" aria-label="این را نمی‌خواهم">${icon('x', 14)}</button>
+            title="این مقاله به دردم نمی‌خورد" aria-label="این مقاله به دردم نمی‌خورد">${icon('x', 14)}</button>
         </div>
       </div>
     </article>`;
@@ -73,11 +73,11 @@ export function briefStory(b, { lead = false } = {}) {
 
       <div class="story-why">
         ${icon('spark', 15)}
-        <span><b>چرا برای شما؟</b> ${esc(b.why)}</span>
+        <span><b>چرا این را انتخاب کردیم؟</b> ${esc(b.why)}</span>
       </div>
 
       <div class="story-foot">
-        <span class="meta">${icon('layers', 13)} از ${num(b.basedOn)} منبع در کتابخانه شما</span>
+        <span class="meta">${icon('layers', 13)} این خلاصه از ${num(b.basedOn)} مقاله شما ساخته شده</span>
         <div class="actions">
           <button class="btn btn-sm btn-primary" data-act="article:open" data-id="${b.articleId}">بخوانید</button>
           <button class="btn btn-sm btn-ghost" data-act="article:save" data-id="${b.articleId}">
@@ -106,7 +106,7 @@ export function mini(a) {
           <button class="btn btn-ghost btn-icon btn-sm" data-act="article:save" data-id="${a.id}"
             title="ذخیره" aria-label="ذخیره">${icon('bookmark', 14)}</button>
           <button class="btn btn-ghost btn-icon btn-sm" data-act="article:why" data-id="${a.id}"
-            title="چرا این را می‌بینم؟" aria-label="چرا این را می‌بینم؟">${icon('help', 14)}</button>
+            title="چرا این را انتخاب کردیم؟" aria-label="چرا این را انتخاب کردیم؟">${icon('help', 14)}</button>
         </div>
       </footer>
     </article>`;
@@ -148,7 +148,7 @@ export const errorState = ({ title, reasons = [], actions = '' }) => `
     <h3 class="h2">${esc(title)}</h3>
     ${reasons.length ? `
       <div>
-        <span class="label">می‌تواند به این دلایل باشد</span>
+        <span class="label">دلیلش می‌تواند یکی از این‌ها باشد</span>
         <ul class="mt-3" style="display:grid;gap:var(--s-2)">
           ${reasons.map(r => `<li class="small">— ${esc(r)}</li>`).join('')}
         </ul>

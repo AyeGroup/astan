@@ -16,7 +16,7 @@ export function home() {
   const maxW = Math.max(1, ...topics.map(t => t.weight));
 
   const later = [
-    ...s.read.slice(0, 2).map(id => ({ label: 'ادامه بدهید', a: store.findArticle(id) })),
+    ...s.read.slice(0, 2).map(id => ({ label: 'قبلاً باز کرده‌اید', a: store.findArticle(id) })),
     ...s.saved.slice(0, 2).map(id => ({ label: 'ذخیره کرده‌اید', a: store.findArticle(id) })),
   ].filter(x => x.a).slice(0, 3);
 
@@ -32,8 +32,8 @@ export function home() {
           <span class="label-quiet">${esc(todayLong())}</span>
           <h1 class="h1">${esc(greeting())}، ${esc(name)}</h1>
           <p class="muted">${brief.length
-            ? `${num(brief.length)} چیز هست که امروز بهتر است بدانید.`
-            : 'امروز چیز مهمی پیدا نشد.'}</p>
+            ? `امروز ${num(brief.length)} خبر مهم برایتان پیدا کردیم.`
+            : 'امروز خبر مهمی در منبع‌هایتان پیدا نشد.'}</p>
         </header>
 
         <!-- Section A — the brief itself, no wrapper needed -->
@@ -41,16 +41,16 @@ export function home() {
           ${brief.length ? brief.map((b, i) => briefStory(b, { lead: i === 0 })).join('')
             : emptyState({
                 title: 'امروز خبر مهمی نبود',
-                body: 'از آخرین بازدید شما چیزی به‌اندازه کافی مرتبط پیدا نشد. این یعنی چیز مهمی را از دست نداده‌اید.',
-                cta: 'دیدن پیشنهادها', act: 'nav:go', arg: '/discover',
+                body: 'از آخرین باری که سر زدید، هیچ مقاله‌ای به‌اندازه کافی مهم نبود که خبرش را بدهیم. یعنی چیزی را از دست نداده‌اید.',
+                cta: 'دیدن پیشنهادهای دیگر', act: 'nav:go', arg: '/discover',
               })}
         </section>
 
         <!-- Section B — Worth your time -->
         <section class="section">
-          ${sectionHead('ارزش وقت شماست',
-            `<button class="btn btn-sm btn-ghost" data-act="nav:go" data-id="/discover">همه ${icon('left', 13)}</button>`,
-            'مقاله‌هایی که با موضوع‌های شما جور است')}
+          ${sectionHead('ارزش خواندن دارد',
+            `<button class="btn btn-sm btn-ghost" data-act="nav:go" data-id="/discover">همه پیشنهادها ${icon('left', 13)}</button>`,
+            'مقاله‌هایی که با موضوع‌های شما هم‌خوانی دارند')}
           <div class="grid grid-auto">
             ${ranked.slice(0, 3).map(mini).join('')}
           </div>
@@ -58,19 +58,19 @@ export function home() {
 
         <!-- Section C + D — what arrived, what is heating up -->
         <section class="section">
-          ${sectionHead('از آخرین باری که آمدید')}
+          ${sectionHead('از آخرین باری که سر زدید')}
           <div class="card card-quiet">
             <div class="row gap-4 wrap between">
               <div>
-                <p><b class="h1 tnum">${num(unread.length)}</b> مقاله تازه رسید</p>
-                <p class="small muted mt-2">${num(high)} تای آن‌ها به کار شما می‌آید. بقیه فقط ذخیره شده‌اند.</p>
+                <p><b class="h1 tnum">${num(unread.length)}</b> مقاله تازه جمع شد</p>
+                <p class="small muted mt-2">از این تعداد ${num(high)} مقاله به موضوع‌های شما نزدیک است. بقیه بدون اعلان در کتابخانه‌تان ذخیره شده‌اند.</p>
               </div>
               <button class="btn btn-sm" data-act="nav:go" data-id="/library">دیدن کتابخانه</button>
             </div>
 
             <div class="divider mt-5"></div>
 
-            <p class="label mt-5">این هفته بیشتر درباره این‌ها نوشته شده</p>
+            <p class="label mt-5">این هفته بیشتر درباره این موضوع‌ها نوشته‌اند</p>
             <div class="mt-4">
               ${momentum.map(t => `
                 <div class="kv">
@@ -85,8 +85,8 @@ export function home() {
 
         <!-- §54 — show the product is learning, in plain words -->
         <section class="section">
-          ${sectionHead('چیزهایی که درباره شما یاد گرفتیم',
-            `<button class="btn btn-sm btn-ghost" data-act="nav:go" data-id="/settings">تغییر بدهید</button>`)}
+          ${sectionHead('موضوع‌هایی که بیشتر می‌خوانید',
+            `<button class="btn btn-sm btn-ghost" data-act="nav:go" data-id="/settings">تغییر علاقه‌مندی‌ها</button>`)}
           <div class="card">
             <div class="bars">
               ${topics.map(t => `
@@ -98,7 +98,7 @@ export function home() {
                 </div>`).join('')}
             </div>
             <p class="small muted mt-5">
-              ${topics[0] ? `بیشتر از همه «${esc(topics[0].name)}» را می‌خوانید. ` : ''}هر بار چیزی می‌خوانید یا ذخیره می‌کنید، این‌ها دقیق‌تر می‌شوند.
+              ${topics[0] ? `بیشتر از همه سراغ «${esc(topics[0].name)}» می‌روید. ` : ''}هر بار مقاله‌ای می‌خوانید یا ذخیره می‌کنید، این عددها دقیق‌تر می‌شوند.
             </p>
           </div>
         </section>
@@ -106,7 +106,7 @@ export function home() {
         <!-- Section E — pick the thread back up -->
         ${later.length ? `
           <section class="section">
-            ${sectionHead('نیمه‌کاره مانده')}
+            ${sectionHead('نیمه‌کاره مانده', '', 'از جایی که رها کردید ادامه بدهید')}
             <div class="grid grid-auto">
               ${later.map(({ label, a }) => `
                 <button class="mini" data-act="article:open" data-id="${a.id}" style="cursor:pointer;text-align:start">

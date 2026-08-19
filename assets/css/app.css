@@ -703,7 +703,7 @@ input[type="checkbox"] { accent-color: var(--red); width: 17px; height: 17px; }
 .shot-bar { display: flex; align-items: center; gap: var(--s-2); padding: var(--s-4) var(--s-5); border-bottom: 1px solid var(--line); background: var(--panel); }
 .shot-bar i { width: 8px; height: 8px; border-radius: var(--r-full); background: var(--line-2); }
 .shot-body { padding: var(--s-5); }
-.shot-row { display: grid; grid-template-columns: 42px 1fr; gap: var(--s-3); padding: var(--s-4) 0; border-bottom: 1px solid var(--line); }
+.shot-row { display: grid; grid-template-columns: 46px 1fr; gap: var(--s-4); padding: var(--s-4) 0; border-bottom: 1px solid var(--line); align-items: start; }
 .shot-row:last-child { border-bottom: 0; }
 
 .steps-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--s-6); padding: var(--s-8) 0; border-top: 1px solid var(--line); }

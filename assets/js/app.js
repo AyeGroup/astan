@@ -61,7 +61,7 @@ function topbar(active) {
           ${icon('bell', 16)}
           ${unread ? `<span class="bar-count">${num(unread)}</span>` : ''}
         </a>
-        <button class="btn btn-ghost btn-icon btn-sm" data-act="theme:toggle" aria-label="روشن یا تاریک">
+        <button class="btn btn-ghost btn-icon btn-sm" data-act="theme:toggle" aria-label="تغییر بین حالت روشن و تاریک">
           ${icon(store.resolvedTheme() === 'dark' ? 'sun' : 'moon', 16)}
         </button>
         <button class="avatar" data-act="nav:go" data-id="/settings" aria-label="تنظیمات">
@@ -128,7 +128,7 @@ const handlers = {
   __notfound: () => render({
     layout: 'app', title: 'پیدا نشد',
     html: `<div class="page"><h1 class="h1">این صفحه وجود ندارد</h1>
-      <p class="muted mt-3">شاید نشانی را اشتباه وارد کرده‌اید.</p>
+      <p class="muted mt-3">شاید نشانی را اشتباه وارد کرده‌اید یا این صفحه حذف شده است.</p>
       <button class="btn btn-primary mt-5" data-act="nav:go" data-id="/home">برگردید به خانه</button></div>`,
   }),
 };
@@ -155,22 +155,23 @@ on('help', () => openModal({
     <div class="col gap-6">
       <div>
         <span class="label">کار اصلی</span>
-        <p class="mt-2">سایت‌ها و موضوع‌هایی را که برایتان مهم است اضافه می‌کنید.
-          ما مقاله‌های مرتبط را پیدا می‌کنیم، خلاصه می‌کنیم و می‌گوییم چرا به درد شما می‌خورد.</p>
+        <p class="mt-2">شما موضوع‌های مورد علاقه‌تان را انتخاب می‌کنید و سایت‌هایی را که
+          دنبال می‌کنید به ما معرفی می‌کنید. ما هر روز مقاله‌های تازه آن‌ها را می‌خوانیم
+          و مهم‌ترین‌ها را برایتان خلاصه می‌کنیم.</p>
       </div>
       <div>
         <span class="label">هر پیشنهاد دلیل دارد</span>
-        <p class="mt-2">زیر هر مقاله نوشته‌ایم چرا آن را به شما نشان داده‌ایم.
-          اگر اشتباه بود، همان‌جا بگویید تا دفعه بعد بهتر شود.</p>
+        <p class="mt-2">کنار هر مقاله می‌نویسیم چرا آن را برای شما انتخاب کرده‌ایم.
+          اگر انتخاب خوبی نبود، با یک کلیک به ما بگویید تا پیشنهادهای بعدی دقیق‌تر شود.</p>
       </div>
       <div>
-        <span class="label">وقتی مطمئن نیستیم</span>
-        <p class="mt-2">اگر جواب روشنی نداشته باشیم، همین را می‌گوییم.
-          چیزی از خودمان نمی‌سازیم.</p>
+        <span class="label">وقتی جواب را نداریم</span>
+        <p class="mt-2">اگر در مقاله‌های شما جواب روشنی نباشد، صریح می‌گوییم که نمی‌دانیم.
+          هیچ‌وقت از خودمان جواب نمی‌سازیم.</p>
       </div>
       <div>
         <span class="label">میان‌برها</span>
-        <p class="mt-3"><span class="kbd">⌘K</span> جست‌وجو · <span class="kbd">Esc</span> بستن</p>
+        <p class="mt-3"><span class="kbd">⌘K</span> برای جست‌وجو · <span class="kbd">Esc</span> برای بستن</p>
       </div>
     </div>`,
 }));
@@ -180,13 +181,13 @@ on('article:open', ({ id }) => { resetReader(); go(`/article/${id}`); });
 
 on('article:save', ({ id }) => {
   const saved = store.toggleSave(id);
-  toast(saved ? 'ذخیره شد' : 'از ذخیره‌ها برداشته شد');
+  toast(saved ? 'در کتابخانه شما ذخیره شد' : 'از کتابخانه شما برداشته شد');
   rerender();
 });
 
 on('article:dismiss', ({ id }) => {
   store.dismiss(id);
-  toast('باشد، از این‌ها کمتر نشان می‌دهیم');
+  toast('باشد، دیگر از این‌جور مقاله‌ها کمتر نشان می‌دهیم');
   rerender();
 });
 
@@ -196,9 +197,9 @@ on('article:share', ({ id }) => {
   if (navigator.share) navigator.share({ title: a.title, text }).catch(() => {});
   else if (navigator.clipboard) {
     navigator.clipboard.writeText(text)
-      .then(() => toast('پیوند کپی شد'))
-      .catch(() => toast('کپی‌کردن اینجا مسدود است', 'x'));
-  } else toast('هم‌رسانی در این مرورگر در دسترس نیست', 'x');
+      .then(() => toast('لینک مقاله کپی شد'))
+      .catch(() => toast('مرورگر اجازه کپی‌کردن نداد', 'x'));
+  } else toast('این مرورگر امکان هم‌رسانی ندارد', 'x');
 });
 
 /* §26 "Why this?" + §27 feedback, in one place. */
@@ -207,18 +208,18 @@ on('article:why', ({ id }) => {
   if (!a) return;
   const weight = store.get().topicWeights[a.topic] ?? 50;
   openModal({
-    title: 'چرا این را به شما نشان دادیم',
+    title: 'چرا این مقاله را انتخاب کردیم',
     subtitle: `${esc(topicName(a.topic))} · ٪${num(store.personalRelevance(a))} مرتبط`,
     body: `
       <p class="h2" style="line-height:1.6">${esc(a.title)}</p>
       <ul class="mt-5" style="display:grid;gap:var(--s-3)">
         ${a.reasons.map(r => `<li class="row gap-3"><span class="dot dot-ok"></span><span>${esc(r)}</span></li>`).join('')}
-        <li class="row gap-3"><span class="dot dot-ok"></span><span>علاقه شما به این موضوع: ${num(weight)} از ۱۰۰</span></li>
-        <li class="row gap-3"><span class="dot dot-ok"></span><span>از <span class="latin">${esc(sourceName(a.source))}</span> که دنبالش می‌کنید</span></li>
+        <li class="row gap-3"><span class="dot dot-ok"></span><span>علاقه شما به این موضوع ${num(weight)} از ۱۰۰ است</span></li>
+        <li class="row gap-3"><span class="dot dot-ok"></span><span>این مقاله از <span class="latin">${esc(sourceName(a.source))}</span> است که دنبالش می‌کنید</span></li>
       </ul>
       <div class="divider mt-5"></div>
       <div class="mt-5">
-        <span class="label">این پیشنهاد خوب بود؟</span>
+        <span class="label">این انتخاب ما خوب بود؟</span>
         <div class="row wrap gap-2 mt-3">
           <button class="btn btn-sm btn-primary" data-act="fb:up" data-id="${a.id}">${icon('thumbUp', 14)} بله</button>
           <button class="btn btn-sm" data-act="fb:down" data-id="${a.id}">${icon('thumbDn', 14)} نه</button>
@@ -226,7 +227,7 @@ on('article:why', ({ id }) => {
           <button class="btn btn-sm btn-ghost" data-act="fb:less" data-id="${a.id}">از این‌ها کمتر</button>
           <button class="btn btn-sm btn-ghost" data-act="fb:hide" data-id="${a.source}">دیگر از این منبع نشان نده</button>
         </div>
-        <p class="xs muted-2 mt-4">دفعه بعد که سر بزنید، اثرش را می‌بینید.</p>
+        <p class="xs muted-2 mt-4">جواب شما را همین حالا اعمال می‌کنیم. دفعه بعد که سر بزنید، فرقش را می‌بینید.</p>
       </div>`,
   });
 });
@@ -239,14 +240,14 @@ const feedback = (kind, id, message) => {
   rerender();
 };
 
-on('fb:up',   ({ id }) => feedback('save', id, 'ممنون — از این‌ها بیشتر نشان می‌دهیم'));
-on('fb:down', ({ id }) => feedback('notInterested', id, 'ممنون — از این‌ها کمتر نشان می‌دهیم'));
-on('fb:more', ({ id }) => feedback('followTopic', id, 'از این موضوع بیشتر نشان می‌دهیم'));
-on('fb:less', ({ id }) => feedback('skip', id, 'از این موضوع کمتر نشان می‌دهیم'));
+on('fb:up',   ({ id }) => feedback('save', id, 'ممنون. از این‌جور مقاله‌ها بیشتر نشان می‌دهیم.'));
+on('fb:down', ({ id }) => feedback('notInterested', id, 'ممنون. از این‌جور مقاله‌ها کمتر نشان می‌دهیم.'));
+on('fb:more', ({ id }) => feedback('followTopic', id, 'از این موضوع بیشتر برایتان می‌آوریم.'));
+on('fb:less', ({ id }) => feedback('skip', id, 'از این موضوع کمتر برایتان می‌آوریم.'));
 on('fb:hide', ({ id }) => {
   store.hideSource(id);
   closeModal();
-  toast(`دیگر از ${sourceName(id)} چیزی نشان نمی‌دهیم`);
+  toast(`دیگر از ${sourceName(id)} مقاله‌ای نشان نمی‌دهیم.`);
   rerender();
 });
 
@@ -260,7 +261,7 @@ on('palette:open', () => {
   const modal = qs('.modal', overlay);
   modal.classList.add('palette');
   modal.innerHTML = `
-    <input class="palette-input" id="paletteInput" placeholder="دنبال چه می‌گردید؟"
+    <input class="palette-input" id="paletteInput" placeholder="دنبال چه چیزی می‌گردید؟"
       autocomplete="off" data-act-enter="palette:search">
     <div class="palette-results" id="paletteResults"></div>`;
   const input = qs('#paletteInput', modal);
@@ -281,11 +282,11 @@ function paletteRender(q) {
 
   out.innerHTML = `
     ${query ? `
-      <div class="palette-group">این را از کتابخانه‌تان بپرسید</div>
+      <div class="palette-group">این سؤال را از کتابخانه‌تان بپرسید</div>
       <button class="palette-item" data-act="palette:ask" data-q="${esc(query)}">
         <span class="palette-ico">${icon('spark', 15)}</span>
         <span class="grow"><b class="small">${esc(query)}</b>
-          <span class="xs muted" style="display:block">جواب را از همه مقاله‌های شما می‌سازیم</span></span>
+          <span class="xs muted" style="display:block">جواب را از روی همه مقاله‌های شما می‌نویسیم</span></span>
       </button>` : ''}
 
     <div class="palette-group">${query ? 'در کتابخانه شما' : 'پیشنهاد برای شما'}</div>
@@ -295,7 +296,7 @@ function paletteRender(q) {
         <span class="grow"><b class="small clamp-1">${esc(a.title)}</b>
           <span class="xs muted">${esc(sourceName(a.source))} · ${esc(topicName(a.topic))}</span></span>
       </button>`).join('')
-      : '<p class="small muted" style="padding:var(--s-4)">چیزی پیدا نشد. سؤالتان را از کتابخانه بپرسید.</p>'}
+      : '<p class="small muted" style="padding:var(--s-4)">مقاله‌ای با این عبارت پیدا نشد. می‌توانید سؤالتان را مستقیم از کتابخانه بپرسید.</p>'}
 
     ${topics.length ? `
       <div class="palette-group">موضوع‌ها</div>
@@ -307,7 +308,7 @@ function paletteRender(q) {
     ${query ? `
       <div class="palette-group">جست‌وجو در متن</div>
       <button class="palette-item" data-act="palette:library" data-q="${esc(query)}">
-        <span class="palette-ico">${icon('book', 15)}</span> <span class="small">دیدن همه نتیجه‌ها</span>
+        <span class="palette-ico">${icon('book', 15)}</span> <span class="small">دیدن همه نتیجه‌ها در کتابخانه</span>
       </button>` : ''}`;
 }
 

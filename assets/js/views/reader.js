@@ -14,7 +14,7 @@ export function reader(segments) {
       layout: 'app', title: 'مقاله پیدا نشد',
       html: `<div class="page">${emptyState({
         title: 'این مقاله پیدا نشد',
-        body: 'شاید حذفش کرده‌اید.',
+        body: 'شاید آن را حذف کرده‌اید یا لینکش درست نیست.',
         cta: 'برگردید به خانه', act: 'nav:go', arg: '/home',
       })}</div>`,
     };
@@ -75,13 +75,13 @@ export function reader(segments) {
 
         <!-- §30 — readable in 15 seconds -->
         <div class="block block-red">
-          <span class="label">خلاصه در ۳ خط</span>
+          <span class="label">خلاصه مقاله در سه خط</span>
           <p class="big">${esc(a.tldr)}</p>
         </div>
 
         <!-- §31 Key insights -->
         <div class="block">
-          <span class="label">نکته‌های مهم</span>
+          <span class="label">نکته‌های مهم مقاله</span>
           <ol class="points mt-4">
             ${a.insights.map(i => `<li><div><h4>${esc(i.h)}</h4><p>${esc(i.p)}</p></div></li>`).join('')}
           </ol>
@@ -89,13 +89,13 @@ export function reader(segments) {
 
         <!-- §32 Why it matters — personalized -->
         <div class="block">
-          <span class="label">چرا این را به شما نشان دادیم</span>
+          <span class="label">چرا این مقاله را برای شما انتخاب کردیم</span>
           <p>${esc(a.why)}</p>
         </div>
 
         <!-- §33 What changed -->
         <div class="block">
-          <span class="label">نسبت به چیزهایی که خوانده‌اید</span>
+          <span class="label">فرقش با مقاله‌هایی که خوانده‌اید</span>
           <p>${esc(a.changed)}</p>
         </div>
 
@@ -107,7 +107,7 @@ export function reader(segments) {
           ${sectionHead(state.lang === 'fa' ? 'متن کامل' : 'متن اصلی')}
           ${body(a)}
           <p class="xs muted-2 mt-6">
-            منبع: <a class="link latin" href="https://${esc((store.findSource(a.source) || {}).domain || 'example.com')}" target="_blank" rel="noopener">${esc(sourceName(a.source))} ${icon('external', 12)}</a>
+            این مقاله از <a class="link latin" href="https://${esc((store.findSource(a.source) || {}).domain || 'example.com')}" target="_blank" rel="noopener">${esc(sourceName(a.source))} ${icon('external', 12)}</a> است
             · <span class="latin">${esc(a.author)}</span> · ${esc(fmtDate(a.date))}
           </p>
         </section>
@@ -115,13 +115,13 @@ export function reader(segments) {
         <!-- Related -->
         ${fromLibrary.length ? `
           <section class="section">
-            ${sectionHead('از چیزهایی که قبلاً خوانده‌اید')}
+            ${sectionHead('از مقاله‌هایی که قبلاً خوانده‌اید')}
             <div class="rows">
               ${fromLibrary.map(x => `
                 <div class="list-row" data-act="article:open" data-id="${x.id}">
                   <div class="grow">
                     <p class="editorial" style="font-size:1.125rem;line-height:1.55">${esc(x.title)}</p>
-                    <p class="xs muted mt-2">${store.isSaved(x.id) ? 'این را ذخیره کردید' : 'این را خواندید'} · ${esc(sourceName(x.source))}</p>
+                    <p class="xs muted mt-2">${store.isSaved(x.id) ? 'این را ذخیره کرده‌اید' : 'این را خوانده‌اید'} · <span class="latin">${esc(sourceName(x.source))}</span></p>
                   </div>
                   ${icon('left', 14)}
                 </div>`).join('')}
@@ -157,7 +157,7 @@ function body(a) {
     return `
       <div class="block">
         <span class="label">متن اصلی</span>
-        <p class="xs muted mt-2">این متن ترجمه نشده و به زبان اصلی است.</p>
+        <p class="xs muted mt-2">این متن به زبان اصلی مقاله است و ترجمه نشده.</p>
       </div>
       <div class="prose" dir="ltr" lang="en">${render(en)}</div>`;
   }
@@ -167,7 +167,7 @@ function body(a) {
     return `
       <div class="block">
         <span class="label">فقط خلاصه</span>
-        <p class="xs muted mt-2">کوتاه‌شده — نه ترجمه کامل.</p>
+        <p class="xs muted mt-2">فقط مهم‌ترین بخش‌های مقاله، نه ترجمه کامل آن.</p>
       </div>
       <div class="prose">${render(gist)}</div>`;
   }
@@ -196,7 +196,7 @@ function askPanel(a) {
           <span class="ask-ico">${icon('spark', 17)}</span>
           <span>
             <b style="display:block">سؤالی درباره این مقاله دارید؟</b>
-            <span class="xs muted">جواب فقط از متن همین مقاله می‌آید</span>
+            <span class="xs muted">جواب را فقط از متن همین مقاله می‌دهیم</span>
           </span>
         </span>
         <span class="row gap-2 xs muted">${state.askOpen ? 'بستن' : 'باز کردن'} ${icon('down', 13)}</span>
@@ -212,9 +212,9 @@ function askPanel(a) {
                   <div class="ask-sources">
                     <button class="tag" data-act="article:open" data-id="${a.id}">${icon('file', 12)} ${esc(a.title.slice(0, 44))}${a.title.length > 44 ? '…' : ''}</button>
                   </div>
-                  <p class="xs muted-2 mt-2">فقط از متن همین مقاله.</p>` : ''}
+                  <p class="xs muted-2 mt-2">این جواب فقط از متن همین مقاله ساخته شده است.</p>` : ''}
               </div>`).join('')
-              : '<p class="small muted">یکی از سؤال‌های آماده را بزنید یا خودتان بپرسید.</p>'}
+              : '<p class="small muted">یکی از سؤال‌های آماده را انتخاب کنید، یا سؤال خودتان را بنویسید.</p>'}
           </div>
           <div class="row wrap gap-2" style="margin-bottom:var(--s-4)">
             ${presets.map(q => `<button class="chip" data-act="reader:preset" data-id="${a.id}" data-q="${esc(q)}">${esc(q)}</button>`).join('')}
@@ -245,7 +245,7 @@ export function registerReaderActions(rerender) {
     const hit = words(q).filter(w => w.length > 3).some(w => hay.includes(w));
     return hit
       ? `${a.tldr}`
-      : 'این مقاله جواب این سؤال را ندارد. به‌جای حدس‌زدن، از کل کتابخانه‌تان بپرسید — دکمه «پرسیدن» بالای صفحه.';
+      : 'جواب این سؤال در متن این مقاله نیست و ما هم حدس نمی‌زنیم. اگر می‌خواهید از همه مقاله‌هایتان بپرسیم، از بخش «پرسیدن» در نوار بالا استفاده کنید.';
   };
 
   const send = (id, q) => {

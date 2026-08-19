@@ -29,29 +29,33 @@ export function landing() {
           <div class="hero-copy">
             <span class="label">دستیار خواندن شما</span>
             <h1 class="hero-t">لازم نیست همه‌چیز را بخوانید.<br><em>ما می‌گوییم چه چیزی مهم است.</em></h1>
-            <p class="lead">سایت‌ها و موضوع‌هایی که برایتان مهم است را اضافه کنید.
-              ما هر روز می‌گردیم، می‌خوانیم، و فقط آنچه به کار شما می‌آید را جلو می‌آوریم — با دلیلش.</p>
+            <p class="lead">شما موضوع‌های مورد علاقه‌تان را انتخاب می‌کنید.
+              ما هر روز مقاله‌های تازه را می‌خوانیم، خلاصه‌شان می‌کنیم،
+              و فقط مهم‌ترین‌ها را به شما نشان می‌دهیم.</p>
             <div class="actions">
               <button class="btn btn-primary btn-lg" data-act="nav:auth">رایگان شروع کنید</button>
               <button class="btn btn-lg" data-act="landing:how">چطور کار می‌کند؟</button>
             </div>
-            <p class="xs muted-2">بدون کارت بانکی · کمتر از یک دقیقه</p>
+            <p class="xs muted-2">رایگان است و کارت بانکی نمی‌خواهد. راه‌اندازی کمتر از یک دقیقه طول می‌کشد.</p>
           </div>
 
           <!-- §7: show the real product, not an illustration -->
           <div class="shot" aria-hidden="true">
             <div class="shot-bar">
               <i></i><i></i><i></i>
-              <span class="xs muted-2" style="margin-inline-start:auto">خلاصه امروز شما</span>
+              <span class="xs muted-2" style="margin-inline-start:auto">صفحه اصلی</span>
             </div>
             <div class="shot-body">
-              <span class="label">سه‌شنبه صبح</span>
-              <p class="h2 mt-3">۳ چیزی که امروز بهتر است بدانید</p>
+              <span class="label">سه‌شنبه، ۲۷ مرداد</span>
+              <p class="h2 mt-3">۳ خبر مهمی که امروز برایتان پیدا کردیم</p>
               <div class="mt-4">
                 ${[
-                  ['۹۴', 'کار با ابزار در عامل‌ها یکسان شد', 'به ۸ مقاله‌ای که خواندید مربوط است'],
-                  ['۹۱', 'اروپا اجرای قانون را شروع کرد', 'از منبعی که دنبال می‌کنید'],
-                  ['۸۳', 'پژوهشی با مقاله ذخیره‌شده شما مخالف است', 'در کتابخانه شما نکته مخالف دارد'],
+                  ['۹۴', 'چهار ابزار بزرگ ساخت عامل به یک زبان مشترک رسیدند',
+                        'چون ۸ مقاله درباره همین موضوع خوانده‌اید'],
+                  ['۹۱', 'اروپا اجرای قانون هوش مصنوعی را شروع کرد',
+                        'چون Lawfare را دنبال می‌کنید'],
+                  ['۸۳', 'یک پژوهش تازه با مقاله‌ای که ذخیره کرده‌اید مخالف است',
+                        'چون این موضوع را دنبال می‌کنید'],
                 ].map(([n, title, why]) => `
                   <div class="shot-row">
                     <span class="score"><b>٪${n}</b></span>
@@ -67,9 +71,12 @@ export function landing() {
 
         <section class="steps-3" id="how">
           ${[
-            ['۱', 'منبع اضافه کنید', 'یک لینک مقاله، یک فایل PDF، یا نشانی یک سایت. بقیه‌اش با ما.'],
-            ['۲', 'خلاصه بگیرید', 'خلاصه کوتاه، نکته‌های مهم، و ترجمه فارسی. لازم نیست کل مقاله را بخوانید.'],
-            ['۳', 'بدانید چرا', 'زیر هر پیشنهاد نوشته‌ایم چرا به شما نشانش دادیم. اشتباه بود؟ بگویید تا درست شود.'],
+            ['۱', 'منبع‌هایتان را معرفی کنید',
+                  'لینک یک مقاله، یک فایل PDF، یا نشانی سایتی که دنبال می‌کنید. ما هر روز سراغشان می‌رویم.'],
+            ['۲', 'به‌جای مقاله، خلاصه بخوانید',
+                  'برای هر مقاله یک خلاصه کوتاه، چند نکته مهم و ترجمه فارسی آماده می‌کنیم.'],
+            ['۳', 'ببینید چرا این را انتخاب کرده‌ایم',
+                  'کنار هر مقاله می‌نویسیم چرا آن را برای شما انتخاب کرده‌ایم. اگر انتخاب خوبی نبود، با یک کلیک به ما بگویید.'],
           ].map(([n, t, d]) => `
             <div class="step-3">
               <span class="n">${n}</span>
@@ -79,14 +86,14 @@ export function landing() {
         </section>
 
         <section class="cta-band">
-          <h2 class="h1">وقت‌تان را صرف خواندن چیزهای مهم کنید</h2>
-          <p class="lead" style="max-width:32rem">اگر فقط پنج دقیقه وقت دارید، ما مهم‌ترین چیزها را جلوی چشمتان می‌گذاریم.</p>
+          <h2 class="h1">وقت‌تان را صرف مقاله‌های مهم کنید</h2>
+          <p class="lead" style="max-width:34rem">اگر روزی فقط پنج دقیقه وقت دارید، همان پنج دقیقه را صرف مهم‌ترین خبرها کنید.</p>
           <button class="btn btn-primary btn-lg" data-act="nav:auth">حساب بسازید</button>
         </section>
 
         <footer class="foot">
           <span class="xs muted-2">پژوهش · دستیار خواندن شما</span>
-          <span class="xs muted-2">نمونه آزمایشی — همه محتوا نمونه است</span>
+          <span class="xs muted-2">این یک نمونه آزمایشی است و همه مقاله‌های آن ساختگی‌اند.</span>
         </footer>
       </div>`,
   };
@@ -103,7 +110,7 @@ export function auth() {
           ${brand}
           <div>
             <h1 class="h1">حساب بسازید</h1>
-            <p class="muted mt-2">بعدش موضوع‌هایتان را انتخاب می‌کنید. کمتر از یک دقیقه.</p>
+            <p class="muted mt-2">در قدم بعد موضوع‌های مورد علاقه‌تان را انتخاب می‌کنید.</p>
           </div>
 
           <button class="btn btn-block btn-lg" data-act="auth:google">
@@ -129,7 +136,7 @@ export function auth() {
           </form>
 
           <p class="xs muted-2" style="text-align:center">
-            نمونه آزمایشی است — حسابی ساخته نمی‌شود و اطلاعاتی جایی نمی‌رود.
+            این یک نمونه آزمایشی است. حسابی ساخته نمی‌شود و هیچ اطلاعاتی از مرورگر شما بیرون نمی‌رود.
           </p>
         </div>
       </div>`,
@@ -183,25 +190,25 @@ function topicGrid() {
       </button>`).join('')}
     ${canCreate ? `
       <button class="pill" data-act="onb:create" style="border-style:dashed">
-        <span>${icon('plus', 14)} «${esc(draft.query)}» را اضافه کن</span>
+        <span>${icon('plus', 14)} «${esc(draft.query)}» را اضافه کنید</span>
       </button>` : ''}
-    ${!list.length && !canCreate ? '<p class="muted small">چیزی پیدا نشد.</p>' : ''}`;
+    ${!list.length && !canCreate ? '<p class="muted small">موضوعی با این نام پیدا نشد.</p>' : ''}`;
 }
 
 function step1() {
   return shell(1, `
-    <span class="label">قدم اول</span>
-    <h1 class="h1 mt-3">دوست دارید درباره چه چیزهایی بدانید؟</h1>
-    <p class="muted mt-3">دو تا سه مورد انتخاب کنید. هر وقت خواستید عوضشان کنید.</p>
+    <span class="label">قدم ۱ از ۳</span>
+    <h1 class="h1 mt-3">درباره چه موضوع‌هایی می‌خواهید بدانید؟</h1>
+    <p class="muted mt-3">دو یا سه موضوع انتخاب کنید. هر وقت خواستید می‌توانید عوضشان کنید.</p>
 
     <div class="field mt-6">
-      <input class="input input-lg" id="topicSearch" placeholder="یا خودتان بنویسید…"
+      <input class="input input-lg" id="topicSearch" placeholder="موضوع دیگری مد نظرتان است؟ اینجا بنویسید"
         value="${esc(draft.query)}" data-act-enter="onb:create" autocomplete="off">
     </div>
 
     <div class="pill-grid mt-4" id="topicGrid">${topicGrid()}</div>
   `, `
-    <span class="small muted" data-topic-count>${draft.interests.length} تا انتخاب شد</span>
+    <span class="small muted" data-topic-count>${draft.interests.length} موضوع انتخاب کرده‌اید</span>
     <button class="btn btn-primary btn-lg" data-act="onb:next" data-step="2"
       ${draft.interests.length < 1 ? 'disabled' : ''}>ادامه</button>
   `);
@@ -209,15 +216,15 @@ function step1() {
 
 function step2() {
   return shell(2, `
-    <span class="label">قدم دوم</span>
-    <h1 class="h1 mt-3">اولین منبعتان را اضافه کنید</h1>
-    <p class="muted mt-3">یکی کافی است. تا شما بقیه را تنظیم کنید، ما کارش را شروع می‌کنیم.</p>
+    <span class="label">قدم ۲ از ۳</span>
+    <h1 class="h1 mt-3">اولین منبعتان را معرفی کنید</h1>
+    <p class="muted mt-3">یک منبع برای شروع کافی است. تا شما بقیه تنظیمات را انجام دهید، ما شروع به خواندنش می‌کنیم.</p>
 
     <div class="grid grid-3 mt-6">
       ${[
-        ['article', 'link', 'یک مقاله', 'لینکش را بچسبانید'],
+        ['article', 'link', 'یک مقاله', 'لینک مقاله را اینجا بگذارید'],
         ['website', 'globe', 'یک سایت', 'هر روز برایتان چکش می‌کنیم'],
-        ['pdf', 'file', 'یک فایل PDF', 'از کامپیوترتان بفرستید'],
+        ['pdf', 'file', 'یک فایل PDF', 'فایل را از کامپیوترتان انتخاب کنید'],
       ].map(([kind, ic, name, hint]) => `
         <button class="choice" data-act="onb:add" data-kind="${kind}">
           <span class="ico">${icon(ic, 20)}</span>
@@ -226,26 +233,26 @@ function step2() {
         </button>`).join('')}
     </div>
 
-    <p class="xs muted-2 mt-5">اگر رد کنید هم اشکالی ندارد — بر اساس موضوع‌هایی که انتخاب کردید چند پیشنهاد آماده می‌کنیم.</p>
+    <p class="xs muted-2 mt-5">اگر الان وقت ندارید، از این قدم رد شوید. بر اساس موضوع‌هایی که انتخاب کردید چند مقاله پیشنهاد می‌دهیم.</p>
   `, `
-    <button class="btn btn-ghost" data-act="onb:next" data-step="3">بعداً</button>
+    <button class="btn btn-ghost" data-act="onb:next" data-step="3">بعداً اضافه می‌کنم</button>
     <button class="btn btn-primary btn-lg" data-act="onb:next" data-step="3">ادامه</button>
   `);
 }
 
 const INTENTS = [
-  { id: 'updated',  label: 'فقط خبرها را بدانم',        hint: 'هر روز یک خلاصه کوتاه.' },
-  { id: 'deep',     label: 'عمیق دنبال کنم',            hint: 'مقاله کمتر، تحلیل و سیر زمانی بیشتر.' },
-  { id: 'industry', label: 'یک صنعت را دنبال کنم',      hint: 'خبر شرکت‌ها، سرمایه‌گذاری و قوانین.' },
-  { id: 'learn',    label: 'یک موضوع را یاد بگیرم',     hint: 'اول مطالب پایه، بعد خبرهای تازه.' },
-  { id: 'track',    label: 'چند سایت خاص را بپایم',     hint: 'هر تغییری در آن‌ها را به شما می‌گوییم.' },
+  { id: 'updated',  label: 'فقط می‌خواهم از خبرها عقب نمانم', hint: 'هر روز یک خلاصه کوتاه برایتان آماده می‌کنیم.' },
+  { id: 'deep',     label: 'می‌خواهم عمیق دنبال کنم',        hint: 'مقاله کمتر، اما تحلیل و سیر اتفاق‌ها بیشتر.' },
+  { id: 'industry', label: 'یک صنعت را دنبال می‌کنم',        hint: 'خبر شرکت‌ها، سرمایه‌گذاری‌ها و قانون‌های تازه.' },
+  { id: 'learn',    label: 'می‌خواهم یک موضوع را یاد بگیرم',  hint: 'اول مقاله‌های پایه، بعد خبرهای تازه.' },
+  { id: 'track',    label: 'چند سایت مشخص برایم مهم است',    hint: 'هر مقاله تازه‌ای که بگذارند به شما خبر می‌دهیم.' },
 ];
 
 function step3() {
   return shell(3, `
-    <span class="label">قدم سوم</span>
-    <h1 class="h1 mt-3">بیشتر برای چه کاری می‌خواهیدش؟</h1>
-    <p class="muted mt-3">یکی را انتخاب کنید. بعداً هم می‌شود عوضش کرد.</p>
+    <span class="label">قدم ۳ از ۳</span>
+    <h1 class="h1 mt-3">بیشتر برای چه کاری از آن استفاده می‌کنید؟</h1>
+    <p class="muted mt-3">این کمک می‌کند بهتر بفهمیم چه چیزی به شما نشان دهیم. بعداً هم می‌توانید عوضش کنید.</p>
 
     <div class="col gap-3 mt-6">
       ${INTENTS.map(i => `
@@ -259,9 +266,9 @@ function step3() {
         </button>`).join('')}
     </div>
   `, `
-    <button class="btn btn-ghost" data-act="onb:finish">رد کن</button>
+    <button class="btn btn-ghost" data-act="onb:finish">فعلاً رد کنید</button>
     <button class="btn btn-primary btn-lg" data-act="onb:finish" ${draft.intent ? '' : 'disabled'}>
-      تمام، شروع کنیم
+      تمام است، بریم
     </button>
   `);
 }
@@ -315,7 +322,7 @@ export function registerLandingActions(rerender) {
     draft.query = '';
     if (input) input.value = '';
     paintGrid();
-    toast(`«${value}» اضافه شد`);
+    toast(`«${value}» به موضوع‌هایتان اضافه شد`);
   });
 
   on('onb:next', ({ step }) => {
@@ -338,7 +345,7 @@ export function registerLandingActions(rerender) {
     });
     draft.interests.forEach(label => store.signal('followTopic', { label }));
     go('/home');
-    toast('آماده است — خوش آمدید');
+    toast('همه‌چیز آماده است. خوش آمدید!');
   });
 }
 

@@ -28,9 +28,9 @@ export function notifications() {
           <div class="row between wrap gap-4">
             <div>
               <h1 class="h1">اعلان‌ها</h1>
-              <p class="muted">${unread ? `${num(unread)} تا خوانده نشده` : 'همه را دیده‌اید'}</p>
+              <p class="muted">${unread ? `${num(unread)} اعلان خوانده‌نشده دارید` : 'همه اعلان‌ها را دیده‌اید'}</p>
             </div>
-            ${unread ? '<button class="btn btn-sm" data-act="notif:readAll">همه را خوانده‌شده کن</button>' : ''}
+            ${unread ? '<button class="btn btn-sm" data-act="notif:readAll">همه را خوانده‌شده علامت بزن</button>' : ''}
           </div>
         </header>
 
@@ -53,14 +53,14 @@ export function notifications() {
           </div>`
           : emptyState({
               title: 'خبری نیست',
-              body: 'فقط وقتی خبر می‌دهیم که واقعاً مهم باشد. سکوت یعنی چیز مهمی نبوده.',
+              body: 'ما فقط وقتی خبر می‌دهیم که مطلب واقعاً مهم باشد. پس نبودن اعلان یعنی چیز مهمی پیش نیامده.',
             })}
 
         <div class="card mt-6" style="background:transparent;border-style:dashed">
           <span class="label">چرا اعلان‌ها کم است؟</span>
           <p class="small muted mt-3">
-            چون فقط تازه‌بودن کافی نیست. یک مطلب باید هم مهم باشد، هم به کار شما بیاید،
-            هم چیز تازه‌ای بگوید. بقیه بدون مزاحمت وارد کتابخانه‌تان می‌شوند.
+            چون تازه‌بودن به‌تنهایی کافی نیست. یک مقاله باید هم مهم باشد، هم به موضوع‌های
+            شما مربوط باشد، و هم حرف تازه‌ای بزند. بقیه بدون مزاحمت وارد کتابخانه‌تان می‌شوند.
           </p>
         </div>
       </div>`,
@@ -80,7 +80,7 @@ export function settings() {
       <div class="page narrow fade-in">
         <header class="page-head">
           <h1 class="h1">تنظیمات</h1>
-          <p class="muted">هر چیزی که درباره شما می‌دانیم، و راه عوض‌کردنش.</p>
+          <p class="muted">هر چیزی که درباره شما می‌دانیم اینجاست و می‌توانید عوضش کنید.</p>
         </header>
 
         <section class="section">
@@ -110,7 +110,7 @@ export function settings() {
         </section>
 
         <section class="section">
-          ${sectionHead('چه چیزی یاد گرفته‌ایم', '', 'هر بار چیزی می‌خوانید این‌ها عوض می‌شود')}
+          ${sectionHead('چه چیزی درباره شما یاد گرفته‌ایم', '', 'هر بار مقاله‌ای می‌خوانید این عددها عوض می‌شود')}
           <div class="meter">
             ${topics.map(t => `
               <div class="meter-track"><i style="width:${t.weight}%"></i></div>
@@ -123,7 +123,7 @@ export function settings() {
         </section>
 
         <section class="section">
-          ${sectionHead('کارهای اخیر شما', '', 'همین‌ها پیشنهادها را می‌سازند')}
+          ${sectionHead('کارهای اخیر شما', '', 'پیشنهادهای ما بر اساس همین‌هاست')}
           ${recent.length ? `
             <div class="rows">
               ${recent.map(sig => `
@@ -135,7 +135,7 @@ export function settings() {
                   <span class="xs ${sig.weight >= 0 ? 'trend-up' : 'muted'}">${sig.weight >= 0 ? '+' : '−'}${num(Math.abs(sig.weight))}</span>
                 </div>`).join('')}
             </div>`
-            : '<p class="small muted">هنوز کاری نکرده‌اید. چیزی بخوانید یا ذخیره کنید.</p>'}
+            : '<p class="small muted">هنوز کاری ثبت نشده. یک مقاله بخوانید یا ذخیره کنید تا اینجا بیاید.</p>'}
         </section>
 
         <section class="section">
@@ -143,7 +143,7 @@ export function settings() {
           <div class="settings-row">
             <div>
               <b>حالت تاریک</b>
-              <p class="xs muted mt-2">برای خواندن طولانی راحت‌تر است.</p>
+              <p class="xs muted mt-2">اگر شب‌ها یا طولانی می‌خوانید، چشمتان کمتر خسته می‌شود.</p>
             </div>
             <button class="switch" role="switch" aria-checked="${store.resolvedTheme() === 'dark'}" data-act="theme:toggle"></button>
           </div>
@@ -154,7 +154,7 @@ export function settings() {
           <div class="settings-row">
             <div>
               <b>پاک‌کردن همه‌چیز</b>
-              <p class="xs muted mt-2">حساب، ذخیره‌ها و منبع‌ها را از این مرورگر پاک می‌کند.</p>
+              <p class="xs muted mt-2">حساب، مقاله‌های ذخیره‌شده و منبع‌هایتان از این مرورگر پاک می‌شود.</p>
             </div>
             <button class="btn btn-sm" data-act="account:reset">پاک کن</button>
           </div>
@@ -165,7 +165,7 @@ export function settings() {
 
 export function registerMiscActions(rerender) {
   on('notif:tab', ({ id }) => { nstate.tab = id; rerender(); });
-  on('notif:readAll', () => { store.readAllNotifications(); rerender(); toast('همه خوانده‌شده شدند'); });
+  on('notif:readAll', () => { store.readAllNotifications(); rerender(); toast('همه اعلان‌ها خوانده‌شده علامت خوردند.'); });
   on('notif:open', ({ id, article, topic, source }) => {
     store.readNotification(id);
     if (article) location.hash = `#/article/${article}`;
@@ -180,6 +180,6 @@ export function registerMiscActions(rerender) {
     store.reset();
     store.applyTheme(null);
     location.hash = '#/';
-    toast('همه‌چیز پاک شد');
+    toast('همه‌چیز پاک شد.');
   });
 }

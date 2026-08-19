@@ -21,32 +21,32 @@ export function discover() {
       <div class="page fade-in">
         <header class="page-head">
           <h1 class="h1">پیشنهادها</h1>
-          <p class="muted">مقاله‌هایی که هنوز نخوانده‌اید و فکر می‌کنیم به کارتان می‌آید.</p>
+          <p class="muted">مقاله‌هایی که هنوز نخوانده‌اید و فکر می‌کنیم به دردتان می‌خورد.</p>
         </header>
 
         <section class="section">
-          ${sectionHead('برای شما', '', 'بر اساس چیزهایی که خوانده‌اید')}
+          ${sectionHead('برای شما', '', 'بر اساس مقاله‌هایی که تا حالا خوانده‌اید')}
           ${forYou.length ? `<div class="grid grid-auto">${forYou.map(mini).join('')}</div>`
             : emptyState({
                 title: 'همه را خوانده‌اید',
-                body: 'فعلاً چیز تازه‌ای نیست. به‌محض اینکه منابعتان مطلب جدید بگذارند، اینجا می‌آید.',
+                body: 'فعلاً مقاله تازه‌ای نیست. به‌محض اینکه منبع‌هایتان مقاله جدید منتشر کنند، همین‌جا می‌بینیدش.',
                 cta: 'یک منبع اضافه کنید', act: 'add:open', arg: 'website',
               })}
         </section>
 
         <section class="section">
-          ${sectionHead('این روزها بیشتر درباره‌شان می‌نویسند')}
+          ${sectionHead('این روزها بیشتر درباره این موضوع‌ها می‌نویسند')}
           <div class="grid grid-auto">${trending.map(mini).join('')}</div>
         </section>
 
         <section class="section">
-          ${sectionHead('تازه‌ترین‌ها از منبع‌های شما',
+          ${sectionHead('تازه‌ترین مقاله‌های منبع‌های شما',
             `<button class="btn btn-sm btn-ghost" data-act="nav:go" data-id="/sources">منبع‌ها ${icon('left', 13)}</button>`)}
           <div class="rows">${fresh.map(articleRow).join('')}</div>
         </section>
 
         <section class="section">
-          ${sectionHead('موضوع‌های دیگر')}
+          ${sectionHead('موضوع‌های دیگری که می‌توانید دنبال کنید')}
           <div class="grid grid-auto">
             ${TOPICS.map(t => `
               <div class="card card-tight">
@@ -105,7 +105,7 @@ export function library() {
       <div class="page fade-in">
         <header class="page-head">
           <h1 class="h1">کتابخانه</h1>
-          <p class="muted">هر چیزی که ذخیره کرده‌اید یا خوانده‌اید، همین‌جاست.</p>
+          <p class="muted">همه مقاله‌هایی که خوانده یا ذخیره کرده‌اید، اینجا جمع می‌شود.</p>
         </header>
 
         ${tabBar([
@@ -118,7 +118,7 @@ export function library() {
 
         <div class="row wrap gap-2" style="margin-bottom:var(--s-5)">
           <div class="grow" style="min-width:220px;position:relative">
-            <input class="input" id="libSearch" placeholder="دنبال چه می‌گردید؟" value="${esc(lib.q)}"
+            <input class="input" id="libSearch" placeholder="در مقاله‌هایتان دنبال چه می‌گردید؟" value="${esc(lib.q)}"
               data-act-enter="lib:search" autocomplete="off">
           </div>
           <select class="select" style="width:auto" data-act="lib:topic" id="libTopic">
@@ -142,7 +142,7 @@ export function library() {
           <div class="rows">${list.map(articleRow).join('')}</div>`
           : emptyState({
               title: 'کتابخانه‌تان هنوز خالی است',
-              body: 'یک مقاله یا یک سایت اضافه کنید تا شروع کنیم.',
+              body: 'یک مقاله یا یک سایت معرفی کنید تا شروع کنیم به جمع‌کردن مطالب برایتان.',
               cta: 'اولین منبع را اضافه کنید', act: 'add:open', arg: 'article',
             })}
       </div>`,

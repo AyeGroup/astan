@@ -15,7 +15,7 @@ export function topicsIndex() {
       <div class="page fade-in">
         <header class="page-head">
           <h1 class="h1">موضوع‌ها</h1>
-          <p class="muted">هر موضوع یک صفحه دارد: تازه‌ترین خبرها، سیر اتفاق‌ها، و منبع‌هایی که درباره‌اش می‌نویسند.</p>
+          <p class="muted">هر موضوع صفحه خودش را دارد: تازه‌ترین خبرها، سیر اتفاق‌ها، و منبع‌هایی که درباره‌اش می‌نویسند.</p>
         </header>
 
         <div class="grid grid-auto">
@@ -73,7 +73,7 @@ export function topicDetail(segments) {
     overview: overviewPane(t, articles, timeline),
     articles: articles.length
       ? `<div class="rows">${articles.map(articleRow).join('')}</div>`
-      : emptyState({ title: 'هنوز مقاله‌ای نیست', body: 'منبعی اضافه کنید که این موضوع را پوشش دهد تا مطالب اینجا جمع شود.', cta: 'افزودن سایت', act: 'add:open', arg: 'website' }),
+      : emptyState({ title: 'هنوز مقاله‌ای نیست', body: 'منبعی معرفی کنید که درباره این موضوع می‌نویسد تا مقاله‌هایش اینجا جمع شود.', cta: 'افزودن سایت', act: 'add:open', arg: 'website' }),
     timeline: timelinePane(timeline),
     trends: trendsPane(t, articles),
     sources: sources.length
@@ -82,7 +82,7 @@ export function topicDetail(segments) {
             <b>${esc(s.name)}</b>
             <p class="xs muted mt-2">${num(s.relevant)} مقاله مرتبط · <span class="latin">${esc(s.domain)}</span></p>
           </div>`).join('')}</div>`
-      : '<p class="muted small">هنوز هیچ منبع پایش‌شده‌ای این موضوع را پوشش نمی‌دهد.</p>',
+      : '<p class="muted small">هیچ‌کدام از منبع‌های شما درباره این موضوع نمی‌نویسند.</p>',
   };
 
   return {
@@ -113,8 +113,8 @@ export function topicDetail(segments) {
               <ul class="mt-3" style="display:grid;gap:var(--s-2)">
                 <li>مقاله‌های مهم تازه</li>
                 <li>اتفاق‌های بزرگ</li>
-                <li>چیزهایی که تازه دارند مطرح می‌شوند</li>
-                <li>هر چیزی که با دانسته‌های شما فرق دارد</li>
+                <li>موضوع‌های تازه‌ای که دارند مطرح می‌شوند</li>
+                <li>هر مطلبی که با دانسته‌های شما فرق دارد</li>
               </ul>
               <p class="xs muted-2 mt-3">فعلاً فقط داخل برنامه. ایمیل بعداً اضافه می‌شود.</p>
             </div>` : ''}
@@ -172,12 +172,12 @@ function overviewPane(t, articles, timeline) {
     </section>
 
     <section class="section">
-      ${sectionHead('کلمه‌هایی که تازه زیاد تکرار می‌شوند')}
+      ${sectionHead('کلمه‌هایی که این روزها زیاد تکرار می‌شوند')}
       <div class="row wrap gap-2">
         ${['پروتکل ابزار', 'آزمون انطباق', 'مجموعه ارزیابی', 'سیاست حافظه', 'سوابق خاستگاه', 'کیفیت مسیریابی']
           .map(c => `<span class="chip" aria-pressed="false">${esc(c)}</span>`).join('')}
       </div>
-      <p class="xs muted-2 mt-4">این‌ها از خود متن مقاله‌ها درآمده‌اند.</p>
+      <p class="xs muted-2 mt-4">این کلمه‌ها را از متن خود مقاله‌ها بیرون کشیده‌ایم.</p>
     </section>`;
 }
 
@@ -185,7 +185,7 @@ function timelinePane(timeline) {
   if (!timeline.length) {
     return emptyState({
       title: 'هنوز نمی‌شود سیر اتفاق‌ها را ساخت',
-      body: 'برای این کار به مقاله‌های بیشتری نیاز داریم. یک منبع دیگر اضافه کنید.',
+      body: 'برای ساختن سیر اتفاق‌ها به مقاله‌های بیشتری نیاز داریم. یک منبع دیگر معرفی کنید.',
       cta: 'یک منبع اضافه کنید', act: 'add:open', arg: 'website',
     });
   }
@@ -198,7 +198,7 @@ function timelinePane(timeline) {
           <button class="link small mt-2" data-act="article:open" data-id="${e.source}">منبع</button>
         </div>`).join('')}
     </div>
-    <p class="xs muted-2 mt-4">این تاریخ‌ها از متن مقاله‌ها درآمده، نه از تاریخ انتشارشان.</p>`;
+    <p class="xs muted-2 mt-4">این تاریخ‌ها را از متن مقاله‌ها بیرون کشیده‌ایم، نه از تاریخ انتشارشان.</p>`;
 }
 
 function trendsPane(t, articles) {

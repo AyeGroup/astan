@@ -19,15 +19,15 @@ const titleCase = s => s.replace(/[-_]+/g, ' ').replace(/\.\w+$/, '')
 /* ------------------------------------------------------------------ Menu */
 export function openAddMenu() {
   openModal({
-    title: 'چه چیزی اضافه کنیم؟',
-    subtitle: 'یکی را انتخاب کنید. بقیه‌اش با ما.',
+    title: 'چه چیزی می‌خواهید اضافه کنید؟',
+    subtitle: 'یکی را انتخاب کنید. بقیه کارها با ماست.',
     body: `
       <div class="grid grid-2">
         ${[
-          ['article', 'link', 'یک مقاله', 'لینکش را بچسبانید'],
-          ['website', 'globe', 'یک سایت', 'هر روز برایتان چک می‌کنیم'],
-          ['pdf', 'file', 'یک فایل PDF', 'از کامپیوترتان بفرستید'],
-          ['topic', 'hash', 'یک موضوع', 'در همه منبع‌ها دنبالش می‌گردیم'],
+          ['article', 'link', 'یک مقاله', 'لینک مقاله را اینجا بگذارید'],
+          ['website', 'globe', 'یک سایت', 'هر روز مقاله‌های تازه‌اش را می‌آوریم'],
+          ['pdf', 'file', 'یک فایل PDF', 'فایل را از کامپیوترتان انتخاب کنید'],
+          ['topic', 'hash', 'یک موضوع', 'در همه منبع‌هایتان دنبالش می‌گردیم'],
         ].map(([kind, ic, name, hint]) => `
           <button class="choice" data-act="add:open" data-kind="${kind}">
             <span class="ico">${icon(ic, 20)}</span>
@@ -42,17 +42,17 @@ export function openAddMenu() {
 export function openAddArticle() {
   openModal({
     title: 'یک مقاله اضافه کنید',
-    subtitle: 'لینکش را بدهید تا بخوانیم، خلاصه کنیم و ترجمه‌اش کنیم.',
+    subtitle: 'لینک مقاله را بدهید تا آن را بخوانیم، خلاصه کنیم و به فارسی ترجمه کنیم.',
     body: `
       <div class="field">
         <label for="artUrl">لینک مقاله</label>
         <input class="input input-lg latin" id="artUrl" placeholder="https://example.com/article"
           data-act-enter="add:article-run" autocomplete="off">
-        <p class="xs muted-2">نمونه آزمایشی: هر لینکی کار می‌کند. اگر کلمه blocked را داخل لینک بگذارید، حالت خطا را می‌بینید.</p>
+        <p class="xs muted-2">این نمونه آزمایشی است و هر لینکی را قبول می‌کند. اگر کلمه blocked داخل لینک باشد، پیام خطا را نشان می‌دهیم.</p>
       </div>`,
     foot: `
-      <button class="btn btn-ghost" data-act="modal:close">بی‌خیال</button>
-      <button class="btn btn-primary" data-act="add:article-run">بخوانش</button>`,
+      <button class="btn btn-ghost" data-act="modal:close">انصراف</button>
+      <button class="btn btn-primary" data-act="add:article-run">بخوان و خلاصه کن</button>`,
   });
 }
 
@@ -67,11 +67,11 @@ function runArticle() {
       body: errorState({
         title: url ? 'نتوانستیم این مقاله را باز کنیم' : 'این لینک درست به نظر نمی‌رسد',
         reasons: url
-          ? ['مقاله فقط برای مشترک‌ها باز است', 'باید اول وارد حساب شد', 'سایت اجازه نمی‌دهد']
-          : ['لینک ناقص است', 'لینک کامل را با https:// امتحان کنید'],
+          ? ['مقاله فقط برای مشترک‌های سایت باز است', 'برای دیدنش باید وارد حساب شوید', 'سایت اجازه خواندن خودکار نمی‌دهد']
+          : ['لینک ناقص است', 'لینک را کامل و با https:// وارد کنید'],
         actions: `
           <button class="btn" data-act="add:open" data-kind="article">لینک دیگری امتحان کنید</button>
-          <button class="btn btn-ghost" data-act="add:open" data-kind="pdf">فایلش را خودتان بفرستید</button>`,
+          <button class="btn btn-ghost" data-act="add:open" data-kind="pdf">فایل مقاله را خودتان بفرستید</button>`,
       }),
       foot: '<button class="btn btn-ghost" data-act="modal:close">بستن</button>',
     });
@@ -79,27 +79,27 @@ function runArticle() {
   }
 
   setModal({
-    title: 'دارم می‌خوانم…',
-    subtitle: `از <b class="latin">${esc(url.hostname)}</b> — چند ثانیه طول می‌کشد.`,
+    title: 'در حال خواندن مقاله…',
+    subtitle: `از سایت <b class="latin">${esc(url.hostname)}</b>. چند ثانیه طول می‌کشد.`,
     body: '<div id="addSteps"></div>', foot: '',
   });
 
   runSteps(document.getElementById('addSteps'), [
-    { label: 'گرفتن صفحه', note: url.hostname },
-    { label: 'جدا کردن متن اصلی', note: 'پیدا شد' },
+    { label: 'باز کردن صفحه', note: url.hostname },
+    { label: 'جدا کردن متن مقاله از بقیه صفحه', note: 'انجام شد' },
     { label: 'خواندن مقاله', note: '' },
-    { label: 'نوشتن خلاصه و نکته‌ها', note: '' },
-    { label: 'وصل کردن به مقاله‌های دیگرتان', note: '' },
+    { label: 'نوشتن خلاصه و نکته‌های مهم', note: '' },
+    { label: 'پیدا کردن ارتباطش با مقاله‌های دیگر شما', note: '' },
   ], {
     onDone: () => {
       const a = buildArticle(url);
       store.addArticle(a);
       setModal({
-        title: 'آماده شد',
+        title: 'مقاله آماده است',
         subtitle: '',
         body: `
           <div class="steps">
-            ${['خلاصه', 'نکته‌های مهم', 'موضوع', 'ترجمه', 'مقاله‌های شبیه این'].map(x => `
+            ${['خلاصه کوتاه', 'نکته‌های مهم', 'دسته‌بندی موضوعی', 'ترجمه فارسی', 'مقاله‌های شبیه این'].map(x => `
               <div class="step" data-state="done">
                 <span class="step-mark">${icon('check', 10)}</span><span>${x}</span>
               </div>`).join('')}
@@ -110,8 +110,8 @@ function runArticle() {
             <p class="xs muted mt-2"><span class="latin">${esc(url.hostname)}</span> · ${num(a.minutes)} دقیقه مطالعه · ٪${num(a.relevance)} مرتبط</p>
           </div>`,
         foot: `
-          <button class="btn btn-ghost" data-act="add:open" data-kind="article">یکی دیگر اضافه کن</button>
-          <button class="btn btn-primary" data-act="add:done-article" data-id="${a.id}">بازش کن</button>`,
+          <button class="btn btn-ghost" data-act="add:open" data-kind="article">یکی دیگر اضافه کنید</button>
+          <button class="btn btn-primary" data-act="add:done-article" data-id="${a.id}">بازش کنید</button>`,
       });
     },
   });
@@ -158,17 +158,17 @@ function buildArticle(url) {
 export function openAddWebsite() {
   openModal({
     title: 'یک سایت اضافه کنید',
-    subtitle: 'کل سایت را می‌گردیم، مقاله‌های به‌دردبخور را پیدا می‌کنیم و هر روز چکش می‌کنیم.',
+    subtitle: 'کل سایت را می‌گردیم، مقاله‌های مرتبط با شما را جدا می‌کنیم، و بعد هر روز سراغش می‌رویم.',
     body: `
       <div class="field">
         <label for="siteUrl">نشانی سایت</label>
         <input class="input input-lg latin" id="siteUrl" placeholder="https://technologyreview.com"
           data-act-enter="add:site-run" autocomplete="off">
-        <p class="xs muted-2">نمونه آزمایشی: هر نشانی‌ای کار می‌کند. کلمه blocked را بگذارید تا حالت خطا را ببینید.</p>
+        <p class="xs muted-2">این نمونه آزمایشی است و هر نشانی‌ای را قبول می‌کند. اگر کلمه blocked داخل نشانی باشد، پیام خطا را نشان می‌دهیم.</p>
       </div>`,
     foot: `
-      <button class="btn btn-ghost" data-act="modal:close">بی‌خیال</button>
-      <button class="btn btn-primary" data-act="add:site-run">بگردش</button>`,
+      <button class="btn btn-ghost" data-act="modal:close">انصراف</button>
+      <button class="btn btn-primary" data-act="add:site-run">سایت را بگرد</button>`,
     wide: true,
   });
 }
@@ -183,10 +183,10 @@ function runWebsite() {
       subtitle: '',
       body: errorState({
         title: 'نتوانستیم این سایت را باز کنیم',
-        reasons: ['سایت بالا نیست', 'محتوایش بسته است', 'نشانی اشتباه است', 'باید وارد حساب شد'],
+        reasons: ['سایت در دسترس نیست', 'مقاله‌هایش برای عموم باز نیست', 'نشانی را اشتباه وارد کرده‌اید', 'برای دیدن مقاله‌ها باید وارد حساب شوید'],
         actions: `
           <button class="btn" data-act="add:open" data-kind="website">نشانی دیگری امتحان کنید</button>
-          <button class="btn btn-ghost" data-act="add:open" data-kind="article">به‌جایش یک مقاله اضافه کنید</button>`,
+          <button class="btn btn-ghost" data-act="add:open" data-kind="article">به‌جایش یک مقاله تکی اضافه کنید</button>`,
       }),
       foot: '<button class="btn btn-ghost" data-act="modal:close">بستن</button>',
     });
@@ -204,18 +204,18 @@ function runWebsite() {
   pending = { host, url: url.href, total, categories, frequency: 'روزانه' };
 
   setModal({
-    title: 'دارم سایت را می‌گردم…',
+    title: 'در حال گشتن سایت…',
     subtitle: `<b class="latin">${esc(host)}</b>`,
     body: `
       <div id="addSteps"></div>
-      <p class="xs muted-2 mt-4">چند لحظه صبر کنید. اگر ببندید، از اول شروع می‌شود.</p>`,
+      <p class="xs muted-2 mt-4">چند لحظه صبر کنید. اگر این پنجره را ببندید، کار از اول شروع می‌شود.</p>`,
     foot: '',
   });
 
   runSteps(document.getElementById('addSteps'), [
     { label: 'سایت پیدا شد', note: host },
-    { label: 'فهرست صفحه‌ها را گرفتیم', note: '' },
-    { label: 'فهمیدیم مقاله‌ها کجا هستند', note: '' },
+    { label: 'فهرست صفحه‌های سایت گرفته شد', note: '' },
+    { label: 'مشخص شد مقاله‌ها کجای سایت هستند', note: '' },
     { label: `${num(total)} مقاله پیدا شد`, note: '' },
     { label: `${num(categories.length)} دسته پیدا شد`, note: '' },
   ], { stepMs: 700, onDone: showWebsiteConfig });
@@ -224,8 +224,8 @@ function runWebsite() {
 function showWebsiteConfig() {
   const p = pending;
   setModal({
-    title: 'کدام‌ها را می‌خواهید؟',
-    subtitle: 'فقط همان‌هایی که تیک بزنید. بقیه را اصلاً نمی‌آوریم.',
+    title: 'کدام دسته‌ها را می‌خواهید؟',
+    subtitle: 'فقط مقاله‌های دسته‌هایی را می‌آوریم که تیک بزنید. بقیه را اصلاً نگاه نمی‌کنیم.',
     body: `
       <div class="row between wrap gap-4">
         <div>
@@ -262,7 +262,7 @@ function showWebsiteConfig() {
         </div>
       </div>`,
     foot: `
-      <button class="btn btn-ghost" data-act="modal:close">بی‌خیال</button>
+      <button class="btn btn-ghost" data-act="modal:close">انصراف</button>
       <button class="btn btn-primary" data-act="add:site-confirm">ادامه</button>`,
   });
 
@@ -279,7 +279,7 @@ function showWebsiteConfirm() {
   const relevant = tracked.reduce((n, c) => n + c.count, 0);
 
   setModal({
-    title: 'همه‌چیز درست است؟',
+    title: 'قبل از شروع، یک مرور',
     subtitle: '',
     body: `
       <div class="rows" style="border-top:0">
@@ -294,10 +294,10 @@ function showWebsiteConfirm() {
             <b class="small" style="text-align:right">${esc(v)}</b>
           </div>`).join('')}
       </div>
-      <p class="xs muted-2 mt-5">هر وقت خواستید می‌توانید عوضش کنید یا متوقفش کنید.</p>`,
+      <p class="xs muted-2 mt-5">هر وقت خواستید می‌توانید این تنظیمات را عوض کنید یا پایش را متوقف کنید.</p>`,
     foot: `
-      <button class="btn btn-ghost" data-act="add:site-back">برگرد</button>
-      <button class="btn btn-accent" data-act="add:site-start">شروع کن</button>`,
+      <button class="btn btn-ghost" data-act="add:site-back">برگردید</button>
+      <button class="btn btn-accent" data-act="add:site-start">شروع کنید</button>`,
   });
 }
 
@@ -318,25 +318,25 @@ function startMonitoring() {
   pending = null;
   closeModal();
   location.hash = `#/sources/${id}`;
-  toast('شروع کردیم — از فردا مقاله‌هایش می‌آید');
+  toast('شروع کردیم. از فردا مقاله‌های این سایت را برایتان می‌آوریم.');
 }
 
 /* ------------------------------------------------------------------- PDF */
 export function openAddPdf() {
   openModal({
     title: 'یک فایل PDF بفرستید',
-    subtitle: 'مثل مقاله‌های وب می‌خوانیمش و خلاصه می‌کنیم.',
+    subtitle: 'فایل را هم مثل مقاله‌های وب می‌خوانیم و خلاصه می‌کنیم.',
     body: `
       <label class="state center" style="cursor:pointer;width:100%" for="pdfFile">
         ${icon('file', 24)}
         <b>فایل را انتخاب کنید</b>
-        <span class="small muted">یا اینجا رهایش کنید — در این نمونه چیزی آپلود نمی‌شود</span>
+        <span class="small muted">یا فایل را همین‌جا رها کنید. در این نمونه آزمایشی چیزی آپلود نمی‌شود.</span>
         <input id="pdfFile" type="file" accept="application/pdf" class="sr-only">
       </label>
       <p class="xs muted-2 mt-4" id="pdfName"></p>`,
     foot: `
-      <button class="btn btn-ghost" data-act="modal:close">بی‌خیال</button>
-      <button class="btn btn-primary" data-act="add:pdf-run">بخوانش</button>`,
+      <button class="btn btn-ghost" data-act="modal:close">انصراف</button>
+      <button class="btn btn-primary" data-act="add:pdf-run">بخوان و خلاصه کن</button>`,
   });
 
   modalBody()?.addEventListener('change', e => {
@@ -352,16 +352,16 @@ function runPdf() {
   const name = file ? file.name : 'document.pdf';
 
   setModal({
-    title: 'دارم می‌خوانم…',
+    title: 'در حال خواندن فایل…',
     subtitle: `<b class="latin">${esc(name)}</b>`,
     body: '<div id="addSteps"></div>', foot: '',
   });
 
   runSteps(document.getElementById('addSteps'), [
     { label: 'باز کردن فایل', note: name },
-    { label: 'بیرون کشیدن متن', note: 'پیدا شد' },
-    { label: 'خواندن محتوا', note: '' },
-    { label: 'نوشتن خلاصه و نکته‌ها', note: '' },
+    { label: 'بیرون کشیدن متن از فایل', note: 'انجام شد' },
+    { label: 'خواندن متن', note: '' },
+    { label: 'نوشتن خلاصه و نکته‌های مهم', note: '' },
   ], {
     onDone: () => {
       const topic = store.rankedTopics()[0]?.id || 'ai-agents';
@@ -383,13 +383,13 @@ function runPdf() {
         original: ['This uploaded document has been extracted and indexed.'],
       });
       setModal({
-        title: 'آماده شد',
+        title: 'مقاله آماده است',
         subtitle: '',
-        body: `<div class="steps">${['متن جدا شد', 'خلاصه', 'نکته‌های مهم', 'رفت به کتابخانه'].map(x =>
+        body: `<div class="steps">${['متن فایل جدا شد', 'خلاصه نوشته شد', 'نکته‌های مهم درآمد', 'در کتابخانه ذخیره شد'].map(x =>
           `<div class="step" data-state="done"><span class="step-mark">${icon('check', 10)}</span><span>${x}</span></div>`).join('')}</div>`,
         foot: `
           <button class="btn btn-ghost" data-act="modal:close">تمام</button>
-          <button class="btn btn-primary" data-act="add:done-article" data-id="${id}">بازش کن</button>`,
+          <button class="btn btn-primary" data-act="add:done-article" data-id="${id}">بازش کنید</button>`,
       });
     },
   });
@@ -399,7 +399,7 @@ function runPdf() {
 export function openAddTopic() {
   openModal({
     title: 'یک موضوع دنبال کنید',
-    subtitle: 'در همه منبع‌هایتان دنبال این موضوع می‌گردیم.',
+    subtitle: 'از این به بعد در همه منبع‌هایتان دنبال این موضوع می‌گردیم.',
     body: `
       <div class="field">
         <label for="topicName">موضوع</label>
@@ -413,8 +413,8 @@ export function openAddTopic() {
         </div>
       </div>`,
     foot: `
-      <button class="btn btn-ghost" data-act="modal:close">بی‌خیال</button>
-      <button class="btn btn-primary" data-act="add:topic-run">دنبالش کن</button>`,
+      <button class="btn btn-ghost" data-act="modal:close">انصراف</button>
+      <button class="btn btn-primary" data-act="add:topic-run">دنبالش کنید</button>`,
   });
 }
 
