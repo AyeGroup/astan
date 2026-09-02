@@ -49,9 +49,36 @@ export class Speaker {
 
   /** Instantaneous mouth parameters for the avatar renderer. */
   readMouth() {
+    if (this.driver === 'timeline') return this._readTimeline();
     if (this.driver === 'audio' && this.analyzer) return this.analyzer.read();
     if (this.driver === 'synthetic') return this.synthetic.read();
     return { open: 0, spread: 0.5, speaking: false };
+  }
+
+  /**
+   * Phoneme-aligned mouth targets, the preferred driver.
+   *
+   * Audio energy cannot tell the mouth to close: energy stays high through
+   * م، ب، پ, so an amplitude-driven mouth hangs open on exactly the sounds
+   * a viewer can see. The timeline closes it because it knows the phoneme.
+   *
+   * Targets are returned as steps; the renderer already smooths between
+   * them with a fast attack and slower release, which is how a jaw moves.
+   */
+  _readTimeline() {
+    const tl = this.timeline;
+    if (!tl || !tl.length) return { open: 0, spread: 0.5, speaking: false };
+
+    const t = this.audioCtx.currentTime - this.timelineStart;
+    // a forward cursor rather than a search: playback only moves forwards
+    while (this.timelineIndex < tl.length - 1 && tl[this.timelineIndex + 1].t <= t) {
+      this.timelineIndex++;
+    }
+    while (this.timelineIndex > 0 && tl[this.timelineIndex].t > t) {
+      this.timelineIndex--;
+    }
+    const seg = tl[this.timelineIndex];
+    return { open: seg.o, spread: seg.s, speaking: seg.o > 0.02 };
   }
 
   /** Speaks one sentence; resolves when playback finishes. */
@@ -68,6 +95,8 @@ export class Speaker {
   stop() {
     try { this.source && this.source.stop(); } catch { /* already stopped */ }
     this.source = null;
+    this.timeline = null;
+    this.timelineIndex = 0;
     if (window.speechSynthesis) window.speechSynthesis.cancel();
     this.synthetic.stop();
     this.driver = null;
@@ -80,16 +109,33 @@ export class Speaker {
     const voice = this.cfg.voice || LANG_TAG[this.lang] || 'fa-IR';
     const key = await hashKey('tts', voice, String(this.cfg.rate), text);
 
-    let blob = this.cfg.cache ? await getAudio(key) : null;
+    const cached = this.cfg.cache ? await getAudio(key) : null;
+    let blob = cached && cached.blob;
+    let meta = cached && cached.meta;
+
     if (!blob) {
+      // ask for JSON so the viseme timeline comes back with the audio; a
+      // server that only knows how to return WAV still works, we just fall
+      // back to driving the mouth from the audio signal
       const res = await fetch(this.cfg.endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text, voice, lang: LANG_TAG[this.lang], rate: this.cfg.rate })
+        body: JSON.stringify({
+          text, voice, lang: LANG_TAG[this.lang], rate: this.cfg.rate, format: 'json'
+        })
       });
       if (!res.ok) throw new Error('TTS HTTP ' + res.status);
-      blob = await res.blob();
-      if (this.cfg.cache) putAudio(key, blob);
+
+      const ctype = res.headers.get('content-type') || '';
+      if (ctype.includes('application/json')) {
+        const data = await res.json();
+        blob = new Blob([base64ToBytes(data.audio)], { type: data.mime || 'audio/wav' });
+        meta = { timeline: data.timeline || null, duration: data.duration };
+      } else {
+        blob = await res.blob();
+        meta = null;
+      }
+      if (this.cfg.cache) putAudio(key, blob, meta);
     }
 
     const buf = await this.audioCtx.decodeAudioData(await blob.arrayBuffer());
@@ -98,9 +144,24 @@ export class Speaker {
       src.buffer = buf;
       src.playbackRate.value = this.cfg.rate || 1;
       this.analyzer.connect(src);          // src -> analyser -> destination
-      src.onended = () => { this.driver = null; this.source = null; resolve(); };
+
+      const timeline = meta && meta.timeline;
+      if (timeline && timeline.length) {
+        this.timeline = timeline;
+        this.timelineIndex = 0;
+        this.timelineStart = this.audioCtx.currentTime;
+        this.driver = 'timeline';
+      } else {
+        this.driver = 'audio';
+      }
+
+      src.onended = () => {
+        this.driver = null;
+        this.timeline = null;
+        this.source = null;
+        resolve();
+      };
       this.source = src;
-      this.driver = 'audio';
       src.start();
     });
   }
@@ -137,6 +198,13 @@ export function hasVoiceFor(lang) {
   const tag = LANG_TAG[lang] || lang;
   if (!window.speechSynthesis) return false;
   return !!pickVoice(tag);
+}
+
+function base64ToBytes(b64) {
+  const bin = atob(b64);
+  const out = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+  return out;
 }
 
 function pickVoice(tag, preferredName) {

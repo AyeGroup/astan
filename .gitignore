@@ -1,0 +1,7 @@
+__pycache__/
+*.py[cod]
+.pytest_cache/
+services/tts/voices/
+services/tts/cache/
+services/tts/.pytest-cache-audio/
+node_modules/

@@ -36,22 +36,24 @@ export async function hashKey(...parts) {
   return [...new Uint8Array(buf)].slice(0, 16).map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
+/** @returns {Promise<{blob: Blob, meta: object|null}|null>} */
 export async function getAudio(key) {
   try {
     const db = await open();
     return await new Promise((resolve, reject) => {
       const tx = db.transaction(STORE_AUDIO, 'readonly');
       const req = tx.objectStore(STORE_AUDIO).get(key);
-      req.onsuccess = () => resolve(req.result ? req.result.blob : null);
+      req.onsuccess = () => resolve(req.result ? { blob: req.result.blob, meta: req.result.meta || null } : null);
       req.onerror = () => reject(req.error);
     });
   } catch { return null; }
 }
 
-export async function putAudio(key, blob) {
+export async function putAudio(key, blob, meta = null) {
   try {
     const db = await open();
     const tx = db.transaction(STORE_AUDIO, 'readwrite');
-    tx.objectStore(STORE_AUDIO).put({ key, blob, at: Date.now() });
+    // meta carries the viseme timeline, which must survive with its audio
+    tx.objectStore(STORE_AUDIO).put({ key, blob, meta, at: Date.now() });
   } catch { /* cache must never break the main path */ }
 }
