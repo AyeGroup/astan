@@ -1,0 +1,17 @@
+services:
+  tts:
+    build: .
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./voices:/voices
+      - tts-cache:/cache
+    environment:
+      TTS_BACKEND: piper          # refuse to start silently without a model
+      TTS_DEFAULT_VOICE: fa_IR-amir-medium
+      TTS_CACHE_MAX_MB: "4096"
+      TTS_CORS: "*"
+    restart: unless-stopped
+
+volumes:
+  tts-cache:

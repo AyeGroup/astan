@@ -1,0 +1,17 @@
+services:
+  admin:
+    build: .
+    ports:
+      - "8082:8082"
+    volumes:
+      - admin-data:/data
+    environment:
+      # Required: the service refuses to start without it. Generate one with
+      #   python3 -c "import secrets; print(secrets.token_urlsafe(32))"
+      ADMIN_TOKEN: "${ADMIN_TOKEN:?set ADMIN_TOKEN before starting}"
+      VIEWER_URL: "https://museum.example.com/app/viewer.html"
+      ADMIN_CORS: "*"
+    restart: unless-stopped
+
+volumes:
+  admin-data:

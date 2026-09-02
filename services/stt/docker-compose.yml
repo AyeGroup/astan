@@ -1,0 +1,19 @@
+services:
+  stt:
+    build: .
+    ports:
+      - "8081:8081"
+    volumes:
+      - ./models:/models
+    environment:
+      STT_BACKEND: whisper        # refuse to start silently without a model
+      STT_MODEL: medium
+      STT_DEVICE: cpu
+      STT_COMPUTE_TYPE: int8
+      STT_MAX_CONCURRENT: "2"
+      STT_CORS: "*"
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 4g

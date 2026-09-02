@@ -1,20 +1,138 @@
+<!doctype html>
 <html lang="fa" dir="rtl">
-  <head>
-    <meta charset="UTF-8" />
-    <title>تست ویجت</title>
-    <style>
-      body {
-        font-family: "Vazirmatn", "Tahoma", sans-serif;
-        direction: rtl;
-        text-align: right;
-        margin: 20px;
-      }
-    </style>
-  </head>
-  <body>
-    <h1>خوش آمدید</h1>
-    <p>این یک تست برای ویجت چت‌بات است.</p>
-<script src="https://ragbuilder.aia-ai.com/api/public/widget/chatbot-widget.js?apiEndpoint=https://ragbuilder.aia-ai.com/api/public&botUUID=51585baf-c08c-4e4a-ab21-f1e704831154&botName=هم یار حرم&primaryColor=%233F855C&accentColor=%23FFC566&buttonSize=ButtonSize.small&widgetPosition=WidgetPosition.bottom_right&greetings=True&logoUrl=https://ragbuilder.aia-ai.com/api/public/51585baf-c08c-4e4a-ab21-f1e704831154/logo&faqs=%5B%7B%22q%22%3A%20%22%DA%86%D8%A7%DB%8C%D8%AE%D8%A7%D9%86%D9%87%20%DA%A9%D8%AC%D8%A7%D8%B3%D8%AA%D8%9F%22%7D%2C%20%7B%22q%22%3A%20%22%DA%86%D9%86%D8%AF%20%D8%B5%D8%AD%D9%86%20%D9%88%20%DA%86%D9%86%D8%AF%20%D8%A8%D8%A7%D8%A8%20%D9%88%20%DA%86%D9%86%D8%AF%20%D8%A7%DB%8C%D9%88%D8%A7%D9%86%20%D8%AF%D8%B1%20%D8%AD%D8%B1%D9%85%20%D9%88%D8%AC%D9%88%D8%AF%20%D8%AF%D8%A7%D8%B1%D8%AF%D8%9F%22%7D%2C%20%7B%22q%22%3A%20%22%D8%AF%D9%81%D8%AA%D8%B1%20%D8%A7%D8%B4%DB%8C%D8%A7%20%D9%BE%DB%8C%D8%AF%D8%A7%D8%B4%D8%AF%D9%87%20%DA%A9%D8%AC%D8%A7%DB%8C%20%D8%AD%D8%B1%D9%85%20%D8%A7%D8%B3%D8%AA%D8%9F%22%7D%2C%20%7B%22q%22%3A%20%22%DA%86%D8%B7%D9%88%D8%B1%20%D9%88%DB%8C%D9%84%DA%86%D8%B1%20%D8%A8%DA%AF%DB%8C%D8%B1%D9%85%D8%9F%22%7D%2C%20%7B%22q%22%3A%20%22%D8%B1%D9%88%D8%A7%D9%82%20%DA%A9%D9%88%D8%AF%DA%A9%20%DA%A9%D8%AC%D8%A7%D8%B3%D8%AA%D8%9F%22%7D%5D"></script>
-  </body>
-</html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>پلتفرم راهنمای هوشمند موزه</title>
+  <link rel="icon" href="app/avatars/mehrbanoo.svg">
+  <link rel="stylesheet" href="app/css/base.css">
+  <style>
+    body { overflow: auto; }
+    .wrap { max-width: 900px; margin: 0 auto; padding: 36px 18px 70px; }
+    h1 { font-size: 24px; margin: 0 0 8px; }
+    .lead { color: var(--muted); line-height: 1.9; margin-bottom: 28px; font-size: 14px; }
+    .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; }
+    .card { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 18px; }
+    .card h2 { font-size: 15px; margin: 0 0 8px; color: var(--accent); }
+    .card p { font-size: 13px; color: var(--muted); line-height: 1.8; margin: 0 0 14px; }
+    .btn { display: inline-block; background: var(--brand); color: #fff; text-decoration: none;
+           border: none; border-radius: 10px; padding: 9px 16px; font-size: 13.5px; font-weight: 600;
+           font-family: inherit; cursor: pointer; }
+    .btn.ghost { background: var(--panel-2); border: 1px solid var(--line); color: var(--text); }
+    section { margin-top: 34px; }
+    section > h2 { font-size: 16px; margin: 0 0 12px; }
+    label { display: block; font-size: 12.5px; color: var(--muted); margin: 12px 0 5px; }
+    input, select {
+      width: 100%; background: var(--panel-2); border: 1px solid var(--line); color: var(--text);
+      border-radius: 10px; padding: 9px 12px; font-family: inherit; font-size: 14px;
+    }
+    .two { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    @media (max-width: 620px) { .two { grid-template-columns: 1fr; } }
+    #out {
+      margin-top: 14px; background: #0b0e12; border: 1px solid var(--line); border-radius: 10px;
+      padding: 12px; font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 12px;
+      direction: ltr; text-align: left; word-break: break-all; color: #a9e0bf; line-height: 1.7;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>پلتفرم راهنمای هوشمند موزه</h1>
+    <p class="lead">
+      آواتار هوش مصنوعی که روی محتوای خودِ موزه آموزش دیده و به پرسش بازدیدکننده
+      پاسخ می‌دهد. رندر چهره و لب‌سینک کاملاً روی گوشی بازدیدکننده اجرا می‌شود،
+      بنابراین هزینهٔ متغیر هر بازدید صفر است و تعداد بازدیدکنندهٔ هم‌زمان محدودیتی ندارد.
+    </p>
 
+    <div class="cards">
+      <div class="card">
+        <h2>صفحهٔ بازدیدکننده</h2>
+        <p>همان چیزی که با اسکن QR کنار هر اثر باز می‌شود: پرسش صوتی یا متنی، پاسخ از پایگاه دانش موزه.</p>
+        <a class="btn" href="app/viewer.html?mock=1">اجرای دمو</a>
+      </div>
+      <div class="card">
+        <h2>استودیوی آواتار</h2>
+        <p>یک عکس بدهید، خط لب را مشخص کنید، پروفایل آواتار ساخته می‌شود. بدون طراح و بدون مدل سه‌بعدی.</p>
+        <a class="btn ghost" href="app/studio.html">باز کردن استودیو</a>
+      </div>
+      <div class="card">
+        <h2>مستندات معماری</h2>
+        <p>قرارداد API، بودجهٔ تأخیر، مدل هزینه و نقشهٔ راه فازهای بعدی.</p>
+        <a class="btn ghost" href="docs/ARCHITECTURE.md">مطالعهٔ مستندات</a>
+      </div>
+    </div>
+
+    <section>
+      <h2>ساخت لینک اثر</h2>
+      <p class="lead" style="margin-bottom:0">
+        برای هر اثر یک لینک بسازید و همان را داخل QR کنار ویترین بگذارید.
+        شناسهٔ اثر به‌عنوان context به RAG تزریق می‌شود تا پرسش «این اثر چیست؟» بدون نام بردن اثر پاسخ بگیرد.
+      </p>
+      <div class="two">
+        <div>
+          <label>آدرس پایهٔ استقرار</label>
+          <input id="base" type="text" value="https://museum.example.com/app/viewer.html">
+        </div>
+        <div>
+          <label>شناسهٔ بات (botUUID)</label>
+          <input id="bot" type="text" value="51585baf-c08c-4e4a-ab21-f1e704831154">
+        </div>
+        <div>
+          <label>شناسهٔ اثر</label>
+          <input id="obj" type="text" value="obj-114">
+        </div>
+        <div>
+          <label>عنوان اثر</label>
+          <input id="title" type="text" value="کاسهٔ لعاب‌دار صفوی">
+        </div>
+        <div>
+          <label>آواتار</label>
+          <select id="av">
+            <option value="mehrbanoo">مهربانو</option>
+            <option value="ostad">استاد</option>
+            <option value="kimia">کیمیا</option>
+          </select>
+        </div>
+        <div>
+          <label>زبان</label>
+          <select id="lang">
+            <option value="fa">فارسی</option>
+            <option value="en">English</option>
+            <option value="ar">العربية</option>
+          </select>
+        </div>
+      </div>
+      <div id="out"></div>
+      <div style="margin-top:12px; display:flex; gap:8px; flex-wrap:wrap">
+        <button class="btn ghost" id="copy">کپی لینک</button>
+        <a class="btn" id="open" href="#" target="_blank" rel="noopener">باز کردن</a>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    const ids = ['base', 'bot', 'obj', 'title', 'av', 'lang'];
+    function build() {
+      const v = Object.fromEntries(ids.map(i => [i, document.getElementById(i).value.trim()]));
+      const p = new URLSearchParams();
+      if (v.bot) p.set('bot', v.bot);
+      if (v.obj) p.set('obj', v.obj);
+      if (v.title) p.set('t', v.title);
+      if (v.av) p.set('av', v.av);
+      if (v.lang) p.set('lang', v.lang);
+      const url = (v.base || '') + '?' + p.toString();
+      document.getElementById('out').textContent = url;
+      document.getElementById('open').href = url;
+      return url;
+    }
+    ids.forEach(i => document.getElementById(i).addEventListener('input', build));
+    document.getElementById('copy').addEventListener('click', async () => {
+      await navigator.clipboard.writeText(build());
+      const b = document.getElementById('copy');
+      b.textContent = 'کپی شد';
+      setTimeout(() => { b.textContent = 'کپی لینک'; }, 1400);
+    });
+    build();
+  </script>
+</body>
+</html>
