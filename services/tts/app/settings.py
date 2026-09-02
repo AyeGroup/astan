@@ -7,8 +7,10 @@ from pathlib import Path
 
 
 class Settings:
-    # "piper" for real synthesis, "dev" for the no-model development backend
+    # "piper" (natural, needs a voice model) or "espeak" (robotic, no
+    # download). "auto" prefers piper and falls back to espeak.
     backend: str = os.getenv("TTS_BACKEND", "auto")
+    language: str = os.getenv("TTS_LANGUAGE", "fa")
 
     voices_dir: Path = Path(os.getenv("TTS_VOICES_DIR", "./voices"))
     default_voice: str = os.getenv("TTS_DEFAULT_VOICE", "fa_IR-amir-medium")

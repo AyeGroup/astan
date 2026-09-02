@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import json
 import logging
+import secrets
 from pathlib import Path
 from typing import List, Optional
 from urllib.parse import urlencode
@@ -29,7 +30,9 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
 from .db import Database
-from .settings import settings
+from .settings import require_configuration, settings
+
+require_configuration()
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 log = logging.getLogger("admin")
@@ -51,16 +54,17 @@ WEB = Path(__file__).resolve().parent.parent / "web"
 def require_admin(x_admin_token: Optional[str] = Header(default=None),
                   authorization: Optional[str] = Header(default=None)) -> None:
     if not settings.admin_token:
-        # An unset token means single-operator local use. Say so loudly at
-        # startup rather than pretending the API is protected.
+        # Only reachable with ADMIN_ALLOW_OPEN=1; require_configuration()
+        # refuses to start otherwise.
         return
     supplied = x_admin_token or (authorization or "").removeprefix("Bearer ").strip()
-    if supplied != settings.admin_token:
+    # constant time, so a wrong token cannot be narrowed down by timing
+    if not secrets.compare_digest(supplied, settings.admin_token):
         raise HTTPException(401, "admin token required")
 
 
 if not settings.admin_token:
-    log.warning("ADMIN_TOKEN is unset: the /api routes are open. Set it before exposing this service.")
+    log.warning("running with ADMIN_ALLOW_OPEN=1: the /api routes are unauthenticated")
 
 
 # ----------------------------------------------------------------- models

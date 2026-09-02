@@ -158,10 +158,13 @@ def voices():
 @app.get("/health")
 def health():
     ready = backend.is_ready()
+    quality = getattr(backend, "quality", "unknown")
     return {
         "status": "ok" if ready else "degraded",
         "backend": backend.name,
-        "production_ready": backend.name == "piper",
+        # both backends speak Persian; only Piper sounds natural
+        "quality": quality,
+        "natural_voice": quality == "natural",
         "voices": backend.voices,
         "cache": cache.stats(),
     }

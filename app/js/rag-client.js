@@ -9,9 +9,11 @@
  *    being generated. That is the single biggest lever on perceived
  *    latency, worth more than any model or infrastructure change.
  *
- * 2. A mock transport, so the whole product runs and demos with no
- *    backend at all, and so the exact API contract can be pinned down
- *    later without blocking any other work.
+ * 2. A mock transport for demos with no backend at all. It is never
+ *    reached by accident: falling back to canned answers on a backend
+ *    error would have the avatar confidently telling a real visitor
+ *    something the museum never said, so the fallback is opt-in and the
+ *    error surfaces instead.
  */
 
 export class RagClient {
@@ -52,12 +54,13 @@ export class RagClient {
     try {
       yield* this._askHttp(question);
     } catch (err) {
-      if (transport === 'auto') {
+      if (this.cfg.mockFallback) {
         console.warn('[rag] backend unreachable, using mock transport:', err.message);
         this.lastTransport = 'mock';
         yield* mockAnswer(question, this.objectContext);
         return;
       }
+      // surface it: a wrong answer is worse than a visible failure
       throw err;
     }
   }

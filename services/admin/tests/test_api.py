@@ -14,14 +14,14 @@ sys.path.insert(0, str(ROOT))
 @pytest.fixture()
 def client(tmp_path, monkeypatch):
     monkeypatch.setenv("ADMIN_DB", str(tmp_path / "t.sqlite3"))
-    monkeypatch.setenv("ADMIN_TOKEN", "secret")
+    monkeypatch.setenv("ADMIN_TOKEN", "test-token-long-enough-to-pass")
     monkeypatch.setenv("VIEWER_URL", "https://m.example.com/app/viewer.html")
     for mod in [m for m in list(sys.modules) if m.startswith("app.")]:
         del sys.modules[mod]
     from fastapi.testclient import TestClient
     from app.main import app
     with TestClient(app) as c:
-        c.headers.update({"X-Admin-Token": "secret"})
+        c.headers.update({"X-Admin-Token": "test-token-long-enough-to-pass"})
         yield c
 
 
@@ -172,3 +172,35 @@ class TestDashboard:
         data = client.get("/api/museums/astan/dashboard").json()
         assert data["totals"]["questions"] == 0
         assert data["latency"]["p50"] is None
+
+
+class TestFailsClosed:
+    """An unauthenticated admin API exposes every museum's objects and
+    reports to anyone who can reach the port. A log warning is not enough."""
+
+    def _settings(self, token="", allow_open=False):
+        from app.settings import Settings
+        cfg = Settings()
+        cfg.admin_token = token
+        cfg.allow_open = allow_open
+        return cfg
+
+    def test_refuses_to_start_without_a_token(self):
+        from app.settings import Misconfigured, require_configuration
+        with pytest.raises(Misconfigured) as err:
+            require_configuration(self._settings())
+        assert "ADMIN_TOKEN" in str(err.value)
+        assert "token_urlsafe" in str(err.value), "the error must say how to fix it"
+
+    def test_refuses_a_token_short_enough_to_guess(self):
+        from app.settings import Misconfigured, require_configuration
+        with pytest.raises(Misconfigured):
+            require_configuration(self._settings(token="secret"))
+
+    def test_accepts_a_real_token(self):
+        from app.settings import require_configuration
+        require_configuration(self._settings(token="v" * 32))
+
+    def test_open_mode_requires_an_explicit_opt_in(self):
+        from app.settings import require_configuration
+        require_configuration(self._settings(allow_open=True))

@@ -6,9 +6,9 @@ services:
     volumes:
       - admin-data:/data
     environment:
-      # Without this the /api routes are open. The service says so at
-      # startup, but set it before putting the panel on a network.
-      ADMIN_TOKEN: "change-me"
+      # Required: the service refuses to start without it. Generate one with
+      #   python3 -c "import secrets; print(secrets.token_urlsafe(32))"
+      ADMIN_TOKEN: "${ADMIN_TOKEN:?set ADMIN_TOKEN before starting}"
       VIEWER_URL: "https://museum.example.com/app/viewer.html"
       ADMIN_CORS: "*"
     restart: unless-stopped

@@ -9,15 +9,19 @@
 const DEFAULTS = {
   rag: {
     // ---------------------------------------------------------------
-    // TODO(قرارداد API): نام مسیر و فیلدها بر اساس ویجت فعلی حدس زده
-    // شده و باید با API واقعی ragbuilder تطبیق داده شود. تا زمانی که
-    // تأیید نشده، transport روی 'auto' می‌ماند و در صورت خطا به mock
-    // برمی‌گردد تا دمو همیشه قابل اجرا باشد.
+    // استریم (SSE) در ragbuilder تأیید شده است، پس 'auto' اول SSE را
+    // امتحان می‌کند و پاسخ جمله‌به‌جمله پخش می‌شود.
+    //
+    // TODO(قرارداد API): نام دقیق مسیر و فیلدها هنوز تأیید نشده و بر
+    // اساس ویجت فعلی حدس زده شده است.
     // ---------------------------------------------------------------
     baseUrl: 'https://ragbuilder.aia-ai.com/api/public',
     botUUID: '51585baf-c08c-4e4a-ab21-f1e704831154',
     chatPath: '/chat',
     transport: 'auto',        // auto | sse | json | mock
+    // بازگشت بی‌صدا به دادهٔ نمایشی در تولید یعنی آواتار به بازدیدکنندهٔ
+    // واقعی پاسخ ساختگی می‌دهد. فقط برای دمو روشن می‌شود.
+    mockFallback: false,
     fields: {
       message: 'message',
       bot: 'bot_uuid',
@@ -86,7 +90,7 @@ function fromUrl(search) {
   const o = { rag: {}, avatar: {}, ui: {}, tts: {}, stt: {} };
   if (p.get('bot')) o.rag.botUUID = p.get('bot');
   if (p.get('api')) o.rag.baseUrl = p.get('api');
-  if (p.get('mock') === '1') o.rag.transport = 'mock';
+  if (p.get('mock') === '1') { o.rag.transport = 'mock'; o.rag.mockFallback = true; }
   if (p.get('av')) o.avatar.id = p.get('av');
   if (p.get('lang')) o.ui.lang = p.get('lang');
   if (p.get('tts')) o.tts.mode = p.get('tts');

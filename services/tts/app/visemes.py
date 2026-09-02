@@ -113,3 +113,70 @@ def build_timeline(alignments: Iterable, sample_rate: int) -> List[Dict[str, Any
 
     timeline.append({"t": round(cursor, 4), "o": 0.0, "s": 0.5})   # close at the end
     return timeline
+
+
+# --------------------------------------------------------------------------
+# espeak-ng phoneme mnemonics
+# --------------------------------------------------------------------------
+
+# espeak reports phoneme events in its own ASCII scheme rather than IPA.
+# Mapping it back lets the espeak backend reuse the same viseme table as
+# Piper, so both backends produce timelines the client reads identically.
+_MNEMONIC_TO_IPA = {
+    "a": "a", "A": "ɑ", "e": "e", "i": "i", "o": "o", "u": "u",
+    "@": "ə", "V": "ɐ", "I": "ɪ", "U": "ʊ", "E": "ɛ", "O": "ɔ",
+    "s": "s", "z": "z", "S": "ʃ", "Z": "ʒ", "tS": "tʃ", "dZ": "dʒ",
+    "t": "t", "d": "d", "n": "n", "l": "l", "r": "r", "R": "r",
+    "m": "m", "b": "b", "p": "p", "f": "f", "v": "v",
+    "k": "k", "g": "ɡ", "q": "q", "x": "x", "G": "ɣ", "h": "h",
+    "?": "ʔ", "j": "j", "y": "j", "w": "w", "N": "n",
+}
+
+_MNEMONIC_SILENCE = {"_", "_:", "_|", "||", ""}
+
+# Stress, tie and length markers prefix or suffix a mnemonic.
+_MNEMONIC_MARKS = "'`,%=:-"
+
+
+def espeak_mnemonic_to_ipa(name: str):
+    """Translate one espeak phoneme mnemonic to IPA.
+
+    Returns "" for silence and None for anything unrecognised, so a
+    caller can tell "a pause" apart from "not a phoneme".
+    """
+    if name is None:
+        return None
+    base = name.strip().strip(_MNEMONIC_MARKS)
+    if base in _MNEMONIC_SILENCE or not base:
+        return ""
+    if base in _MNEMONIC_TO_IPA:
+        return _MNEMONIC_TO_IPA[base]
+    if base[:2] in _MNEMONIC_TO_IPA:
+        return _MNEMONIC_TO_IPA[base[:2]]
+    if base[:1] in _MNEMONIC_TO_IPA:
+        return _MNEMONIC_TO_IPA[base[:1]]
+    return None
+
+
+def build_timeline_from_positions(phonemes, total_duration: float = 0.0):
+    """Build a timeline from (seconds, mnemonic) pairs.
+
+    espeak reports each phoneme's audio position directly, so unlike the
+    Piper path there are no durations to accumulate — the positions are
+    already measured against the audio being played.
+    """
+    timeline = []
+    last_t = 0.0
+    for t, name in phonemes:
+        ipa = espeak_mnemonic_to_ipa(name)
+        if ipa is None:
+            continue
+        shape = _CLOSED if ipa == "" else (phoneme_to_mouth(ipa) or _NEUTRAL)
+        entry = {"t": round(t, 4), "o": shape[0], "s": shape[1]}
+        if timeline and entry["t"] - timeline[-1]["t"] < _MIN_SEGMENT_S:
+            # too short to be seen; keep the earlier target rather than flicker
+            continue
+        timeline.append(entry)
+        last_t = t
+    timeline.append({"t": round(max(total_duration, last_t), 4), "o": 0.0, "s": 0.5})
+    return timeline

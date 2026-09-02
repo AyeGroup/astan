@@ -1,6 +1,7 @@
-"""HTTP contract tests, run against the dev backend so no voice model is
-needed. The dev backend uses the real espeak phonemiser, so the viseme
-timeline under test is genuine even though the waveform is not speech."""
+"""HTTP contract tests against the espeak backend, so no voice model is
+needed. espeak really synthesises Persian and reports the real audio
+position of each phoneme, so both the audio and the timeline under test
+are genuine — only the voice sounds robotic."""
 
 import base64
 import io
@@ -14,7 +15,7 @@ import pytest
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-os.environ.setdefault("TTS_BACKEND", "dev")
+os.environ.setdefault("TTS_BACKEND", "espeak")
 os.environ.setdefault("TTS_CACHE_DIR", str(ROOT / ".pytest-cache-audio"))
 
 from fastapi.testclient import TestClient   # noqa: E402
@@ -34,9 +35,11 @@ class TestHealth:
     def test_health_reports_backend(self, client):
         body = client.get("/health").json()
         assert body["status"] == "ok"
-        assert body["backend"] == "dev"
-        # the dev backend must never be mistaken for a deployable one
-        assert body["production_ready"] is False
+        assert body["backend"] == "espeak"
+        # deployable, but the operator must be able to see it is not the
+        # natural voice before putting it in front of visitors
+        assert body["quality"] == "robotic"
+        assert body["natural_voice"] is False
 
     def test_voices_lists_aliases(self, client):
         body = client.get("/voices").json()

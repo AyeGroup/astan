@@ -58,9 +58,16 @@ Embedding حلش می‌کند ولی یک مدل، یک پایگاه بردار
 
 ```bash
 pip install -r requirements.txt
-ADMIN_TOKEN=secret VIEWER_URL=https://museum.example.com/app/viewer.html \
-  uvicorn app.main:app --port 8082
+
+# توکن الزامی است؛ سرویس بدون آن بالا نمی‌آید
+export ADMIN_TOKEN=$(python3 -c "import secrets; print(secrets.token_urlsafe(32))")
+VIEWER_URL=https://museum.example.com/app/viewer.html uvicorn app.main:app --port 8082
 ```
+
+سرویس **بدون توکن اجرا نمی‌شود**. مسیرهای `/api` آثار و گزارش‌های هر موزه را
+به هر کسی که به پورت برسد نشان می‌دهند؛ یک هشدار در لاگ برای این کافی نیست.
+برای اجرای فقط-محلی می‌توان `ADMIN_ALLOW_OPEN=1` گذاشت. توکن کوتاه‌تر از ۱۶
+کاراکتر هم رد می‌شود.
 
 یا `docker compose up -d`. پنل روی `/` بالا می‌آید.
 
@@ -99,7 +106,8 @@ ADMIN_TOKEN=secret VIEWER_URL=https://museum.example.com/app/viewer.html \
 | متغیر | پیش‌فرض | کار |
 |---|---|---|
 | `ADMIN_DB` | `./data/museum.sqlite3` | مسیر فایل SQLite |
-| `ADMIN_TOKEN` | خالی | نگهبان مسیرهای `/api`. خالی یعنی **باز** |
+| `ADMIN_TOKEN` | — | **الزامی.** حداقل ۱۶ کاراکتر |
+| `ADMIN_ALLOW_OPEN` | خالی | `1` یعنی اجرای بدون احراز هویت، فقط برای ماشین محلی |
 | `VIEWER_URL` | `https://museum.example.com/...` | برای ساخت لینک QR هر اثر |
 | `ADMIN_CORS` | `*` | مبدأهای مجاز |
 | `ADMIN_DEFAULT_DAYS` | `30` | بازهٔ پیش‌فرض داشبورد |

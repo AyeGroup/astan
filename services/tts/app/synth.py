@@ -1,15 +1,18 @@
 """Synthesis backends.
 
-PiperBackend is the real one: Piper with an fa_IR voice, running on CPU,
-self-hosted, with no external dependency at request time.
+PiperBackend gives natural speech, and is what a museum should run. It
+needs a voice model from HuggingFace.
 
-DevBackend exists because a voice model is a few tens of megabytes that
-CI and a fresh checkout should not need. It runs the *real* espeak-ng
-Persian phonemiser, so the phoneme sequence and the viseme timeline it
-produces are genuine; only the waveform is synthetic. That makes the
-whole pipeline, including the client's lip-sync, testable end to end
-without a model. Its audio is a formant-less buzz and is not intelligible
-speech, so it must never be used in production.
+EspeakBackend is the fallback, and it is why the platform has no download
+in its critical path. espeak-ng ships as a PyPI wheel with its own data,
+genuinely speaks Persian (robotically, being a formant synthesiser), and
+reports the real audio position of every phoneme, so its viseme timeline
+is measured rather than estimated. A museum whose network cannot reach
+HuggingFace — a real constraint, not a hypothetical one — can run the
+guide end to end and swap in a Piper voice later with no other change.
+
+'auto' prefers Piper and falls back to espeak. Neither is a stub: both
+produce intelligible Persian speech and a real timeline.
 """
 
 from __future__ import annotations
@@ -23,7 +26,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import List, Optional
 
-from .visemes import build_timeline, phoneme_to_mouth
+from .espeak import ESPEAK, EspeakUnavailable
+from .visemes import build_timeline, build_timeline_from_positions
 
 log = logging.getLogger(__name__)
 
@@ -54,6 +58,7 @@ class BackendUnavailable(RuntimeError):
 
 class PiperBackend:
     name = "piper"
+    quality = "natural"
 
     def __init__(self, voices_dir: Path, default_voice: str, cfg):
         self.voices_dir = Path(voices_dir)
@@ -129,88 +134,39 @@ class PiperBackend:
 
 
 # --------------------------------------------------------------------------
-# Development backend
+# espeak-ng
 # --------------------------------------------------------------------------
 
-# Rough Persian segment durations. Only the relative ratios matter here.
-_DUR = {"vowel": 0.095, "consonant": 0.062, "stop": 0.045, "pause": 0.13}
-_VOWELS = set("ɑaæɐeɛəoɔiɪuʊy")
-_STOPS = set("ptkbdɡgqʔ")
+class EspeakBackend:
+    name = "espeak"
+    quality = "robotic"
 
-
-class DevBackend:
-    name = "dev"
-
-    def __init__(self, sample_rate: int = 22050):
-        self.sample_rate = sample_rate
-        self._phonemizer = None
+    def __init__(self, cfg):
+        self.cfg = cfg
 
     def is_ready(self) -> bool:
-        return True
+        return ESPEAK.available()
 
     @property
     def voices(self) -> List[str]:
-        return ["dev-fa"]
+        return ESPEAK.voices()
 
     def resolve(self, requested: Optional[str]) -> str:
-        return "dev-fa"
-
-    def _phonemes(self, text: str) -> List[str]:
-        if self._phonemizer is None:
-            from piper.phonemize_espeak import EspeakPhonemizer
-            self._phonemizer = EspeakPhonemizer()
-        out: List[str] = []
-        for sentence in self._phonemizer.phonemize("fa", text):
-            out.extend(sentence)
-            out.append(" ")
-        return out
+        return "espeak-fa"
 
     def synthesize(self, text: str, voice: Optional[str], rate: float) -> SynthResult:
-        phonemes = self._phonemes(text)
-        sr = self.sample_rate
-        alignments: List[Alignment] = []
+        language = (self.cfg.language or "fa") if hasattr(self.cfg, "language") else "fa"
+        try:
+            pcm, sample_rate, phonemes = ESPEAK.synthesize(text, language, rate)
+        except EspeakUnavailable as exc:
+            raise BackendUnavailable(str(exc)) from exc
+        if not pcm:
+            raise RuntimeError("espeak produced no audio")
 
-        for ph in phonemes:
-            if ph in " \n\t":
-                seconds = _DUR["pause"]
-            elif ph in _VOWELS:
-                seconds = _DUR["vowel"]
-            elif ph in _STOPS:
-                seconds = _DUR["stop"]
-            elif ph in "ːˈˌ":
-                seconds = 0.02
-            elif ph in ".,!?؟؛:":
-                seconds = _DUR["pause"] * 1.6
-            else:
-                seconds = _DUR["consonant"]
-            alignments.append(Alignment(ph, int(seconds / max(rate, 0.1) * sr)))
-
-        pcm = self._buzz(alignments, sr)
-        timeline = build_timeline(alignments, sr)
-        audio = _wrap_wav(pcm, sr, 2, 1)
-        return SynthResult(audio, sr, len(pcm) / (2.0 * sr), timeline, "dev-fa", self.name)
-
-    def _buzz(self, alignments: List[Alignment], sr: int) -> bytes:
-        """A voiced buzz whose loudness tracks mouth openness.
-
-        Shaping amplitude by the viseme keeps the energy envelope roughly
-        honest, so the client's audio-driven fallback path is exercised
-        too, not just the timeline path.
-        """
-        samples = bytearray()
-        phase = 0.0
-        f0 = 118.0
-        for a in alignments:
-            shape = phoneme_to_mouth(a.phoneme)
-            amp = 0.0 if shape is None else 0.06 + 0.34 * shape[0]
-            for i in range(a.num_samples):
-                phase += 2 * math.pi * f0 / sr
-                # two harmonics is enough to look like speech to an analyser
-                v = math.sin(phase) * 0.7 + math.sin(2 * phase) * 0.3
-                # short fade at both edges to avoid clicks between segments
-                edge = min(i, a.num_samples - i - 1, 64) / 64.0 if a.num_samples > 4 else 0.0
-                samples += struct.pack("<h", int(max(-1, min(1, v * amp * edge)) * 32767))
-        return bytes(samples)
+        duration = len(pcm) / (2.0 * sample_rate)
+        timeline = build_timeline_from_positions(phonemes, duration)
+        return SynthResult(_wrap_wav(pcm, sample_rate, 2, 1), sample_rate,
+                           duration, timeline, "espeak-fa", self.name)
 
 
 def _wrap_wav(pcm: bytes, sample_rate: int, sample_width: int, channels: int) -> bytes:
@@ -224,7 +180,7 @@ def _wrap_wav(pcm: bytes, sample_rate: int, sample_width: int, channels: int) ->
 
 
 def make_backend(cfg):
-    """Pick a backend. 'auto' prefers Piper and falls back to dev."""
+    """Pick a backend. 'auto' prefers Piper and falls back to espeak."""
     mode = cfg.backend
     if mode in ("piper", "auto"):
         piper = PiperBackend(cfg.voices_dir, cfg.default_voice, cfg)
@@ -234,7 +190,12 @@ def make_backend(cfg):
         if mode == "piper":
             raise BackendUnavailable(f"no voice models in {cfg.voices_dir}")
         log.warning(
-            "no Piper voice model found in %s; falling back to the DEV backend, "
-            "which does not produce intelligible speech", cfg.voices_dir
+            "no Piper voice model in %s; using espeak-ng, which speaks Persian "
+            "but sounds robotic. Run scripts/fetch_voices.sh for natural speech.",
+            cfg.voices_dir,
         )
-    return DevBackend()
+
+    espeak = EspeakBackend(cfg)
+    if not espeak.is_ready():
+        raise BackendUnavailable("neither a Piper voice nor espeak-ng is available")
+    return espeak
