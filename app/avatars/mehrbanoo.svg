@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 520" width="400" height="520">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#EAF2EC"/><stop offset="100%" stop-color="#CBDFD2"/>
+    </linearGradient>
+    <linearGradient id="sk" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#F6DCC6"/><stop offset="100%" stop-color="#EAC6A8"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="400" height="520" fill="url(#bg)"/>
+
+  <!-- shoulders / clothing -->
+  <path d="M40 520 C60 430 140 400 200 400 C260 400 340 430 360 520 Z" fill="#3F855C"/>
+  <path d="M175 400 L200 445 L225 400 L215 396 L200 415 L185 396 Z" fill="#2F6647"/>
+
+  <!-- neck -->
+  <path d="M170 350 L170 405 C170 420 230 420 230 405 L230 350 Z" fill="#EAC6A8"/>
+
+  <!-- hair back -->
+  <path d="M84 320 C80 190 128 150 200 150 C272 150 320 190 316 320 L320 440 L296 440 L296 300 L104 300 L104 440 L80 440 Z" fill="#2C2A33"/>
+
+  <!-- head -->
+  <ellipse cx="200" cy="300" rx="104" ry="124" fill="url(#sk)"/>
+
+  <!-- ears -->
+  <ellipse cx="96" cy="308" rx="13" ry="20" fill="#EAC6A8"/>
+  <ellipse cx="304" cy="308" rx="13" ry="20" fill="#EAC6A8"/>
+
+  <!-- hair front -->
+  <path d="M92 300 C88 194 132 158 200 158 C268 158 312 194 308 300 C300 250 280 224 250 214 C224 236 176 236 150 214 C120 224 100 250 92 300 Z" fill="#2C2A33"/>
+
+  <!-- brows -->
+  <path d="M136 258 C152 246 180 246 194 256" stroke="#2C2A33" stroke-width="9" fill="none" stroke-linecap="round"/>
+  <path d="M206 256 C220 246 248 246 264 258" stroke="#2C2A33" stroke-width="9" fill="none" stroke-linecap="round"/>
+
+  <!-- eyes -->
+  <ellipse cx="163" cy="288" rx="21" ry="13" fill="#ffffff"/>
+  <ellipse cx="237" cy="288" rx="21" ry="13" fill="#ffffff"/>
+  <circle cx="165" cy="289" r="9" fill="#4A3728"/>
+  <circle cx="239" cy="289" r="9" fill="#4A3728"/>
+  <circle cx="168" cy="286" r="3" fill="#ffffff" opacity="0.9"/>
+  <circle cx="242" cy="286" r="3" fill="#ffffff" opacity="0.9"/>
+
+  <!-- nose -->
+  <path d="M200 296 L192 328 C196 333 204 333 208 328" stroke="#C79A78" stroke-width="5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <!-- closed mouth: the renderer warps this region -->
+  <path d="M166 349 C182 341 218 341 234 349 C218 361 182 361 166 349 Z" fill="#C46A66"/>
+  <path d="M166 349 C182 345 218 345 234 349" stroke="#9E4F4C" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+
+  <!-- cheeks -->
+  <ellipse cx="140" cy="325" rx="17" ry="10" fill="#E79A93" opacity="0.45"/>
+  <ellipse cx="260" cy="325" rx="17" ry="10" fill="#E79A93" opacity="0.45"/>
+</svg>

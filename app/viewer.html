@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
+  <meta name="theme-color" content="#0f1216">
+  <title>راهنمای هوشمند موزه</title>
+  <link rel="icon" href="avatars/mehrbanoo.svg">
+  <link rel="stylesheet" href="css/base.css">
+</head>
+<body>
+  <div id="app">
+    <div id="stageWrap">
+      <canvas id="stage"></canvas>
+      <div class="overlay-top">
+        <div class="name" id="avatarName"></div>
+        <div class="role" id="avatarRole"></div>
+        <div id="objectChip" hidden></div>
+      </div>
+      <div id="status"></div>
+      <div id="badge" hidden></div>
+      <div id="faces"></div>
+    </div>
+
+    <div id="warn" hidden></div>
+    <div id="log"></div>
+    <div id="suggestions"></div>
+
+    <form id="form" autocomplete="off">
+      <button type="button" class="icon-btn" id="mic" aria-label="صحبت کنید">&#127908;</button>
+      <input id="input" type="text" inputmode="text">
+      <button type="submit" class="icon-btn" aria-label="ارسال">&#10148;</button>
+    </form>
+  </div>
+
+  <div id="gate">
+    <div class="gate-inner">
+      <div class="gate-ring">&#9654;</div>
+      <div id="startLabel"></div>
+    </div>
+  </div>
+
+  <script type="module" src="js/viewer.js"></script>
+</body>
+</html>
