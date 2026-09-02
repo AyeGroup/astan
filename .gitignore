@@ -5,3 +5,5 @@ services/tts/voices/
 services/tts/cache/
 services/tts/.pytest-cache-audio/
 node_modules/
+services/admin/data/
+services/admin/*.sqlite3*

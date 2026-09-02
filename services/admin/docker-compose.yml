@@ -1,0 +1,17 @@
+services:
+  admin:
+    build: .
+    ports:
+      - "8082:8082"
+    volumes:
+      - admin-data:/data
+    environment:
+      # Without this the /api routes are open. The service says so at
+      # startup, but set it before putting the panel on a network.
+      ADMIN_TOKEN: "change-me"
+      VIEWER_URL: "https://museum.example.com/app/viewer.html"
+      ADMIN_CORS: "*"
+    restart: unless-stopped
+
+volumes:
+  admin-data:

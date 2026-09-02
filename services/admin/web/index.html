@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>پنل مدیریت موزه</title>
+  <link rel="stylesheet" href="css/admin.css">
+</head>
+<body>
+
+<div id="toast" class="toast" hidden></div>
+
+<!-- ------------------------------------------------------------- auth -->
+<section id="auth" class="gate" hidden>
+  <form id="authForm" class="gate-card">
+    <h1>پنل مدیریت</h1>
+    <p class="dim">توکن ادمین را وارد کنید. همان مقداری که در <code>ADMIN_TOKEN</code> تنظیم شده است.</p>
+    <label for="tokenInput">توکن ادمین</label>
+    <input id="tokenInput" type="password" autocomplete="current-password" required>
+    <button class="btn primary" type="submit">ورود</button>
+  </form>
+</section>
+
+<!-- -------------------------------------------------------------- app -->
+<section id="app" hidden>
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-mark" aria-hidden="true"></span>
+      <span>راهنمای هوشمند موزه</span>
+    </div>
+    <div class="topbar-controls">
+      <label class="visually-hidden" for="museumSelect">موزه</label>
+      <select id="museumSelect"></select>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <div id="noMuseum" class="panel" hidden>
+      <h2>اولین موزه را بسازید</h2>
+      <p class="dim">
+        شناسهٔ بات را از ragbuilder بردارید. همان بات، پایگاه دانشی است که
+        آواتار از رویش پاسخ می‌دهد.
+      </p>
+      <form id="museumForm" class="grid-form">
+        <div><label for="mSlug">شناسهٔ کوتاه</label><input id="mSlug" required placeholder="astan" pattern="[a-z0-9][a-z0-9-]{1,40}"></div>
+        <div><label for="mName">نام موزه</label><input id="mName" required placeholder="موزهٔ آستان قدس"></div>
+        <div><label for="mBot">شناسهٔ بات</label><input id="mBot" required placeholder="51585baf-..." dir="ltr"></div>
+        <div><label for="mLang">زبان اصلی</label>
+          <select id="mLang"><option value="fa">فارسی</option><option value="en">English</option><option value="ar">العربية</option></select>
+        </div>
+        <div class="form-actions"><button class="btn primary" type="submit">ساخت موزه</button></div>
+      </form>
+    </div>
+
+    <div id="workspace" hidden>
+      <div id="tabs" class="tabs" role="tablist">
+        <button type="button" role="tab" data-tab="objects" aria-selected="false">آثار</button>
+        <button type="button" role="tab" data-tab="dashboard" aria-selected="true">داشبورد</button>
+      </div>
+
+      <!-- ------------------------------------------------------ objects -->
+      <section id="tab-objects" role="tabpanel" hidden>
+        <div class="panel">
+          <div class="panel-head">
+            <h2>آثار ثبت‌شده <span class="count" id="objectCount">۰</span></h2>
+            <button class="btn ghost" id="csvBtn" type="button">دریافت CSV برای ساخت QR</button>
+          </div>
+          <div class="table-scroll">
+            <table class="grid">
+              <thead><tr><th>کد</th><th>عنوان</th><th>سالن</th><th class="num">پرسش</th><th></th></tr></thead>
+              <tbody id="objectRows"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="panel">
+          <h2>افزودن یا ویرایش اثر</h2>
+          <p class="dim">
+            کد اثر همان چیزی است که داخل QR کنار ویترین می‌رود و به‌عنوان
+            context به پایگاه دانش تزریق می‌شود، تا پرسش «این اثر چیست؟»
+            بدون نام بردن اثر پاسخ بگیرد.
+          </p>
+          <form id="objectForm" class="grid-form">
+            <div><label for="fCode">کد اثر</label><input id="fCode" required placeholder="obj-114" dir="ltr" pattern="[A-Za-z0-9][A-Za-z0-9._-]{0,40}"></div>
+            <div><label for="fTitle">عنوان</label><input id="fTitle" required placeholder="کاسهٔ لعاب‌دار صفوی"></div>
+            <div><label for="fHall">سالن</label><input id="fHall" placeholder="گالری ۲"></div>
+            <div><label for="fNote">یادداشت داخلی</label><input id="fNote" placeholder="اختیاری"></div>
+            <div class="form-actions"><button class="btn primary" type="submit">ذخیره</button></div>
+          </form>
+        </div>
+      </section>
+
+      <!-- ---------------------------------------------------- dashboard -->
+      <section id="tab-dashboard" role="tabpanel">
+        <div class="range">
+          <label for="daysSelect">بازهٔ زمانی</label>
+          <select id="daysSelect">
+            <option value="7">۷ روز گذشته</option>
+            <option value="30" selected>۳۰ روز گذشته</option>
+            <option value="90">۹۰ روز گذشته</option>
+            <option value="365">یک سال گذشته</option>
+          </select>
+        </div>
+
+        <div class="tiles">
+          <div class="tile"><span class="tile-label">پرسش</span><b id="kQuestions">۰</b></div>
+          <div class="tile"><span class="tile-label">بازدیدکننده</span><b id="kSessions">۰</b></div>
+          <div class="tile"><span class="tile-label">پرسش در هر بازدید</span><b id="kPerSession">۰</b></div>
+          <div class="tile">
+            <span class="tile-label">تا اولین کلمه</span><b id="kLatency">—</b>
+            <span class="tile-note" id="kLatencyNote"></span>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head">
+            <h2>پرتکرارترین پرسش‌ها</h2>
+            <button class="btn ghost" id="tableToggle" type="button">نمایش جدول اعداد</button>
+          </div>
+          <p class="dim">
+            صورت‌های مختلف یک پرسش در یک ردیف جمع می‌شوند، پس «چایخانه کجاست؟»
+            و «کجاست چای‌خانه» دو ردیف جدا نمی‌سازند.
+          </p>
+          <div id="chartQuestions" class="chart"></div>
+          <div id="questionTable" class="table-scroll" hidden>
+            <table class="grid">
+              <thead><tr><th class="num">#</th><th>پرسش</th><th class="num">تعداد</th><th class="num">صورت‌های بیان</th></tr></thead>
+              <tbody id="questionTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="two-up">
+          <div class="panel">
+            <h2>پرسش‌های بی‌پاسخ‌مانده</h2>
+            <p class="dim">
+              پرسش‌هایی که بازدیدکننده بلافاصله بعدشان دوباره پرسیده — نشانهٔ
+              جای خالی در محتوای موزه.
+            </p>
+            <div id="chartGaps" class="chart"></div>
+          </div>
+
+          <div class="panel">
+            <h2>پربازدیدترین آثار</h2>
+            <p class="dim">کدام ویترین بیشترین کنجکاوی را می‌سازد.</p>
+            <div id="chartObjects" class="chart"></div>
+          </div>
+        </div>
+
+        <div class="two-up">
+          <div class="panel">
+            <h2>ساعات پرسش</h2>
+            <p class="dim">اوج مراجعه در طول شبانه‌روز.</p>
+            <div id="chartHours" class="chart"></div>
+          </div>
+
+          <div class="panel">
+            <h2>زبان بازدیدکنندگان</h2>
+            <p class="dim">سهم هر زبان از کل پرسش‌ها.</p>
+            <div id="chartLangs" class="chart"></div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+</section>
+
+<script type="module" src="js/admin.js"></script>
+</body>
+</html>
