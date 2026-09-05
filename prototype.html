@@ -536,6 +536,30 @@ table.meetings tbody tr:hover .title { color: var(--brand-700); }
   content:""; display:inline-block; width:.4rem; height:.4rem; border-radius:999px;
   background:var(--bad-600); margin-inline-start:.4rem; vertical-align:.15rem;
 }
+.prov {
+  font-size:.6875rem; font-weight:500; border-radius:999px; padding:.1rem .5rem;
+  border:1px solid; white-space:nowrap;
+}
+.prov.ai   { background:var(--sky-50);  color:var(--sky-700);  border-color:var(--sky-200); }
+.prov.user { background:var(--ok-50);   color:var(--ok-700);   border-color:var(--ok-200); }
+
+.chg { border:1px solid var(--s-200); border-radius:.625rem; padding:.6rem .75rem; font-size:.875rem; }
+.chg + .chg { margin-top:.5rem; }
+.chg.learned { border-color:var(--ok-200); background:var(--ok-50); }
+.chg .diff { margin-top:.35rem; line-height:1.9; }
+.chg .old { text-decoration:line-through; color:var(--bad-600); }
+.chg .new { color:var(--ok-700); font-weight:500; }
+.chg .to { color:var(--s-400); margin:0 .3rem; }
+
+/* the strip that says which of the two people you currently are */
+.rolebar {
+  display:flex; align-items:center; gap:.5rem 1rem; flex-wrap:wrap;
+  background:var(--brand-50); border:1px solid var(--brand-200); color:var(--brand-700);
+  border-radius:12px; padding:.6rem .875rem; font-size:.8125rem; line-height:1.8; margin-bottom:1.25rem;
+}
+.rolebar b { font-weight:600; }
+.rolebar .other { color:var(--s-500); }
+
 .comment.approve { border-inline-start-color:var(--ok-700); background:var(--ok-50); }
 .comment.return  { border-inline-start-color:var(--warn-700); background:var(--warn-50); }
 </style>
@@ -829,6 +853,9 @@ const state = {
   editingSummary: false,
   editingFacts: false,
   editingPeople: false,
+  editingProposal: null,
+  editingList: null,
+  showTrail: false,
   addingAction: false,
   dragging: false,
   authTab: "login",
@@ -854,10 +881,12 @@ const state = {
    document is recorded against their name, because "who changed this" is the
    first question anyone asks of a file. */
 const ROLES = {
-  manager:   { label: "مدیر",  name: "دکتر رضایی", glyph: "👔",
-               can: "بررسی کارتابل، تأیید یا اعادهٔ ارسال‌ها، واگذاری کار، حذف رکورد" },
-  secretary: { label: "منشی",  name: "خانم موسوی", glyph: "🗂",
-               can: "ثبت و ویرایش سند، ارسال برای تأیید مدیر، گزارش انجام کار — بدون حذف و تأیید" },
+  manager: { label: "مدیر", name: "دکتر رضایی", glyph: "👔",
+    can: "تأیید نهایی ارسال‌ها · واگذاری کار به منشی · افزودن اصلاح‌ها به دانش سامانه · حذف رکورد",
+    cannot: "ارسال برای تأیید (کسی بالادست او نیست)" },
+  secretary: { label: "منشی", name: "خانم موسوی", glyph: "🗂",
+    can: "ثبت و ویرایش سند · ارسال برای تأیید مدیر · گزارش انجام کار واگذارشده",
+    cannot: "تأیید نهایی · واگذاری کار · حذف رکورد · افزودن به دانش سامانه" },
 };
 function me() { return ROLES[state.role]; }
 
@@ -867,8 +896,8 @@ function me() { return ROLES[state.role]; }
    every handler checks as well, because a rule a demo can be talked out of
    answers nothing about the real system. */
 const PERMISSIONS = {
-  manager:   { removeRecord: true,  assign: true,  completeAssignment: false, submit: false, decide: true },
-  secretary: { removeRecord: false, assign: false, completeAssignment: true,  submit: true,  decide: false },
+  manager:   { removeRecord: true,  assign: true,  completeAssignment: false, submit: false, decide: true,  teach: true,  editDoc: true },
+  secretary: { removeRecord: false, assign: false, completeAssignment: true,  submit: true,  decide: false, teach: false, editDoc: true },
 };
 function can(what) { return !!(PERMISSIONS[state.role] || {})[what]; }
 function requires(what) {
@@ -1003,6 +1032,7 @@ function resetEditing() {
   state.editingAction = null; state.editingDecision = null;
   state.editingTitle = false; state.editingSummary = false; state.addingAction = false;
   state.editingFacts = false; state.editingPeople = false;
+  state.editingProposal = null; state.editingList = null;
 }
 function snapshot(minutes) {
   return minutes ? JSON.parse(JSON.stringify(minutes)) : null;
@@ -1041,6 +1071,7 @@ function saveState() {
     localStorage.setItem(STORE_KEY, JSON.stringify({
       uid: uid, user: state.user, route: state.route, role: state.role,
       meetings: state.meetings, docMeta: state.docMeta, chat: state.chat,
+      showTrail: state.showTrail,
       submissions: state.submissions,
       archive: ARCHIVE, docTab: state.docTab,
       archiveQuery: state.archiveQuery, archiveKind: state.archiveKind,
@@ -1062,6 +1093,7 @@ function loadState() {
   state.chat = saved.chat || {};
   state.submissions = saved.submissions || [];
   state.docTab = saved.docTab || "comments";
+  state.showTrail = !!saved.showTrail;
   ["archiveQuery", "archiveKind", "archiveFrom", "archiveTo"].forEach((k) => { state[k] = saved[k] || ""; });
   if (Array.isArray(saved.archive)) { ARCHIVE.length = 0; saved.archive.forEach((d) => ARCHIVE.push(d)); }
 
@@ -1084,6 +1116,58 @@ function resetDemo() {
   try { localStorage.removeItem(STORE_KEY); } catch (e) { /* nothing to clear */ }
   location.reload();
 }
+
+/* ==========================================================================
+   Who wrote this line
+
+   A generated document has two kinds of authorship in it: what the extractor
+   produced, and what a person changed afterwards. Both are recorded against
+   the field they touched, so every section can say whether a human has been
+   through it yet, and the history can say who changed what, when, and from
+   what.
+
+   A confirmed correction is also the most valuable thing this product
+   collects — it is the one signal that says "the extractor got this wrong and
+   here is the right answer". Approving one marks it to be fed back into the
+   extractor's knowledge, which is a decision about the organisation's record,
+   so only the manager makes it.
+   ========================================================================== */
+
+const AI_AUTHOR = "استخراج خودکار";
+
+function provOf(m, field) { return (m.prov || {})[field] || null; }
+
+/* Everything a fresh run produced is the extractor's, until someone edits it. */
+function markGenerated(m, fields) {
+  m.prov = {};
+  const at = stamp();
+  fields.forEach((f) => { m.prov[f] = { source: "ai", by: AI_AUTHOR, at: at }; });
+}
+
+function recordChange(m, field, label, from, to) {
+  const a = from == null ? "" : String(from);
+  const b = to == null ? "" : String(to);
+  if (a === b) return false;
+  m.prov = m.prov || {};
+  m.prov[field] = { source: "user", by: me().name, role: state.role, at: stamp() };
+  m.trail = m.trail || [];
+  m.trail.unshift({
+    id: nid("ch"), field: field, label: label, from: a, to: b,
+    by: me().name, role: state.role, at: stamp(), learned: false,
+  });
+  return true;
+}
+
+function provBadge(m, field) {
+  const p = provOf(m, field);
+  if (!p) return "";
+  if (p.source === "ai") {
+    return `<span class="prov ai" title="این بخش را سامانه از روی منابع نوشته و هنوز کسی آن را بازبینی نکرده است">🤖 ${AI_AUTHOR}</span>`;
+  }
+  return `<span class="prov user" title="آخرین ویرایش دستی این بخش">✍️ ${esc(p.by)} · ${esc(p.at)}</span>`;
+}
+
+function learnedCount(m) { return (m.trail || []).filter((c) => c.learned).length; }
 
 /* ==========================================================================
    Render
@@ -1140,7 +1224,22 @@ function shell(inner) {
         </div>
       </div>
     </div>
-    <main class="wrap">${inner}</main>`;
+    <main class="wrap">${roleBar()}${inner}</main>`;
+}
+
+/* A demo where two people share one screen has to say, at all times, which of
+   them you currently are and what that costs you. */
+function roleBar() {
+  const other = ROLES[state.role === "manager" ? "secretary" : "manager"];
+  const mine = me();
+  return `
+    <div class="rolebar">
+      <span><b>${mine.glyph} شما اکنون ${mine.label} هستید</b> — ${esc(mine.can)}</span>
+      <span class="other">در این نقش نمی‌توانید: ${esc(mine.cannot)}</span>
+      <button class="btn btn-secondary btn-sm" style="margin-inline-start:auto" data-role="${state.role === "manager" ? "secretary" : "manager"}">
+        دیدن نمای ${other.glyph} ${other.label}
+      </button>
+    </div>`;
 }
 
 /* ---------- landing ---------- */
@@ -1335,7 +1434,7 @@ function viewNewMeeting() {
           <div>
             <label class="label" for="nm-kind">نوع</label>
             <select class="field" id="nm-kind">
-              ${ENTRY_KINDS.map((k) => `<option value="${k}">${DOC_KINDS[k].glyph} ${DOC_KINDS[k].label}</option>`).join("")}
+              ${KIND_ORDER.map((k) => `<option value="${k}">${DOC_KINDS[k].glyph} ${DOC_KINDS[k].label}</option>`).join("")}
             </select>
             <p class="hint">نوع تعیین می‌کند سند در بایگانی کجا بنشیند و در پاسخ‌ها چقدر وزن داشته باشد.</p>
           </div>
@@ -1495,31 +1594,52 @@ function minutesSection(m) {
       ${state.editingTitle ? `
         <div style="display:grid;gap:.75rem">
           <div><label class="label" for="ed-title">عنوان سند</label><input class="field" id="ed-title" value="${esc(d.title)}"></div>
+          <div style="display:grid;gap:.75rem;grid-template-columns:repeat(auto-fit,minmax(12rem,1fr))">
+            <div>
+              <label class="label" for="ed-kind">نوع سند</label>
+              <select class="field" id="ed-kind">
+                ${KIND_ORDER.map((k) => `<option value="${k}" ${kind === k ? "selected" : ""}>${DOC_KINDS[k].glyph} ${DOC_KINDS[k].label}</option>`).join("")}
+              </select>
+              <p class="hint">نوع سند تعیین می‌کند چه بخش‌هایی نمایش داده شود و در بایگانی زیر کدام برچسب بنشیند.</p>
+            </div>
+            <div>
+              <label class="label" for="ed-date">تاریخ</label>
+              <input class="field ltr" id="ed-date" type="date" value="${esc(d.info.date || "")}">
+            </div>
+          </div>
+          <div>
+            <label class="label" for="ed-objective">موضوع</label>
+            <textarea class="field" id="ed-objective" rows="2" placeholder="این سند دربارهٔ چیست؟">${esc(d.info.objective || "")}</textarea>
+          </div>
           <div class="row"><button class="btn btn-primary btn-sm" data-save-title>ذخیره</button><button class="btn btn-secondary btn-sm" data-cancel-edit>انصراف</button></div>
         </div>` : `
         <div class="spread">
           <div style="min-width:0">
             <h2 style="font-size:1.25rem;font-weight:600">${esc(d.title)}</h2>
             <dl class="kv">
-              <div><dt>نوع:</dt><dd>${DOC_KINDS[kind].label}</dd></div>
+              <div><dt>نوع:</dt><dd>${DOC_KINDS[kind].glyph} ${DOC_KINDS[kind].label}</dd></div>
               ${d.info.date ? `<div><dt>تاریخ:</dt><dd class="tnum">${formatDate(d.info.date)}</dd></div>` : ""}
             </dl>
           </div>
-          <button class="btn btn-ghost btn-sm" data-edit-title>ویرایش</button>
-        </div>`}
-      ${d.info.objective ? `
+          <div class="row" style="gap:.5rem">
+            ${provBadge(m, "header")}
+            <button class="btn btn-ghost btn-sm" data-edit-title>ویرایش</button>
+          </div>
+        </div>
         <div style="border-top:1px solid var(--s-100);margin-top:1rem;padding-top:1rem">
           <p class="muted" style="font-size:.6875rem;letter-spacing:.06em;font-weight:500">موضوع</p>
-          <p class="small" style="margin-top:.25rem;color:var(--s-700);line-height:1.9">${esc(d.info.objective)}</p>
-        </div>` : ""}
+          <p class="small" style="margin-top:.25rem;color:var(--s-700);line-height:1.9">
+            ${d.info.objective ? esc(d.info.objective) : `<span class="muted">ثبت نشده — با «ویرایش» اضافه کنید.</span>`}
+          </p>
+        </div>`}
     </div>
 
-    ${factsCard(d, form)}
+    ${factsCard(m, form)}
 
     <div class="card">
       <div class="section-title">
         <h3>${form.summary}</h3>
-        ${state.editingSummary ? "" : `<button class="btn btn-ghost btn-sm" data-edit-summary>ویرایش</button>`}
+        ${state.editingSummary ? "" : `<div class="row" style="gap:.5rem">${provBadge(m, "summary")}<button class="btn btn-ghost btn-sm" data-edit-summary>ویرایش</button></div>`}
       </div>
       ${state.editingSummary ? `
         <div style="display:grid;gap:.75rem">
@@ -1528,40 +1648,32 @@ function minutesSection(m) {
         </div>` : `<p style="line-height:2;color:var(--s-700);font-size:.9375rem">${esc(d.summary)}</p>`}
     </div>
 
-    ${peopleCard(d, form)}
+    ${peopleCard(m, form)}
 
     ${d.decisions.length ? `
       <div class="card">
-        <div class="section-title"><h3>تصمیمات <span class="count">${fa(d.decisions.length)}</span></h3></div>
+        <div class="section-title"><h3>تصمیمات <span class="count">${fa(d.decisions.length)}</span></h3>${provBadge(m, "decisions")}</div>
         <div style="display:grid;gap:.75rem">${d.decisions.map((dec, i) => decisionCard(dec, i)).join("")}</div>
       </div>` : ""}
 
-    ${d.proposals.length ? `
+    ${true ? `
       <div class="card">
-        <div class="section-title"><h3>پیشنهادهای مطرح‌شده <span class="count">${fa(d.proposals.length)}</span></h3></div>
+        <div class="section-title"><h3>پیشنهادهای مطرح‌شده <span class="count">${fa(d.proposals.length)}</span></h3>${provBadge(m, "proposals")}</div>
         <p class="muted small" style="margin:-.5rem 0 .75rem">این موارد مطرح شده‌اند اما به تصمیم قطعی نرسیده‌اند.</p>
-        <div style="display:grid;gap:.5rem">
-          ${d.proposals.map((p) => `
-            <div class="proposal-item">
-              <span>${esc(p.text)}${p.context ? `<br><span class="muted" style="font-size:.75rem">${esc(p.context)}</span>` : ""}</span>
-              <button class="linkish" data-evidence="proposal:${p.id}">مشاهدهٔ منبع</button>
-            </div>`).join("")}
-        </div>
+        <div style="display:grid;gap:.5rem">${d.proposals.map(proposalCard).join("")}</div>
+        ${state.editingProposal ? "" : `<button class="btn btn-secondary btn-sm" style="margin-top:.75rem" data-add-proposal>+ افزودن پیشنهاد</button>`}
       </div>` : ""}
 
     <div class="card">
       <div class="section-title">
         <h3>اقدامات <span class="count">${fa(d.actions.length)}</span></h3>
-        ${state.addingAction ? "" : `<button class="btn btn-secondary btn-sm" data-add-action>+ افزودن اقدام</button>`}
+        <div class="row" style="gap:.5rem">
+          ${provBadge(m, "actions")}
+          ${state.editingAction ? "" : `<button class="btn btn-secondary btn-sm" data-add-action>+ افزودن اقدام</button>`}
+        </div>
       </div>
-      ${state.addingAction ? `
-        <div class="row" style="margin-bottom:.75rem;gap:.5rem">
-          <input class="field" id="new-action-title" placeholder="عنوان اقدام" style="max-width:20rem">
-          <button class="btn btn-primary btn-sm" data-save-new-action>افزودن</button>
-          <button class="btn btn-ghost btn-sm" data-cancel-edit>انصراف</button>
-        </div>` : ""}
       ${d.actions.length ? `<div style="display:grid;gap:.75rem">${d.actions.map(actionCard).join("")}</div>`
-        : `<p class="muted small" style="text-align:center;padding:1.5rem 0">اقدامی از منابع استخراج نشد.</p>`}
+        : `<p class="muted small" style="text-align:center;padding:1.5rem 0">اقدامی از منابع استخراج نشد. با «افزودن اقدام» خودتان ثبت کنید.</p>`}
     </div>
 
     ${d.topics.length ? `
@@ -1575,35 +1687,11 @@ function minutesSection(m) {
           </div>`).join("")}
       </div>` : ""}
 
-    ${d.questions.length ? `
-      <div class="card">
-        <div class="section-title"><h3>پرسش‌های باز <span class="count">${fa(d.questions.length)}</span></h3></div>
-        <ul class="bullet-list" style="list-style:none;padding:0">
-          ${d.questions.map((q) => `<li><span class="b">•</span><span>${esc(q.text)}${q.context ? `<span class="muted"> — ${esc(q.context)}</span>` : ""}</span></li>`).join("")}
-        </ul>
-      </div>` : ""}
-
-    ${d.risks.length ? `
-      <div class="card">
-        <div class="section-title"><h3>ریسک‌ها و نکات مهم <span class="count">${fa(d.risks.length)}</span></h3></div>
-        <ul class="bullet-list" style="list-style:none;padding:0">
-          ${d.risks.map((r) => `<li><span class="b">•</span><span>${esc(r.text)}${r.impact ? `<br><span class="muted" style="font-size:.75rem">اثر: ${esc(r.impact)}${r.mitigation ? " · اقدام کاهنده: " + esc(r.mitigation) : ""}</span>` : ""}</span></li>`).join("")}
-        </ul>
-      </div>` : ""}
-
-    ${d.nextSteps.length ? `
-      <div class="card">
-        <div class="section-title"><h3>گام‌های بعدی <span class="count">${fa(d.nextSteps.length)}</span></h3></div>
-        <ul class="bullet-list" style="list-style:none;padding:0">
-          ${d.nextSteps.map((s) => `<li><span class="b">→</span><span>${esc(s.text)}${s.owner || s.when ? `<span class="muted" style="font-size:.75rem"> (${[s.owner, s.when].filter(Boolean).map(esc).join(" · ")})</span>` : ""}</span></li>`).join("")}
-        </ul>
-      </div>` : ""}
-
-    ${d.notes.length ? `
-      <div class="card">
-        <div class="section-title"><h3>یادداشت‌ها <span class="count">${fa(d.notes.length)}</span></h3></div>
-        <ul class="bullet-list" style="list-style:none;padding:0">${d.notes.map((n) => `<li><span class="b">•</span>${esc(n)}</li>`).join("")}</ul>
-      </div>` : ""}
+    ${listCard(m, "questions")}
+    ${listCard(m, "risks")}
+    ${listCard(m, "nextSteps")}
+    ${listCard(m, "notes")}
+    ${trailCard(m)}
 
     <p class="muted small tnum" style="text-align:center;padding-bottom:.5rem">
       نسخهٔ ${fa(version.n)} · تولیدشده در ${formatDate(d.generatedAt)}${d.model ? ` · <span class="ltr" style="display:inline-block">${esc(d.model)}</span>` : ""}
@@ -1614,7 +1702,8 @@ function minutesSection(m) {
    and term, a meeting's room and hour. Empty ones are still listed while
    editing, because a blank a person can fill is more useful than a field that
    only appears once it has a value. */
-function factsCard(d, form) {
+function factsCard(m, form) {
+  const d = m.minutes;
   if (!form.fields.length) return "";
   const filled = form.fields.filter(([k]) => factValue(d, k));
 
@@ -1640,7 +1729,7 @@ function factsCard(d, form) {
     <div class="card">
       <div class="section-title">
         <h3>مشخصات سند</h3>
-        <button class="btn btn-ghost btn-sm" data-edit-facts>ویرایش</button>
+        <div class="row" style="gap:.5rem">${provBadge(m, "facts")}<button class="btn btn-ghost btn-sm" data-edit-facts>ویرایش</button></div>
       </div>
       ${filled.length ? `
         <dl class="kv" style="margin:0;gap:.5rem 1.5rem">
@@ -1655,7 +1744,8 @@ function factsCard(d, form) {
 
 /* People, only where a document has any. A letter has no attendees, and an
    empty "شرکت‌کنندگان" card on a letter is noise pretending to be a form. */
-function peopleCard(d, form) {
+function peopleCard(m, form) {
+  const d = m.minutes;
   if (!form.people) return "";
 
   if (state.editingPeople) {
@@ -1688,7 +1778,7 @@ function peopleCard(d, form) {
     <div class="card">
       <div class="section-title">
         <h3>${form.people} <span class="count">${fa(d.participants.length)}</span></h3>
-        <button class="btn btn-ghost btn-sm" data-edit-people>ویرایش</button>
+        <div class="row" style="gap:.5rem">${provBadge(m, "people")}<button class="btn btn-ghost btn-sm" data-edit-people>ویرایش</button></div>
       </div>
       ${d.participants.length ? `
         <div class="people">
@@ -1733,6 +1823,145 @@ function decisionCard(dec, i) {
         ${dec.by ? `<span class="badge badge-neutral">تصمیم‌گیرنده: ${esc(dec.by)}</span>` : "<span></span>"}
         <button class="linkish" data-evidence="decision:${dec.id}">مشاهدهٔ منبع${dec.evidence.length > 1 ? ` (${fa(dec.evidence.length)} منبع)` : ""}</button>
       </div>
+    </div>`;
+}
+
+/* Four lists that are the same shape: a line of text, sometimes with a
+   secondary field or two. One editor serves all of them, so adding a risk
+   works exactly like adding an open question. */
+const LIST_SPECS = {
+  questions: { title: "پرسش‌های باز", bullet: "•", empty: "پرسش بازی ثبت نشده است.",
+    fields: [["text", "پرسش"], ["context", "توضیح"]] },
+  risks: { title: "ریسک‌ها و نکات مهم", bullet: "•", empty: "ریسکی ثبت نشده است.",
+    fields: [["text", "ریسک"], ["impact", "اثر"], ["mitigation", "اقدام کاهنده"]] },
+  nextSteps: { title: "گام‌های بعدی", bullet: "→", empty: "گام بعدی‌ای ثبت نشده است.",
+    fields: [["text", "گام"], ["owner", "مسئول"], ["when", "زمان"]] },
+  notes: { title: "یادداشت‌ها", bullet: "•", empty: "یادداشتی ثبت نشده است.", plain: true,
+    fields: [["text", "یادداشت"]] },
+};
+
+function listItemText(spec, item) { return spec.plain ? String(item || "") : (item.text || ""); }
+
+function listCard(m, key) {
+  const spec = LIST_SPECS[key];
+  const list = m.minutes[key] || [];
+  const editing = state.editingList === key;
+
+  if (editing) {
+    return `
+      <div class="card">
+        <div class="section-title"><h3>${spec.title}</h3></div>
+        <div style="display:grid;gap:.75rem">
+          ${list.map((item, i) => `
+            <div style="border:1px solid var(--s-200);border-radius:12px;padding:.75rem">
+              ${spec.fields.map(([f, label], fi) => `
+                <label class="label" ${fi ? 'style="margin-top:.5rem"' : ""} for="li-${key}-${i}-${f}">${label}</label>
+                ${f === "text" && !spec.plain === false ? "" : ""}
+                <input class="field" id="li-${key}-${i}-${f}" data-li="${key}:${i}:${f}"
+                       value="${esc(spec.plain ? String(item || "") : (item[f] || ""))}">`).join("")}
+              <div class="row" style="margin-top:.625rem">
+                <button class="btn btn-ghost btn-sm" style="color:var(--bad-600)" data-drop-li="${key}:${i}">حذف این مورد</button>
+              </div>
+            </div>`).join("")}
+          ${list.length ? "" : `<p class="muted small">${spec.empty}</p>`}
+        </div>
+        <div class="row" style="margin-top:.875rem">
+          <button class="btn btn-primary btn-sm" data-save-list="${key}">ذخیره</button>
+          <button class="btn btn-secondary btn-sm" data-cancel-edit>انصراف</button>
+          <button class="btn btn-secondary btn-sm" style="margin-inline-start:auto" data-add-li="${key}">+ افزودن</button>
+        </div>
+      </div>`;
+  }
+
+  return `
+    <div class="card">
+      <div class="section-title">
+        <h3>${spec.title} <span class="count">${fa(list.length)}</span></h3>
+        <div class="row" style="gap:.5rem">${provBadge(m, key)}<button class="btn btn-ghost btn-sm" data-edit-list="${key}">ویرایش</button></div>
+      </div>
+      ${list.length ? `
+        <ul class="bullet-list" style="list-style:none;padding:0">
+          ${list.map((item) => {
+            const extra = spec.plain ? "" : spec.fields.slice(1)
+              .map(([f, label]) => item[f] ? label + ": " + item[f] : null).filter(Boolean).join(" · ");
+            return `<li><span class="b">${spec.bullet}</span><span>${esc(listItemText(spec, item))}
+              ${extra ? `<br><span class="muted" style="font-size:.75rem">${esc(extra)}</span>` : ""}</span></li>`;
+          }).join("")}
+        </ul>` : `<p class="muted small">${spec.empty}</p>`}
+    </div>`;
+}
+
+/* Everything a person changed on this document, and what it was before. The
+   manager can push a correction into the extractor's knowledge from here —
+   that is the only place in the product where a change becomes a lesson. */
+function trailCard(m) {
+  const trail = m.trail || [];
+  const learned = learnedCount(m);
+  return `
+    <div class="card">
+      <div class="section-title">
+        <h3>تاریخچهٔ تغییرات <span class="count">${fa(trail.length)}</span></h3>
+        <div class="row" style="gap:.5rem">
+          ${learned ? `<span class="badge badge-success tnum">${fa(learned)} مورد به دانش سامانه افزوده شد</span>` : ""}
+          ${trail.length ? `<button class="btn btn-ghost btn-sm" data-toggle-trail>${state.showTrail ? "بستن" : "نمایش"}</button>` : ""}
+        </div>
+      </div>
+      ${!trail.length ? `
+        <p class="muted small">هنوز کسی این سند را ویرایش نکرده است؛ هرچه می‌بینید نوشتهٔ سامانه است.</p>
+      ` : !state.showTrail ? `
+        <p class="muted small">${fa(trail.length)} تغییر دستی روی این سند ثبت شده است. آخرین مورد:
+          ${esc(trail[0].by)} — ${esc(trail[0].label)} · ${esc(trail[0].at)}</p>
+      ` : `
+        <div style="margin-top:.25rem">
+          ${trail.map((c) => `
+            <div class="chg ${c.learned ? "learned" : ""}">
+              <div class="spread">
+                <span class="who">${ROLES[c.role] ? ROLES[c.role].glyph : "✍️"} ${esc(c.by)} — ${esc(c.label)}</span>
+                <span class="muted small tnum">${esc(c.at)}</span>
+              </div>
+              <p class="diff">
+                <span class="old">${esc(c.from || "—")}</span>
+                <span class="to">←</span>
+                <span class="new">${esc(c.to || "—")}</span>
+              </p>
+              <div class="row" style="margin-top:.5rem">
+                ${c.learned
+                  ? `<span class="badge badge-success">به دانش سامانه افزوده شد — ${esc(c.learnedBy)}</span>`
+                  : can("teach")
+                    ? `<button class="btn btn-secondary btn-sm" data-learn="${c.id}">تأیید و افزودن به دانش سامانه</button>`
+                    : `<span class="muted small">افزودن به دانش سامانه با مدیر است.</span>`}
+              </div>
+            </div>`).join("")}
+        </div>
+        <p class="hint" style="margin-top:.875rem;line-height:1.9">
+          هر اصلاحی که تأیید شود، به‌عنوان نمونهٔ درست به دانش سامانه اضافه می‌شود تا در پردازش‌های بعدی
+          همان اشتباه تکرار نشود. تا وقتی تأیید نشده، فقط یک ویرایش ثبت‌شده است و روی رفتار سامانه اثری ندارد.
+        </p>`}
+    </div>`;
+}
+
+function proposalCard(p) {
+  if (state.editingProposal === p.id) {
+    return `
+      <div class="action-card editing">
+        <div style="display:grid;gap:.75rem">
+          <div><label class="label" for="pr-text">متن پیشنهاد</label><textarea class="field" id="pr-text" rows="2">${esc(p.text)}</textarea></div>
+          <div><label class="label" for="pr-ctx">توضیح</label><input class="field" id="pr-ctx" value="${esc(p.context || "")}" placeholder="چرا به تصمیم نرسید؟"></div>
+          <div class="row">
+            <button class="btn btn-primary btn-sm" data-save-proposal="${p.id}">ذخیره</button>
+            <button class="btn btn-secondary btn-sm" data-cancel-edit>انصراف</button>
+            ${can("removeRecord") ? `<button class="btn btn-danger btn-sm" style="margin-inline-start:auto" data-delete-proposal="${p.id}">حذف</button>` : ""}
+          </div>
+        </div>
+      </div>`;
+  }
+  return `
+    <div class="proposal-item">
+      <span>${esc(p.text)}${p.context ? `<br><span class="muted" style="font-size:.75rem">${esc(p.context)}</span>` : ""}</span>
+      <span class="row" style="gap:.5rem">
+        <button class="linkish" data-evidence="proposal:${p.id}">مشاهدهٔ منبع</button>
+        <button class="btn btn-ghost btn-sm" data-edit-proposal="${p.id}">ویرایش</button>
+      </span>
     </div>`;
 }
 
@@ -2055,7 +2284,7 @@ function viewModal() {
       </p>
       <label class="label">نوع سند</label>
       <select class="field" id="nd-kind">
-        ${DOC_KIND_ORDER.map((k) => `<option value="${k}" ${draft.kind === k ? "selected" : ""}>${DOC_KINDS[k].glyph} ${DOC_KINDS[k].label}</option>`).join("")}
+        ${KIND_ORDER.map((k) => `<option value="${k}" ${draft.kind === k ? "selected" : ""}>${DOC_KINDS[k].glyph} ${DOC_KINDS[k].label}</option>`).join("")}
       </select>
       <label class="label" style="margin-top:.875rem">عنوان سند</label>
       <input class="field" id="nd-title" placeholder="مثلاً: قرارداد نگهداری مرکز داده" value="${esc(draft.title || "")}">
@@ -2194,57 +2423,46 @@ function toMarkdown(d) {
    contract, its amendment and an MoU are exactly the material a manager
    needs beside the minutes, so they are first-class here. */
 const DOC_KINDS = {
-  meeting_minutes: { label: "صورت‌جلسه",        glyph: "📝", weight: "سابقهٔ رسمی", tone: "neutral" },
-  contract:        { label: "قرارداد",           glyph: "📑", weight: "سند تعهدآور", tone: "brand" },
-  contract_annex:  { label: "الحاقیهٔ قرارداد",  glyph: "📑", weight: "سند تعهدآور", tone: "brand" },
-  mou:             { label: "تفاهم‌نامه",        glyph: "🤝", weight: "سند تعهدآور", tone: "brand" },
-  letter_in:       { label: "نامهٔ وارده",        glyph: "✉️", weight: "مکاتبهٔ رسمی", tone: "info" },
-  letter_out:      { label: "نامهٔ صادره",        glyph: "✉️", weight: "مکاتبهٔ رسمی", tone: "info" },
-  resolution:      { label: "مصوبه",             glyph: "⚖️", weight: "تصمیم رسمی", tone: "info" },
-  law:             { label: "قانون و مقررات",    glyph: "📜", weight: "الزام قانونی", tone: "brand" },
-  progress_report: { label: "گزارش پیشرفت",      glyph: "📊", weight: "سابقهٔ رسمی", tone: "neutral" },
-  analysis:        { label: "تحلیل کارشناسی",    glyph: "🔍", weight: "نظر کارشناسی", tone: "neutral" },
-  note:            { label: "یادداشت شخصی",      glyph: "🗒", weight: "برداشت شخصی", tone: "warning" },
-  negotiation:     { label: "ملاقات و مذاکره",   glyph: "🤝", weight: "سابقهٔ گفت‌وگو", tone: "neutral" },
-  letter:          { label: "نامه",              glyph: "✉️", weight: "مکاتبهٔ رسمی", tone: "info" },
-  content_doc:     { label: "سند محتوایی",       glyph: "📄", weight: "سند پشتیبان", tone: "neutral" },
-  related_docs:    { label: "اسناد مرتبط",       glyph: "🔗", weight: "سند پشتیبان", tone: "neutral" },
+  meeting_minutes: { label: "صورت‌جلسه",          glyph: "📝", weight: "سابقهٔ رسمی",     tone: "neutral" },
+  negotiation:     { label: "ملاقات و مذاکره",    glyph: "🤝", weight: "سابقهٔ گفت‌وگو",   tone: "neutral" },
+  letter:          { label: "نامه و مکاتبه",      glyph: "✉️", weight: "مکاتبهٔ رسمی",    tone: "info" },
+  resolution:      { label: "مصوبه و قانون",      glyph: "⚖️", weight: "الزام رسمی",      tone: "info" },
+  contract:        { label: "قرارداد و تفاهم‌نامه", glyph: "📑", weight: "سند تعهدآور",   tone: "brand" },
+  progress_report: { label: "گزارش و تحلیل",      glyph: "📊", weight: "گزارش کارشناسی",  tone: "neutral" },
+  content_doc:     { label: "سند پشتیبان",        glyph: "📄", weight: "سند پشتیبان",     tone: "neutral" },
+  note:            { label: "یادداشت",            glyph: "🗒", weight: "برداشت شخصی",    tone: "warning" },
 };
+
+/* One list, in one order, offered in every place a document is tagged and in
+   every place it is filtered. The tag is whatever the person filing the
+   document chose — the system never assigns a second one of its own. */
+const KIND_ORDER = Object.keys(DOC_KINDS);
 
 /* Not every entry is a meeting. A letter has a sender and a recipient and no
    attendees; a note has an author and nothing to vote on. Printing every
    section on every document and leaving most of them blank is how a form stops
    being read — so each kind declares the sections it actually has, and the
    document page shows only those. */
-const LETTER_FORM = { summary: "خلاصهٔ نامه", people: null, role: null, absent: null,
-  fields: [["sender", "فرستنده"], ["recipient", "گیرنده"], ["ref", "شمارهٔ نامه"], ["replyTo", "در پاسخ به"]] };
-const CONTRACT_FORM = { summary: "خلاصهٔ قرارداد", people: null, role: null, absent: null,
-  fields: [["party", "طرف قرارداد"], ["ref", "شمارهٔ قرارداد"], ["amount", "مبلغ"], ["term", "مدت"]] };
-const SUPPORT_FORM = { summary: "خلاصهٔ سند", people: null, role: null, absent: null,
-  fields: [["author", "تهیه‌کننده"], ["party", "مرجع / منبع"]] };
-
 const KIND_FORM = {
   meeting_minutes: { summary: "خلاصهٔ جلسه", people: "شرکت‌کنندگان", role: "سمت", absent: "غایبان",
     fields: [["location", "محل برگزاری"], ["time", "ساعت"]] },
   negotiation: { summary: "خلاصهٔ گفت‌وگو", people: "طرف‌های گفت‌وگو", role: "سمت / نمایندهٔ", absent: null,
     fields: [["location", "محل"], ["time", "ساعت"]] },
+  letter: { summary: "خلاصهٔ نامه", people: null, role: null, absent: null,
+    fields: [["sender", "فرستنده"], ["recipient", "گیرنده"], ["ref", "شمارهٔ نامه"], ["replyTo", "در پاسخ به"]] },
   resolution: { summary: "خلاصهٔ مصوبه", people: "حاضران", role: "سمت", absent: null,
-    fields: [["authority", "مرجع تصویب"], ["ref", "شمارهٔ مصوبه"]] },
-  law: { summary: "خلاصهٔ قانون", people: null, role: null, absent: null,
     fields: [["authority", "مرجع تصویب"], ["ref", "شماره / ماده"]] },
+  contract: { summary: "خلاصهٔ قرارداد", people: null, role: null, absent: null,
+    fields: [["party", "طرف قرارداد"], ["ref", "شمارهٔ قرارداد"], ["amount", "مبلغ"], ["term", "مدت"]] },
   progress_report: { summary: "خلاصهٔ گزارش", people: null, role: null, absent: null,
     fields: [["author", "تهیه‌کننده"], ["period", "دورهٔ گزارش"]] },
-  analysis: { summary: "خلاصهٔ تحلیل", people: null, role: null, absent: null,
-    fields: [["author", "تهیه‌کننده"]] },
+  content_doc: { summary: "خلاصهٔ سند", people: null, role: null, absent: null,
+    fields: [["author", "تهیه‌کننده"], ["party", "مرجع / منبع"]] },
   note: { summary: "خلاصهٔ یادداشت", people: null, role: null, absent: null,
     fields: [["author", "نویسنده"]] },
-  mou: { summary: "خلاصهٔ تفاهم‌نامه", people: null, role: null, absent: null,
-    fields: [["party", "طرف تفاهم"], ["term", "مدت"]] },
-  letter: LETTER_FORM, letter_in: LETTER_FORM, letter_out: LETTER_FORM,
-  contract: CONTRACT_FORM, contract_annex: CONTRACT_FORM,
-  content_doc: SUPPORT_FORM, related_docs: SUPPORT_FORM,
 };
-function formOf(kind) { return KIND_FORM[kind] || SUPPORT_FORM; }
+const FALLBACK_FORM = KIND_FORM.content_doc;
+function formOf(kind) { return KIND_FORM[kind] || FALLBACK_FORM; }
 
 /* Two of the fields have lived on info since the beginning; the rest are new
    and kind-specific. One pair of accessors keeps that an implementation
@@ -2260,20 +2478,6 @@ function setFact(d, key, v) {
   else if (key === "time") d.info.time = val;
   else { d.fields = d.fields || {}; d.fields[key] = val; }
 }
-
-/* What the data-entry form offers, in the order it offers them. Same values
-   as the archive uses, so an entry is filed the moment it is created. */
-const ENTRY_KINDS = [
-  "meeting_minutes", "negotiation", "letter",
-  "content_doc", "related_docs", "note",
-];
-
-/* The order the "add a document" picker offers them in. */
-const DOC_KIND_ORDER = [
-  "meeting_minutes", "contract", "contract_annex", "mou",
-  "letter_in", "letter_out", "resolution", "law",
-  "progress_report", "analysis", "note",
-];
 
 /* A programme contains projects, and a question asked at programme level has
    to reach the projects underneath it — that is the whole reason the levels
@@ -2311,7 +2515,7 @@ function caseTree(id) {
 
 /* --- the archive -------------------------------------------------------- */
 const ARCHIVE = [
-  { id: "a1", kind: "law", title: "قانون توسعهٔ دولت الکترونیک و زیرساخت داده",
+  { id: "a1", kind: "resolution", title: "قانون توسعهٔ دولت الکترونیک و زیرساخت داده",
     date: "۱۳۹۶/۰۳/۱۰", party: "مجلس شورای اسلامی", cases: ["program", "security"],
     text: "ماده ۴ — دستگاه‌های اجرایی مکلف‌اند ظرف دو سال داده‌های مرجع خود را روی زیرساخت دادهٔ کشور در دسترس قرار دهند. تبصره ۱ — سازمان فناوری اطلاعات موظف است سند معماری امنیت تبادل داده را ظرف یک سال تهیه و ابلاغ کند." },
 
@@ -2328,16 +2532,16 @@ const ARCHIVE = [
     date: "۱۳۹۷/۰۲/۲۰", party: "کارگروه فنی", cases: ["program", "datacenter"],
     text: "سه دیدگاه دربارهٔ معماری مرکز داده مطرح شد: تمرکز در یک سایت، توزیع در سه استان، و اجرای مرحله‌ای. مقرر شد اجرای مرحله‌ای مبنای کار قرار گیرد." },
 
-  { id: "a5", kind: "letter_out", title: "نامهٔ درخواست گزارش پیشرفت", ref: "۱۲/۴۴۷۱",
+  { id: "a5", kind: "letter", title: "نامهٔ درخواست گزارش پیشرفت", ref: "۱۲/۴۴۷۱",
     date: "۱۳۹۷/۰۴/۰۵", party: "دبیرخانهٔ شورا ← سازمان فناوری اطلاعات", cases: ["program", "security"],
     text: "در اجرای بند ۲ مصوبهٔ جلسهٔ ۴۱، گزارش پیشرفت تدوین سند معماری امنیت تبادل داده خواسته شد." },
 
-  { id: "a6", kind: "letter_in", title: "پاسخ دربارهٔ سند معماری امنیت", ref: "۵۵/۲۲۱۰",
+  { id: "a6", kind: "letter", title: "پاسخ دربارهٔ سند معماری امنیت", ref: "۵۵/۲۲۱۰",
     date: "۱۳۹۷/۰۵/۱۲", party: "سازمان فناوری اطلاعات ← دبیرخانهٔ شورا", reply: "۱۲/۴۴۷۱",
     cases: ["program", "security"],
     text: "پیرو نامهٔ ۱۲/۴۴۷۱: تدوین سند در حال انجام است و پیش‌نویس اولیه تهیه شده. نهایی‌سازی منوط به تخصیص اعتبار مطالعات تکمیلی است." },
 
-  { id: "a7", kind: "contract_annex", title: "الحاقیهٔ شمارهٔ ۱ — تمدید مدت قرارداد مرکز داده", ref: "۹۸/۲۲-۱۴/۱",
+  { id: "a7", kind: "contract", title: "الحاقیهٔ شمارهٔ ۱ — تمدید مدت قرارداد مرکز داده", ref: "۹۸/۲۲-۱۴/۱",
     date: "۱۳۹۸/۰۲/۱۰", party: "شرکت زیرساخت ارتباطات", cases: ["program", "datacenter"],
     amount: "بدون افزایش مبلغ", term: "چهار ماه تمدید",
     text: "مدت قرارداد ۹۷/۲۲-۱۴ به‌دلیل تأخیر در تأمین تجهیزات، چهار ماه تمدید شد. سایر شرایط قرارداد بدون تغییر است." },
@@ -2350,7 +2554,7 @@ const ARCHIVE = [
     date: "۱۳۹۸/۰۸/۰۳", party: "کمیتهٔ راهبری", cases: ["program", "security"],
     text: "مهلت تدوین سند معماری امنیت از پایان ۱۳۹۷ به پایان ۱۳۹۹ تغییر یافت. تأمین اعتبار مطالعات تکمیلی به سازمان برنامه و بودجه واگذار شد." },
 
-  { id: "a10", kind: "analysis", title: "تحلیل کارشناسی گزینه‌های معماری امنیت",
+  { id: "a10", kind: "progress_report", title: "تحلیل کارشناسی گزینه‌های معماری امنیت",
     date: "۱۳۹۸/۱۱/۳۰", party: "مرکز راهبردی", cases: ["security"],
     text: "سه رویکرد بررسی شد: رمزنگاری سرتاسری، دروازهٔ امنیتی متمرکز، و مدل ترکیبی. هیچ‌یک بدون تأمین اعتبار مطالعات تکمیلی قابل اجرا نیست. این سند نظر کارشناسی است و جایگزین مصوبه نیست." },
 
@@ -2362,12 +2566,12 @@ const ARCHIVE = [
     date: "۱۳۹۹/۱۰/۳۰", party: "دبیرخانهٔ شورا", cases: ["program", "security", "datacenter", "exchange"],
     text: "بهره‌برداری کامل از فاز نخست مرکز داده انجام شد (ظرفیت ۸۰ درصد). اتصال دستگاه‌ها به سامانهٔ تبادل داده با تأخیر مواجه است (۱۲ از ۲۰ دستگاه). تدوین سند معماری امنیت همچنان متوقف است." },
 
-  { id: "a13", kind: "mou", title: "تفاهم‌نامهٔ همکاری در تبادل دادهٔ سلامت",
+  { id: "a13", kind: "contract", title: "تفاهم‌نامهٔ همکاری در تبادل دادهٔ سلامت",
     date: "۱۴۰۰/۰۲/۱۸", party: "وزارت بهداشت", cases: ["program", "exchange"],
     term: "دو سال، قابل تمدید",
     text: "چارچوب همکاری برای اتصال سامانه‌های سلامت به سامانهٔ تبادل داده. تفاهم‌نامه تعهد مالی ایجاد نمی‌کند و اجرای آن منوط به انعقاد قرارداد جداگانه است." },
 
-  { id: "a14", kind: "letter_out", title: "پیگیری تعیین تکلیف اعتبار سند امنیت", ref: "۱۲/۸۸۹۰",
+  { id: "a14", kind: "letter", title: "پیگیری تعیین تکلیف اعتبار سند امنیت", ref: "۱۲/۸۸۹۰",
     date: "۱۴۰۰/۰۶/۰۲", party: "دبیرخانهٔ شورا ← سازمان برنامه و بودجه", reply: "۵۵/۲۲۱۰",
     cases: ["program", "security"],
     text: "پیرو نامهٔ ۵۵/۲۲۱۰ و گزارش سالانهٔ ۱۳۹۹، نتیجهٔ بررسی تأمین اعتبار مطالعات تکمیلی امنیت خواسته شد. تا این تاریخ پاسخی ثبت نشده است." },
@@ -3127,7 +3331,7 @@ function viewArchive() {
     return true;
   });
 
-  const kinds = [...new Set(all.map((d) => d.kind))];
+  const kinds = KIND_ORDER;
   const yearOptions = (selected) => years.map((y) =>
     `<option value="${y}" ${String(selected) === String(y) ? "selected" : ""}>${fa(y)}</option>`).join("");
 
@@ -3597,18 +3801,43 @@ function wire() {
     const m = currentMeeting();
     const v = (document.getElementById("ed-title").value || "").trim();
     if (!v) return toast("عنوان سند نمی‌تواند خالی باشد.");
-    m.minutes.title = v; bumpVersion(m, "user_edit"); resetEditing();
-    toast("ذخیره شد"); render();
+    const kindEl = document.getElementById("ed-kind");
+    const dateEl = document.getElementById("ed-date");
+    const objEl = document.getElementById("ed-objective");
+    const nextKind = kindEl ? kindEl.value : m.kind;
+    const nextDate = dateEl ? (dateEl.value || null) : m.date;
+    const nextObj = objEl ? ((objEl.value || "").trim() || null) : m.minutes.info.objective;
+
+    let changed = recordChange(m, "header", "عنوان سند", m.minutes.title, v);
+    if (nextKind !== (m.kind || "meeting_minutes")) {
+      changed = recordChange(m, "header", "نوع سند",
+        DOC_KINDS[m.kind || "meeting_minutes"].label, DOC_KINDS[nextKind].label) || changed;
+    }
+    changed = recordChange(m, "header", "تاریخ سند",
+      m.minutes.info.date ? formatDate(m.minutes.info.date) : "", nextDate ? formatDate(nextDate) : "") || changed;
+    changed = recordChange(m, "header", "موضوع سند", m.minutes.info.objective, nextObj) || changed;
+
+    m.minutes.title = v; m.title = v;
+    m.kind = nextKind; m.minutes.kind = nextKind;
+    m.date = nextDate; m.minutes.info.date = nextDate;
+    m.minutes.info.objective = nextObj;
+    if (changed) bumpVersion(m, "user_edit");
+    resetEditing(); toast(changed ? "ذخیره شد" : "تغییری وارد نشد"); render();
   });
 
   on("[data-edit-facts]", "click", () => { resetEditing(); state.editingFacts = true; render(); });
   on("[data-save-facts]", "click", () => {
     const m = currentMeeting();
+    let changed = false;
     formOf(m.kind || "meeting_minutes").fields.forEach((pair) => {
       const el = document.getElementById("fx-" + pair[0]);
-      if (el) setFact(m.minutes, pair[0], el.value);
+      if (!el) return;
+      const before = factValue(m.minutes, pair[0]);
+      setFact(m.minutes, pair[0], el.value);
+      changed = recordChange(m, "facts", pair[1], before, factValue(m.minutes, pair[0])) || changed;
     });
-    bumpVersion(m, "user_edit"); resetEditing(); toast("مشخصات سند ذخیره شد"); render();
+    if (changed) bumpVersion(m, "user_edit");
+    resetEditing(); toast(changed ? "مشخصات سند ذخیره شد" : "تغییری وارد نشد"); render();
   });
 
   /* The list is rebuilt on every render, so whatever is typed has to be read
@@ -3643,19 +3872,28 @@ function wire() {
     peopleList(prefix).splice(+i, 1);
     render();
   });
+  const peopleLine = (list) => list.map((p) => p.name + (p.role ? " (" + p.role + ")" : "")).join("، ");
   on("[data-save-people]", "click", () => {
     const m = currentMeeting();
+    const form = formOf(m.kind || "meeting_minutes");
+    const beforeIn = peopleLine(m.minutes.participants), beforeOut = peopleLine(m.minutes.absentees);
     readPeople();
     m.minutes.participants = m.minutes.participants.filter((p) => p.name);
     m.minutes.absentees = m.minutes.absentees.filter((p) => p.name);
-    bumpVersion(m, "user_edit"); resetEditing(); toast("ذخیره شد"); render();
+    let changed = recordChange(m, "people", form.people, beforeIn, peopleLine(m.minutes.participants));
+    if (form.absent) changed = recordChange(m, "people", form.absent, beforeOut, peopleLine(m.minutes.absentees)) || changed;
+    if (changed) bumpVersion(m, "user_edit");
+    resetEditing(); toast(changed ? "ذخیره شد" : "تغییری وارد نشد"); render();
   });
 
   on("[data-edit-summary]", "click", () => { resetEditing(); state.editingSummary = true; render(); });
   on("[data-save-summary]", "click", () => {
     const m = currentMeeting();
-    m.minutes.summary = document.getElementById("ed-summary").value.trim();
-    bumpVersion(m, "user_edit"); resetEditing(); toast("ذخیره شد"); render();
+    const next = document.getElementById("ed-summary").value.trim();
+    const changed = recordChange(m, "summary", formOf(m.kind || "meeting_minutes").summary, m.minutes.summary, next);
+    m.minutes.summary = next;
+    if (changed) bumpVersion(m, "user_edit");
+    resetEditing(); toast(changed ? "ذخیره شد" : "تغییری وارد نشد"); render();
   });
 
   on("[data-edit-action]", "click", (e) => { resetEditing(); state.editingAction = e.currentTarget.dataset.editAction; render(); });
@@ -3664,6 +3902,7 @@ function wire() {
     const a = m.minutes.actions.find((x) => x.id === e.currentTarget.dataset.saveAction);
     const title = (document.getElementById("ac-title").value || "").trim();
     if (!title) return toast("عنوان اقدام نمی‌تواند خالی باشد.");
+    const before = a.isNew ? "" : actionLine(a);
     a.title = title;
     a.desc = (document.getElementById("ac-desc").value || "").trim() || null;
     const owner = (document.getElementById("ac-owner").value || "").trim();
@@ -3673,50 +3912,168 @@ function wire() {
     a.deadlineText = a.deadline ? null : ((document.getElementById("ac-dtext").value || "").trim() || null);
     a.status = document.getElementById("ac-status").value;
     a.priority = document.getElementById("ac-priority").value || null;
+    recordChange(m, "actions", a.isNew ? "اقدام تازه" : "اقدام: " + title, before, actionLine(a));
+    delete a.isNew;
     bumpVersion(m, "user_edit"); resetEditing(); toast("اقدام ذخیره شد"); render();
   });
   on("[data-delete-action]", "click", (e) => {
-    if (!requires("removeRecord")) return;
     const m = currentMeeting(); const id = e.currentTarget.dataset.deleteAction;
+    const a = m.minutes.actions.find((x) => x.id === id);
+    // Dropping a row that was never saved is not a deletion, it is a cancel.
+    if (a && a.isNew) { m.minutes.actions = m.minutes.actions.filter((x) => x.id !== id); resetEditing(); return render(); }
+    if (!requires("removeRecord")) return;
     m.minutes.actions = m.minutes.actions.filter((x) => x.id !== id);
+    if (a) recordChange(m, "actions", "حذف اقدام", actionLine(a), "");
     bumpVersion(m, "user_edit"); resetEditing(); toast("اقدام حذف شد"); render();
   });
   on("[data-status-for]", "change", (e) => {
     const m = currentMeeting();
     const a = m.minutes.actions.find((x) => x.id === e.currentTarget.dataset.statusFor);
+    const before = ACTION_STATUS[a.status];
     a.status = e.currentTarget.value;
+    recordChange(m, "actions", "وضعیت اقدام: " + a.title, before, ACTION_STATUS[a.status]);
     bumpVersion(m, "user_edit"); toast("وضعیت به‌روزرسانی شد"); render();
   });
 
-  on("[data-add-action]", "click", () => { resetEditing(); state.addingAction = true; render(); });
-  on("[data-save-new-action]", "click", () => {
+  /* Adding an action opens the same editor an existing one uses, so a new
+     action can carry an owner and a deadline from the moment it is written. */
+  on("[data-add-action]", "click", () => {
     const m = currentMeeting();
-    const title = (document.getElementById("new-action-title").value || "").trim();
-    if (!title) return toast("عنوان اقدام نمی‌تواند خالی باشد.");
-    m.minutes.actions.push({ id: nid("a"), title: title, desc: null, owner: null, ownerConfirmed: false,
-      deadline: null, deadlineText: null, priority: null, status: "open", evidence: [] });
-    bumpVersion(m, "user_edit"); resetEditing(); toast("اقدام افزوده شد"); render();
+    resetEditing();
+    const a = { id: nid("a"), title: "", desc: null, owner: null, ownerConfirmed: false,
+      deadline: null, deadlineText: null, priority: null, status: "open", evidence: [], isNew: true };
+    m.minutes.actions.push(a);
+    state.editingAction = a.id;
+    render();
   });
 
   on("[data-edit-decision]", "click", (e) => { resetEditing(); state.editingDecision = e.currentTarget.dataset.editDecision; render(); });
   on("[data-save-decision]", "click", (e) => {
     const m = currentMeeting();
     const d = m.minutes.decisions.find((x) => x.id === e.currentTarget.dataset.saveDecision);
+    const before = d.text;
     const t = (document.getElementById("dec-text").value || "").trim();
     if (!t) return toast("متن تصمیم نمی‌تواند خالی باشد.");
     d.text = t;
     d.context = (document.getElementById("dec-ctx").value || "").trim() || null;
     d.by = (document.getElementById("dec-by").value || "").trim() || null;
+    recordChange(m, "decisions", "تصمیم", before, d.text);
     bumpVersion(m, "user_edit"); resetEditing(); toast("تصمیم ذخیره شد"); render();
   });
   on("[data-delete-decision]", "click", (e) => {
     if (!requires("removeRecord")) return;
     const m = currentMeeting(); const id = e.currentTarget.dataset.deleteDecision;
+    const gone = m.minutes.decisions.find((x) => x.id === id);
     m.minutes.decisions = m.minutes.decisions.filter((x) => x.id !== id);
+    if (gone) recordChange(m, "decisions", "حذف تصمیم", gone.text, "");
     bumpVersion(m, "user_edit"); resetEditing(); toast("تصمیم حذف شد"); render();
   });
 
-  on("[data-cancel-edit]", "click", () => { resetEditing(); render(); });
+  /* One line that says what an action is, so a change to it can be shown as
+     a before and an after rather than as "something changed". */
+  const actionLine = (a) => [a.title, a.owner || "مسئول نامشخص",
+    a.deadline ? formatDate(a.deadline) : (a.deadlineText || "بدون مهلت"),
+    ACTION_STATUS[a.status]].join(" · ");
+
+  on("[data-edit-proposal]", "click", (e) => { resetEditing(); state.editingProposal = e.currentTarget.dataset.editProposal; render(); });
+  on("[data-add-proposal]", "click", () => {
+    const m = currentMeeting();
+    resetEditing();
+    const p = { id: nid("p"), text: "", context: null, evidence: [], isNew: true };
+    m.minutes.proposals.push(p);
+    state.editingProposal = p.id;
+    render();
+  });
+  on("[data-save-proposal]", "click", (e) => {
+    const m = currentMeeting();
+    const p = m.minutes.proposals.find((x) => x.id === e.currentTarget.dataset.saveProposal);
+    const text = (document.getElementById("pr-text").value || "").trim();
+    if (!text) return toast("متن پیشنهاد نمی‌تواند خالی باشد.");
+    const before = p.isNew ? "" : p.text;
+    p.text = text;
+    p.context = (document.getElementById("pr-ctx").value || "").trim() || null;
+    recordChange(m, "proposals", p.isNew ? "پیشنهاد تازه" : "پیشنهاد", before, p.text);
+    delete p.isNew;
+    bumpVersion(m, "user_edit"); resetEditing(); toast("پیشنهاد ذخیره شد"); render();
+  });
+  on("[data-delete-proposal]", "click", (e) => {
+    const m = currentMeeting(); const id = e.currentTarget.dataset.deleteProposal;
+    const p = m.minutes.proposals.find((x) => x.id === id);
+    if (p && p.isNew) { m.minutes.proposals = m.minutes.proposals.filter((x) => x.id !== id); resetEditing(); return render(); }
+    if (!requires("removeRecord")) return;
+    m.minutes.proposals = m.minutes.proposals.filter((x) => x.id !== id);
+    if (p) recordChange(m, "proposals", "حذف پیشنهاد", p.text, "");
+    bumpVersion(m, "user_edit"); resetEditing(); toast("پیشنهاد حذف شد"); render();
+  });
+
+  /* The four plain lists, through one set of handlers. */
+  const readList = (key) => {
+    const m = currentMeeting();
+    const spec = LIST_SPECS[key];
+    const list = m.minutes[key] || [];
+    list.forEach((item, i) => {
+      spec.fields.forEach(([f]) => {
+        const el = document.querySelector("[data-li=\"" + key + ":" + i + ":" + f + "\"]");
+        if (!el) return;
+        const v = el.value.trim();
+        if (spec.plain) list[i] = v;
+        else item[f] = v || (f === "text" ? "" : null);
+      });
+    });
+  };
+  const listLine = (key) => {
+    const spec = LIST_SPECS[key];
+    return (currentMeeting().minutes[key] || []).map((x) => listItemText(spec, x)).filter(Boolean).join(" | ");
+  };
+
+  on("[data-edit-list]", "click", (e) => { resetEditing(); state.editingList = e.currentTarget.dataset.editList; render(); });
+  on("[data-add-li]", "click", (e) => {
+    const key = e.currentTarget.dataset.addLi;
+    const m = currentMeeting();
+    readList(key);
+    m.minutes[key] = m.minutes[key] || [];
+    m.minutes[key].push(LIST_SPECS[key].plain ? "" : { text: "" });
+    render();
+  });
+  on("[data-drop-li]", "click", (e) => {
+    const [key, i] = e.currentTarget.dataset.dropLi.split(":");
+    readList(key);
+    currentMeeting().minutes[key].splice(+i, 1);
+    render();
+  });
+  on("[data-save-list]", "click", (e) => {
+    const key = e.currentTarget.dataset.saveList;
+    const m = currentMeeting();
+    const before = listLine(key);
+    readList(key);
+    const spec = LIST_SPECS[key];
+    m.minutes[key] = (m.minutes[key] || []).filter((x) => listItemText(spec, x).trim());
+    const changed = recordChange(m, key, spec.title, before, listLine(key));
+    if (changed) bumpVersion(m, "user_edit");
+    resetEditing(); toast(changed ? "ذخیره شد" : "تغییری وارد نشد"); render();
+  });
+
+  on("[data-toggle-trail]", "click", () => { state.showTrail = !state.showTrail; render(); });
+  on("[data-learn]", "click", (e) => {
+    if (!requires("teach")) return;
+    const m = currentMeeting();
+    const c = (m.trail || []).find((x) => x.id === e.currentTarget.dataset.learn);
+    if (!c) return;
+    c.learned = true; c.learnedBy = me().name; c.learnedAt = stamp();
+    toast("این اصلاح به دانش سامانه اضافه شد");
+    render();
+  });
+
+  on("[data-cancel-edit]", "click", () => {
+    // A row that was opened by "افزودن" and never filled in should not survive
+    // the cancel that closed it.
+    const m = currentMeeting();
+    if (m && m.minutes) {
+      m.minutes.actions = m.minutes.actions.filter((x) => !x.isNew);
+      m.minutes.proposals = m.minutes.proposals.filter((x) => !x.isNew);
+    }
+    resetEditing(); render();
+  });
 
   /* --- evidence / versions / export --- */
   on("[data-evidence]", "click", (e) => {
@@ -4551,6 +4908,11 @@ function runPipeline(m, isRegeneration) {
       const minutes = deriveMinutes(m, processed);
       minutes.failedSources = failed.map((s) => s.name);
       m.minutes = minutes;
+      // Regenerating replaces the text, so the provenance goes back to the
+      // extractor for every section — but the record of who changed what is
+      // history and is never rewritten.
+      markGenerated(m, ["header", "summary", "facts", "people", "decisions",
+                        "proposals", "actions", "questions", "risks", "nextSteps", "notes"]);
 
       stages[5].state = "done";
       stages[5].detail = fa(minutes.actions.length) + " اقدام، " + fa(minutes.decisions.length) + " تصمیم";
@@ -4605,6 +4967,9 @@ function seedAll() {
      document it produced — otherwise the first entry in the history is empty. */
   state.meetings.forEach((m) => {
     if (m.minutes && m.versions.length) m.versions[0].snapshot = snapshot(m.minutes);
+    // The seeded documents arrived generated, so they say so until someone edits them.
+    if (m.minutes) markGenerated(m, ["header", "summary", "facts", "people", "decisions",
+      "proposals", "actions", "questions", "risks", "nextSteps", "notes"]);
   });
 
   seedDocMeta();
