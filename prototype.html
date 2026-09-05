@@ -508,6 +508,28 @@ table.meetings tbody tr:hover .title { color: var(--brand-700); }
 
 .assign { border:1px solid var(--warn-200); background:var(--warn-50); border-radius:.75rem; padding:.75rem .875rem; }
 .assign.done { border-color:var(--ok-200); background:var(--ok-50); }
+
+/* ---- the tray: what the secretary sent up and what came back ---- */
+.mainnav .n {
+  display:inline-grid; place-items:center; min-width:1.15rem; height:1.15rem; padding:0 .3rem;
+  border-radius:999px; background:var(--bad-600); color:#fff; font-size:.6875rem;
+  font-weight:600; margin-inline-start:.35rem; vertical-align:.05rem;
+}
+.subm {
+  border:1px solid var(--s-200); border-radius:12px; padding:.875rem 1rem; background:#fff;
+  cursor:pointer; transition:border-color .15s, box-shadow .15s;
+}
+.subm:hover { border-color:var(--brand-300); box-shadow:var(--card-shadow); }
+.subm.pending  { border-inline-start:3px solid var(--brand-500); }
+.subm.returned { border-inline-start:3px solid var(--warn-700); }
+.subm.approved, .subm.acknowledged { border-inline-start:3px solid var(--ok-700); }
+.subm .note { color:var(--s-600); font-size:.875rem; line-height:1.9; margin-top:.4rem; }
+.subm.unread .stitle::after {
+  content:""; display:inline-block; width:.4rem; height:.4rem; border-radius:999px;
+  background:var(--bad-600); margin-inline-start:.4rem; vertical-align:.15rem;
+}
+.comment.approve { border-inline-start-color:var(--ok-700); background:var(--ok-50); }
+.comment.return  { border-inline-start-color:var(--warn-700); background:var(--warn-50); }
 </style>
 
 <div id="root"></div>
@@ -813,6 +835,7 @@ const state = {
   role: "manager",
   docTab: "comments",
   chat: {},        // caseId -> [{ from, text, hits }]
+  submissions: [], // what the secretary sent up, and what the manager sent back
   chatBusy: false,
   docMeta: {},     // document id -> { comments, changes, assignment }
 };
@@ -822,9 +845,9 @@ const state = {
    first question anyone asks of a file. */
 const ROLES = {
   manager:   { label: "مدیر",  name: "دکتر رضایی", glyph: "👔",
-               can: "واگذاری کار به منشی، حذف رکورد، ویرایش و یادداشت" },
+               can: "بررسی کارتابل، تأیید یا اعادهٔ ارسال‌ها، واگذاری کار، حذف رکورد" },
   secretary: { label: "منشی",  name: "خانم موسوی", glyph: "🗂",
-               can: "ثبت و ویرایش سند، اعلام انجام کار، یادداشت — بدون حذف و واگذاری" },
+               can: "ثبت و ویرایش سند، ارسال برای تأیید مدیر، گزارش انجام کار — بدون حذف و تأیید" },
 };
 function me() { return ROLES[state.role]; }
 
@@ -834,8 +857,8 @@ function me() { return ROLES[state.role]; }
    every handler checks as well, because a rule a demo can be talked out of
    answers nothing about the real system. */
 const PERMISSIONS = {
-  manager:   { removeRecord: true,  assign: true,  completeAssignment: false },
-  secretary: { removeRecord: false, assign: false, completeAssignment: true },
+  manager:   { removeRecord: true,  assign: true,  completeAssignment: false, submit: false, decide: true },
+  secretary: { removeRecord: false, assign: false, completeAssignment: true,  submit: true,  decide: false },
 };
 function can(what) { return !!(PERMISSIONS[state.role] || {})[what]; }
 function requires(what) {
@@ -1007,6 +1030,7 @@ function saveState() {
     localStorage.setItem(STORE_KEY, JSON.stringify({
       uid: uid, user: state.user, route: state.route, role: state.role,
       meetings: state.meetings, docMeta: state.docMeta, chat: state.chat,
+      submissions: state.submissions,
       archive: ARCHIVE, docTab: state.docTab,
       archiveQuery: state.archiveQuery, archiveKind: state.archiveKind,
       archiveFrom: state.archiveFrom, archiveTo: state.archiveTo,
@@ -1025,6 +1049,7 @@ function loadState() {
   state.meetings = saved.meetings;
   state.docMeta = saved.docMeta || {};
   state.chat = saved.chat || {};
+  state.submissions = saved.submissions || [];
   state.docTab = saved.docTab || "comments";
   ["archiveQuery", "archiveKind", "archiveFrom", "archiveTo"].forEach((k) => { state[k] = saved[k] || ""; });
   if (Array.isArray(saved.archive)) { ARCHIVE.length = 0; saved.archive.forEach((d) => ARCHIVE.push(d)); }
@@ -1064,6 +1089,7 @@ function render() {
   else if (r.name === "meeting") html = shell(viewMeeting());
   else if (r.name === "cases") html = shell(viewCases());
   else if (r.name === "case") html = shell(viewCase());
+  else if (r.name === "inbox") html = shell(viewInbox());
   else if (r.name === "archive") html = shell(viewArchive());
   else html = shell("<p>صفحه پیدا نشد.</p>");
 
@@ -1085,6 +1111,9 @@ function shell(inner) {
         <nav class="mainnav">
           <button data-go="dashboard" aria-current="${["dashboard","new","meeting"].includes(state.route.name)}">ورود دیتا</button>
           <button data-go="cases" aria-current="${["cases","case"].includes(state.route.name)}">پرونده‌ها</button>
+          <button data-go="inbox" aria-current="${state.route.name === "inbox"}">
+            کارتابل${inboxCount() ? `<span class="n tnum">${fa(inboxCount())}</span>` : ""}
+          </button>
           <button data-go="archive" aria-current="${state.route.name === "archive"}">بایگانی</button>
         </nav>
         <div class="row">
@@ -1422,6 +1451,7 @@ function minutesSection(m) {
     <div class="minutes-head">
       <h2>صورت‌جلسه</h2>
       <div class="row" style="gap:.5rem">
+        ${can("submit") ? `<button class="btn btn-primary btn-sm" data-submit-minutes="${m.id}">ارسال برای تأیید مدیر</button>` : ""}
         <button class="btn btn-secondary btn-sm" data-regenerate ${m.status === "processing" ? "disabled" : ""}>تولید مجدد</button>
         ${m.versions.length > 1 ? `<button class="btn btn-ghost btn-sm" data-versions>تاریخچهٔ نسخه‌ها (${fa(m.versions.length)})</button>` : ""}
         <button class="btn btn-secondary btn-sm" data-export="docx">دانلود Word</button>
@@ -1802,7 +1832,8 @@ function viewModal() {
       <div class="doc-tabs">
         ${[["comments", "گفت‌وگو", meta.comments.length],
            ["changes", "تغییرات", meta.changes.length],
-           ["assign", "واگذاری", meta.assignment ? 1 : 0]].map(([key, lbl, count]) => `
+           ["assign", "واگذاری", meta.assignment ? 1 : 0],
+           ["approval", "ارسال و تأیید", submissionsFor(d.id).length]].map(([key, lbl, count]) => `
           <button data-doc-tab="${key}" class="${state.docTab === key ? "on" : ""}">
             ${lbl}${count ? ` <span class="count">${fa(count)}</span>` : ""}
           </button>`).join("")}
@@ -1810,7 +1841,52 @@ function viewModal() {
 
       ${state.docTab === "comments" ? docComments(d, meta)
         : state.docTab === "changes" ? docChanges(d, meta)
-        : docAssignment(d, meta)}`;
+        : state.docTab === "assign" ? docAssignment(d, meta)
+        : docApproval(d)}`;
+  }
+
+  else if (mod.type === "submission") {
+    const sub = state.submissions.find((x) => x.id === mod.id);
+    if (!sub) {
+      title = "پیدا نشد";
+      body = `<p class="muted small">این مورد دیگر در کارتابل نیست.</p>`;
+    } else {
+      const k = SUBMISSION_KIND[sub.kind];
+      const st = SUBMISSION_STATUS[sub.status];
+      title = k.glyph + " " + k.label;
+      wide = true;
+      body = `
+        <div class="spread" style="margin-bottom:.75rem">
+          <div>
+            <p style="font-weight:600">${esc(sub.docTitle)}</p>
+            <p class="muted small tnum" style="margin-top:.2rem">
+              فرستنده: ${esc(ROLES[sub.from].name)} · ${esc(sub.at)}
+            </p>
+          </div>
+          <span class="badge badge-${st.tone}">${st.label}</span>
+        </div>
+
+        ${sub.assignmentTask ? `<div class="assign" style="margin-bottom:.75rem">
+          <span class="who">🗂 کار واگذارشده</span>
+          <p style="margin-top:.35rem">${esc(sub.assignmentTask)}</p>
+        </div>` : ""}
+
+        <div class="comment ${sub.from}">
+          <div class="spread">
+            <span class="who">${ROLES[sub.from].glyph} ${esc(ROLES[sub.from].name)}</span>
+            <span class="muted small tnum">${esc(sub.at)}</span>
+          </div>
+          <p style="margin-top:.35rem">${esc(sub.note)}</p>
+        </div>
+
+        <div style="margin-top:.875rem">${submThread(sub)}</div>
+        ${submActions(sub)}
+
+        <div class="row" style="margin-top:1rem;border-top:1px solid var(--s-100);padding-top:.875rem">
+          <button class="btn btn-secondary btn-sm" data-doc="${sub.docId}">مشاهدهٔ سند</button>
+          <span class="muted small">هر تصمیم و یادداشتی که اینجا ثبت شود، در سابقهٔ همین سند هم می‌ماند.</span>
+        </div>`;
+    }
   }
 
   else if (mod.type === "adddoc") {
@@ -2461,6 +2537,102 @@ function seedDocMeta() {
     what: "تاریخ سند", from: "۱۳۹۸/۰۶/۳۱", to: "۱۳۹۸/۰۷/۰۱" });
 }
 
+/* ==========================================================================
+   The tray — the way back up
+
+   The manager already hands work down; this is the return path. A secretary
+   sends one thing at a time: a document for final approval, or a report on
+   work that was assigned. The manager approves it, sends it back for
+   correction, or writes a note and leaves it open.
+
+   Nothing here is a private message. Every move is also written onto the
+   document's own record, because six months later the question is never
+   "what was in the tray" — it is "who approved this, and when".
+   ========================================================================== */
+const SUBMISSION_KIND = {
+  approval: { label: "درخواست تأیید", glyph: "🖋" },
+  report:   { label: "گزارش کار",     glyph: "📋" },
+};
+
+const SUBMISSION_STATUS = {
+  pending:      { label: "در انتظار بررسی مدیر", tone: "brand" },
+  approved:     { label: "تأیید نهایی شد",        tone: "success" },
+  returned:     { label: "اعاده برای اصلاح",      tone: "warning" },
+  acknowledged: { label: "خوانده و ثبت شد",       tone: "neutral" },
+};
+
+/* What the manager can do with one submission. A note deliberately changes
+   nothing: "I read it and I am still thinking" is a real answer, and forcing
+   it into approve/reject is how approval queues start lying. */
+const DECISIONS = {
+  approve:     { label: "تأیید نهایی",      status: "approved",     tone: "approve" },
+  return:      { label: "اعاده برای اصلاح", status: "returned",     tone: "return" },
+  acknowledge: { label: "خوانده شد",        status: "acknowledged", tone: "" },
+  note:        { label: "یادداشت مدیر",     status: null,           tone: "" },
+};
+
+function submissionsFor(docId) {
+  return state.submissions.filter((x) => x.docId === docId);
+}
+
+/* What is waiting for me right now: for the manager, everything undecided;
+   for the secretary, every answer they have not read yet. */
+function myInbox() {
+  return state.submissions.filter((x) => can("decide")
+    ? x.status === "pending"
+    : x.status !== "pending" && !x.seen.secretary);
+}
+function inboxCount() { return myInbox().length; }
+function isUnread(sub) { return can("decide") ? !sub.seen.manager : !sub.seen.secretary; }
+
+function submit(docId, docTitle, kind, note, assignmentTask) {
+  const sub = {
+    id: nid("sub"), kind: kind, docId: docId, docTitle: docTitle,
+    from: state.role, to: "manager", note: note, at: stamp(),
+    assignmentTask: assignmentTask || null, status: "pending",
+    seen: { manager: false, secretary: true }, replies: [],
+  };
+  state.submissions.unshift(sub);
+  addComment(docId, (kind === "approval" ? "ارسال برای تأیید مدیر — " : "گزارش کار — ") + note);
+  return sub;
+}
+
+function decideOn(sub, action, text) {
+  const d = DECISIONS[action];
+  sub.replies.push({ role: state.role, who: me().name, at: stamp(), action: action, text: text || "" });
+  if (d.status) sub.status = d.status;
+  sub.seen = { manager: true, secretary: false };
+  addComment(sub.docId, d.label + (text ? " — " + text : ""));
+}
+
+/* A few items already in the tray, so the loop is visible before anyone has
+   sent anything: two waiting on the manager and one already answered. */
+function seedSubmissions() {
+  state.submissions = [
+    { id: nid("sub"), kind: "approval", docId: "a14",
+      docTitle: "پیگیری تعیین تکلیف اعتبار سند امنیت",
+      from: "secretary", to: "manager", at: "۱۴۰۰/۰۶/۰۳ · ۰۹:۲۰",
+      note: "پیش‌نویس نامهٔ یادآوری آماده شد. پیش از ارسال به سازمان برنامه و بودجه تأیید بفرمایید.",
+      assignmentTask: null, status: "pending",
+      seen: { manager: false, secretary: true }, replies: [] },
+
+    { id: nid("sub"), kind: "report", docId: "a5",
+      docTitle: "نامهٔ درخواست گزارش پیشرفت",
+      from: "secretary", to: "manager", at: "۱۴۰۰/۰۶/۰۲ · ۱۶:۴۵",
+      note: "سه بار پیگیری تلفنی شد و یک نامهٔ یادآوری هم ثبت شد؛ تا امروز پاسخی دریافت نشده است.",
+      assignmentTask: "پیگیری پاسخ نامهٔ ۱۲/۸۸۹۰ از سازمان برنامه و بودجه",
+      status: "pending", seen: { manager: false, secretary: true }, replies: [] },
+
+    { id: nid("sub"), kind: "approval", docId: "a9",
+      docTitle: "صورت‌جلسهٔ کمیتهٔ راهبری — بازنگری مهلت‌ها",
+      from: "secretary", to: "manager", at: "۱۳۹۸/۰۸/۰۵ · ۱۰:۱۰",
+      note: "صورت‌جلسه پیاده و بازبینی شد؛ برای ثبت نهایی در بایگانی تأیید بفرمایید.",
+      assignmentTask: null, status: "approved", seen: { manager: true, secretary: true },
+      replies: [{ role: "manager", who: ROLES.manager.name, at: "۱۳۹۸/۰۸/۰۵ · ۱۱:۳۰",
+                  action: "approve", text: "تأیید شد. مهلت جدید را در گزارش بعدی هم یادآوری کنید." }] },
+  ];
+}
+
 /* Every document filed under a subject: the seeded archive plus anything
    entered in the first tab whose own words put it here. */
 function caseDocs(caseId) {
@@ -2664,6 +2836,113 @@ function askChat(caseId, question) {
   }, 520);
 }
 
+/* --- the tray ----------------------------------------------------------- */
+function viewInbox() {
+  const boss = can("decide");
+  const all = state.submissions;
+  const open = all.filter((x) => x.status === "pending");
+  const closed = all.filter((x) => x.status !== "pending");
+  const unreadClosed = closed.filter((x) => !x.seen.secretary).length;
+
+  const group = (title, hint, rows) => rows.length ? `
+    <div class="card" style="margin-top:1rem">
+      <div class="section-title"><h3>${title} <span class="count">${fa(rows.length)}</span></h3></div>
+      ${hint ? `<p class="muted small" style="margin:-.5rem 0 .75rem;line-height:1.9">${hint}</p>` : ""}
+      <div class="stack" style="gap:.625rem">${rows.map(submRow).join("")}</div>
+    </div>` : "";
+
+  return `
+    <div class="spread" style="margin-bottom:.5rem">
+      <div>
+        <h1 style="font-size:1.5rem;font-weight:600">کارتابل</h1>
+        <p class="muted small" style="margin-top:.25rem;max-width:44rem;line-height:1.9">
+          ${boss
+            ? "هرچه منشی برای تأیید یا گزارش فرستاده، اینجاست. می‌توانید تأیید کنید، برای اصلاح برگردانید، یا فقط یادداشت بگذارید."
+            : "هرچه برای مدیر فرستاده‌اید و پاسخی که گرفته‌اید. ارسال از داخل هر سند انجام می‌شود."}
+        </p>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="countbar" style="margin-top:0">
+        <div class="countbox ${open.length ? "warn" : ""}"><b class="tnum">${fa(open.length)}</b><span>${boss ? "در انتظار بررسی شما" : "در انتظار پاسخ مدیر"}</span></div>
+        <div class="countbox"><b class="tnum">${fa(closed.filter((x) => x.status === "approved").length)}</b><span>تأییدشده</span></div>
+        <div class="countbox ${closed.some((x) => x.status === "returned") ? "bad" : ""}"><b class="tnum">${fa(closed.filter((x) => x.status === "returned").length)}</b><span>اعاده‌شده</span></div>
+        <div class="countbox"><b class="tnum">${fa(all.length)}</b><span>کل ارسال‌ها</span></div>
+      </div>
+    </div>
+
+    ${all.length === 0 ? `
+      <div class="empty" style="margin-top:1rem">
+        <span class="glyph">📭</span>
+        <p style="font-weight:500">کارتابل خالی است</p>
+        <p class="muted small" style="max-width:30rem">
+          ارسال از داخل سند انجام می‌شود: سند را باز کنید و به تب «ارسال و تأیید» بروید.
+        </p>
+      </div>` : ""}
+
+    ${group(boss ? "در انتظار بررسی شما" : "در انتظار پاسخ مدیر",
+            boss ? "" : "تا وقتی مدیر تصمیمی نگرفته، اینجا می‌ماند.", open)}
+    ${group("پاسخ‌داده‌شده",
+            unreadClosed && !boss ? "موارد نشان‌دار هنوز خوانده نشده‌اند." : "", closed)}`;
+}
+
+function submRow(sub) {
+  const k = SUBMISSION_KIND[sub.kind];
+  const st = SUBMISSION_STATUS[sub.status];
+  const last = sub.replies[sub.replies.length - 1];
+  return `
+    <div class="subm ${sub.status} ${isUnread(sub) ? "unread" : ""}" data-subm="${sub.id}">
+      <div class="spread">
+        <div style="min-width:0">
+          <p class="stitle" style="font-weight:500">${k.glyph} ${esc(sub.docTitle)}</p>
+          <p class="muted small tnum" style="margin-top:.2rem">
+            ${k.label} · ${esc(ROLES[sub.from].name)} · ${esc(sub.at)}
+          </p>
+        </div>
+        <span class="badge badge-${st.tone}">${st.label}</span>
+      </div>
+      <p class="note">«${esc(sub.note)}»</p>
+      ${sub.assignmentTask ? `<p class="muted small" style="margin-top:.35rem">دربارهٔ کار واگذارشده: ${esc(sub.assignmentTask)}</p>` : ""}
+      ${last ? `<p class="muted small" style="margin-top:.35rem">
+        ${esc(ROLES[last.role].name)} — ${esc(DECISIONS[last.action].label)}${last.text ? "، «" + esc(last.text) + "»" : ""}
+      </p>` : ""}
+    </div>`;
+}
+
+/* The same thread, wherever it is read from. */
+function submThread(sub) {
+  if (!sub.replies.length) return `<p class="muted small">مدیر هنوز پاسخی ثبت نکرده است.</p>`;
+  return sub.replies.map((r) => `
+    <div class="comment ${DECISIONS[r.action].tone || r.role}">
+      <div class="spread">
+        <span class="who">${ROLES[r.role].glyph} ${esc(r.who)} — ${esc(DECISIONS[r.action].label)}</span>
+        <span class="muted small tnum">${esc(r.at)}</span>
+      </div>
+      ${r.text ? `<p style="margin-top:.35rem">${esc(r.text)}</p>` : ""}
+    </div>`).join("");
+}
+
+/* What the manager may do about it, right where they are reading it. */
+function submActions(sub) {
+  if (!can("decide")) {
+    return sub.status === "pending"
+      ? `<p class="muted small">در انتظار بررسی ${esc(ROLES.manager.name)}.</p>`
+      : `<p class="muted small">این مورد بسته شده است. اگر لازم است، از داخل سند دوباره ارسال کنید.</p>`;
+  }
+  const close = sub.kind === "approval"
+    ? `<button class="btn btn-primary btn-sm" data-decide="${sub.id}:approve">✓ تأیید نهایی</button>`
+    : `<button class="btn btn-primary btn-sm" data-decide="${sub.id}:acknowledge">✓ خوانده شد</button>`;
+  return `
+    <label class="label" for="sub-note" style="margin-top:.875rem">یادداشت شما ${sub.status === "pending" ? "(اختیاری)" : ""}</label>
+    <textarea class="field" id="sub-note" rows="2" placeholder="اگر نکته‌ای دارید بنویسید؛ روی سند هم ثبت می‌شود."></textarea>
+    <div class="row" style="margin-top:.75rem">
+      ${close}
+      <button class="btn btn-secondary btn-sm" data-decide="${sub.id}:return">↩ اعاده برای اصلاح</button>
+      <button class="btn btn-ghost btn-sm" data-decide="${sub.id}:note">ثبت یادداشت بدون تصمیم</button>
+    </div>`;
+}
+
 /* --- archive ------------------------------------------------------------ */
 
 /* Archive dates are written the way the documents are: ۱۳۹۶/۰۳/۱۰. Folded to
@@ -2820,6 +3099,8 @@ function docRow(d, quote) {
       ${meta && meta.comments.length ? `<span class="chip">💬 ${fa(meta.comments.length)}</span>` : ""}
       ${meta && meta.assignment && meta.assignment.status === "open"
         ? `<span class="badge badge-warning">واگذارشده</span>` : ""}
+      ${submissionsFor(d.id).some((x) => x.status === "pending")
+        ? `<span class="badge badge-brand">در انتظار تأیید</span>` : ""}
       <span class="badge badge-${k.tone}">${k.label}</span>
       ${d.fromMeeting ? `<span class="badge badge-success">از ورود دیتا</span>` : ""}
     </div>`;
@@ -2868,6 +3149,57 @@ function wire() {
 
   on("[data-doc-tab]", "click", (e) => { state.docTab = e.currentTarget.dataset.docTab; render(); });
 
+  /* ---- the tray ---- */
+  on("[data-subm]", "click", (e) => {
+    const id = e.currentTarget.dataset.subm;
+    const sub = state.submissions.find((x) => x.id === id);
+    if (!sub) return;
+    sub.seen[state.role] = true;          // opening it is reading it
+    state.modal = { type: "submission", id: id };
+    render();
+  });
+
+  on("[data-decide]", "click", (e) => {
+    if (!requires("decide")) return;
+    const [id, action] = e.currentTarget.dataset.decide.split(":");
+    const sub = state.submissions.find((x) => x.id === id);
+    if (!sub) return;
+    const box = document.getElementById("sub-note");
+    const text = (box && box.value || "").trim();
+    if (action === "note" && !text) { toast("یادداشتی ننوشته‌اید"); return; }
+    decideOn(sub, action, text);
+    toast(DECISIONS[action].label + " ثبت شد");
+    // A decision closes the item, so it closes the window it was read in —
+    // but only when the item was opened from the tray. A note settles nothing,
+    // and a decision taken while reading the document leaves you on the
+    // document, where you were.
+    if (DECISIONS[action].status && state.modal && state.modal.type === "submission") state.modal = null;
+    render();
+  });
+
+  on("[data-submit-doc]", "click", (e) => {
+    if (!requires("submit")) return;
+    const id = e.currentTarget.dataset.submitDoc;
+    const doc = archiveAll().find((x) => x.id === id);
+    const note = (document.getElementById("sb-note").value || "").trim();
+    if (!note) { toast("بنویسید چه چیزی را برای مدیر می‌فرستید"); return; }
+    const kind = document.getElementById("sb-kind").value;
+    submit(id, doc ? doc.title : id, kind, note, null);
+    toast(kind === "approval" ? "برای تأیید مدیر فرستاده شد" : "گزارش به کارتابل مدیر رفت");
+    render();
+  });
+
+  on("[data-submit-minutes]", "click", (e) => {
+    if (!requires("submit")) return;
+    const docId = "m-" + e.currentTarget.dataset.submitMinutes;
+    const doc = archiveAll().find((x) => x.id === docId);
+    if (!doc) { toast("این ورودی هنوز در بایگانی ثبت نشده است"); return; }
+    // Composing happens in one place: the document's own tray tab.
+    state.docTab = "approval";
+    state.modal = { type: "doc", doc: doc };
+    render();
+  });
+
   on("[data-add-comment]", "click", (e) => {
     const box = document.getElementById("cm-text");
     const text = (box && box.value || "").trim();
@@ -2913,9 +3245,19 @@ function wire() {
 
   on("[data-assign-done]", "click", (e) => {
     if (!requires("completeAssignment")) return;
-    const a = docMeta(e.currentTarget.dataset.assignDone).assignment;
+    const id = e.currentTarget.dataset.assignDone;
+    const a = docMeta(id).assignment;
+    const box = document.getElementById("as-report");
+    const text = (box && box.value || "").trim();
     a.status = "done"; a.done = stamp();
-    toast("انجام کار اعلام شد");
+    if (text) {
+      // Finishing the work and reporting it are one move, not two.
+      const doc = archiveAll().find((x) => x.id === id);
+      submit(id, doc ? doc.title : id, "report", text, a.task);
+      toast("انجام کار اعلام و گزارش به کارتابل مدیر فرستاده شد");
+    } else {
+      toast("انجام کار اعلام شد — بدون گزارش");
+    }
     render();
   });
 
@@ -3353,14 +3695,54 @@ function docAssignment(d, meta) {
         ${a.done ? `<p class="muted small tnum" style="margin-top:.25rem">اعلام انجام: ${esc(a.done)}</p>` : ""}
       </div>
 
+      ${can("completeAssignment") && a.status === "open" ? `
+        <div style="margin-top:.875rem">
+          <label class="label" for="as-report">گزارش انجام کار برای ${esc(ROLES.manager.name)}</label>
+          <textarea class="field" id="as-report" rows="2" placeholder="چه کردید و نتیجه چه شد؟ این متن به کارتابل مدیر می‌رود."></textarea>
+        </div>` : ""}
+
       <div class="row" style="margin-top:.75rem">
         ${can("completeAssignment") && a.status === "open"
-          ? `<button class="btn btn-primary btn-sm" data-assign-done="${d.id}">انجام شد</button>` : ""}
+          ? `<button class="btn btn-primary btn-sm" data-assign-done="${d.id}">اعلام انجام و ارسال گزارش</button>` : ""}
         ${can("assign") && a.status === "done"
           ? `<button class="btn btn-secondary btn-sm" data-assign-reopen="${d.id}">دوباره باز کن</button>` : ""}
         ${can("assign")
           ? `<button class="btn btn-ghost btn-sm" data-assign-remind="${d.id}">یادآوری به منشی</button>` : ""}
       </div>
+    </div>`;
+}
+
+/* Sending up, and the answer coming back — read on the document itself, so
+   the tray is a view of the record rather than a place records hide. */
+function docApproval(d) {
+  const subs = submissionsFor(d.id);
+  const pending = subs.filter((x) => x.status === "pending")[0];
+  return `
+    <div class="panel">
+      ${subs.length
+        ? `<div class="stack" style="gap:.625rem">${subs.map(submRow).join("")}</div>`
+        : `<p class="muted small">این سند تا امروز برای تأیید یا گزارش فرستاده نشده است.</p>`}
+
+      ${pending && can("decide") ? `
+        <div style="border-top:1px solid var(--s-100);margin-top:.875rem;padding-top:.875rem">
+          <p style="font-weight:500;font-size:.875rem">تصمیم شما دربارهٔ ارسال باز</p>
+          ${submActions(pending)}
+        </div>` : ""}
+
+      ${can("submit") ? `
+        <div style="border-top:1px solid var(--s-100);margin-top:.875rem;padding-top:.875rem">
+          <label class="label" for="sb-kind">ارسال به ${esc(ROLES.manager.name)}</label>
+          <select class="field" id="sb-kind">
+            <option value="approval">🖋 درخواست تأیید نهایی</option>
+            <option value="report">📋 گزارش کار</option>
+          </select>
+          <textarea class="field" id="sb-note" rows="3" style="margin-top:.625rem"
+            placeholder="چه چیزی را می‌فرستید و از مدیر چه می‌خواهید؟"></textarea>
+          <div class="row" style="margin-top:.625rem">
+            <button class="btn btn-primary btn-sm" data-submit-doc="${d.id}">ارسال به مدیر</button>
+            <span class="muted small">متن شما در گفت‌وگوی همین سند هم ثبت می‌شود.</span>
+          </div>
+        </div>` : ""}
     </div>`;
 }
 
@@ -4006,6 +4388,7 @@ function seedAll() {
   });
 
   seedDocMeta();
+  seedSubmissions();
 }
 
 if (!loadState()) seedAll();
