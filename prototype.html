@@ -821,10 +821,28 @@ const state = {
    document is recorded against their name, because "who changed this" is the
    first question anyone asks of a file. */
 const ROLES = {
-  manager:   { label: "مدیر",  name: "دکتر رضایی",   glyph: "👔" },
-  secretary: { label: "منشی",  name: "خانم موسوی",   glyph: "🗂" },
+  manager:   { label: "مدیر",  name: "دکتر رضایی", glyph: "👔",
+               can: "واگذاری کار به منشی، حذف رکورد، ویرایش و یادداشت" },
+  secretary: { label: "منشی",  name: "خانم موسوی", glyph: "🗂",
+               can: "ثبت و ویرایش سند، اعلام انجام کار، یادداشت — بدون حذف و واگذاری" },
 };
 function me() { return ROLES[state.role]; }
+
+/* The switch in the header is not a costume. A secretary files documents,
+   comments, and reports work done; a manager assigns work and is the only one
+   who can take anything off the record. Hiding the buttons is not enough —
+   every handler checks as well, because a rule a demo can be talked out of
+   answers nothing about the real system. */
+const PERMISSIONS = {
+  manager:   { removeRecord: true,  assign: true,  completeAssignment: false },
+  secretary: { removeRecord: false, assign: false, completeAssignment: true },
+};
+function can(what) { return !!(PERMISSIONS[state.role] || {})[what]; }
+function requires(what) {
+  if (can(what)) return true;
+  toast("این کار در نقش «" + me().label + "» مجاز نیست.");
+  return false;
+}
 
 /* ==========================================================================
    Helpers
@@ -1072,7 +1090,8 @@ function shell(inner) {
         <div class="row">
           <div class="roleswitch" role="group" aria-label="نقش کاربر">
             ${Object.keys(ROLES).map((k) => `
-              <button data-role="${k}" class="${state.role === k ? "on" : ""}">${ROLES[k].glyph} ${ROLES[k].label}</button>
+              <button data-role="${k}" class="${state.role === k ? "on" : ""}"
+                      title="${esc(ROLES[k].can)}">${ROLES[k].glyph} ${ROLES[k].label}</button>
             `).join("")}
           </div>
           <span class="muted small">${esc(me().name)}</span>
@@ -1304,7 +1323,7 @@ function viewMeeting() {
             ${m.description ? `<p class="muted small" style="margin-top:.35rem;max-width:46rem">${esc(m.description)}</p>` : ""}
           </div>
           <div class="row">
-            <button class="btn btn-ghost btn-sm" style="color:var(--bad-600)" data-delete-meeting="${m.id}">حذف</button>
+            ${can("removeRecord") ? `<button class="btn btn-ghost btn-sm" style="color:var(--bad-600)" data-delete-meeting="${m.id}">حذف</button>` : ""}
           </div>
         </div>
       </div>
@@ -1378,7 +1397,7 @@ function sourceRow(s, processing) {
       <div class="row" style="gap:.25rem">
         ${s.text ? `<button class="btn btn-ghost btn-sm" data-view-source="${s.id}">مشاهدهٔ متن</button>` : ""}
         <button class="btn btn-ghost btn-sm" data-download-source="${esc(s.name)}">دانلود</button>
-        ${processing ? "" : `<button class="btn btn-ghost btn-sm" style="color:var(--bad-600)" data-remove-source="${s.id}">حذف</button>`}
+        ${processing || !can("removeRecord") ? "" : `<button class="btn btn-ghost btn-sm" style="color:var(--bad-600)" data-remove-source="${s.id}">حذف</button>`}
       </div>
     </div>`;
 }
@@ -1553,7 +1572,7 @@ function decisionCard(dec, i) {
           <div class="row">
             <button class="btn btn-primary btn-sm" data-save-decision="${dec.id}">ذخیره</button>
             <button class="btn btn-secondary btn-sm" data-cancel-edit>انصراف</button>
-            <button class="btn btn-danger btn-sm" style="margin-inline-start:auto" data-delete-decision="${dec.id}">حذف</button>
+            ${can("removeRecord") ? `<button class="btn btn-danger btn-sm" style="margin-inline-start:auto" data-delete-decision="${dec.id}">حذف</button>` : ""}
           </div>
         </div>
       </div>`;
@@ -1595,7 +1614,7 @@ function actionCard(a) {
           <div class="row">
             <button class="btn btn-primary btn-sm" data-save-action="${a.id}">ذخیره</button>
             <button class="btn btn-secondary btn-sm" data-cancel-edit>انصراف</button>
-            <button class="btn btn-danger btn-sm" style="margin-inline-start:auto" data-delete-action="${a.id}">حذف</button>
+            ${can("removeRecord") ? `<button class="btn btn-danger btn-sm" style="margin-inline-start:auto" data-delete-action="${a.id}">حذف</button>` : ""}
           </div>
         </div>
       </div>`;
@@ -1811,7 +1830,8 @@ function viewModal() {
       <div class="row" style="margin-top:.875rem;align-items:flex-start">
         <div style="flex:1;min-width:10rem">
           <label class="label">تاریخ</label>
-          <input class="field" id="nd-date" placeholder="۱۴۰۰/۰۵/۱۲" value="${esc(draft.date || "")}">
+          <input class="field" id="nd-date" placeholder="۱۴۰۵/۰۶/۱۵" value="${esc(draft.date || "")}">
+          <p class="hint">شمسی یا میلادی — «۱۴۰۵/۰۶/۱۵»، «1405-6-15»، «۱۵ شهریور ۱۴۰۵» یا «2026-09-05».</p>
         </div>
         <div style="flex:1;min-width:10rem">
           <label class="label">شماره (اختیاری)</label>
@@ -1966,26 +1986,39 @@ const DOC_KIND_ORDER = [
   "progress_report", "analysis", "note",
 ];
 
+/* A programme contains projects, and a question asked at programme level has
+   to reach the projects underneath it — that is the whole reason the levels
+   exist. Each subject therefore names its parent, and the tree is derived. */
 const CASE_LIST = [
-  {
-    id: "program",
-    title: "برنامهٔ ملی زیرساخت داده",
-    note: "برنامهٔ کلان، شامل سه پروژه",
-    children: ["مرکز داده ملی", "امنیت و حفاظت داده", "خدمات تبادل داده"],
-  },
-  {
-    id: "security",
-    title: "پروژهٔ امنیت و حفاظت داده",
-    note: "زیرمجموعهٔ برنامهٔ ملی زیرساخت داده",
-    children: [],
-  },
-  {
-    id: "datacenter",
-    title: "پروژهٔ مرکز داده ملی",
-    note: "زیرمجموعهٔ برنامهٔ ملی زیرساخت داده",
-    children: [],
-  },
+  { id: "program", parent: null, title: "برنامهٔ ملی زیرساخت داده",
+    note: "برنامهٔ کلان. اسناد هر سه پروژهٔ زیرمجموعه هم در همین‌جا دیده و جست‌وجو می‌شود.",
+    starters: ["وضعیت کلی برنامه چطور پیش رفته؟", "کدام مکاتبه بی‌پاسخ مانده است؟",
+               "قرارداد مرکز داده چه شد؟", "چه مهلت‌هایی تغییر کرده است؟"] },
+  { id: "datacenter", parent: "program", title: "پروژهٔ مرکز داده ملی",
+    note: "فاز نخست، قرارداد ۹۷/۲۲-۱۴ و الحاقیهٔ تمدید آن.",
+    starters: ["مبلغ و مدت قرارداد مرکز داده چقدر بود؟", "چرا مدت قرارداد تمدید شد؟",
+               "ظرفیت فاز نخست چقدر است؟"] },
+  { id: "security", parent: "program", title: "پروژهٔ امنیت و حفاظت داده",
+    note: "سند معماری امنیت تبادل داده و اعتبار مطالعات تکمیلی آن.",
+    starters: ["اعتبار مطالعات امنیت چه شد؟", "سند معماری امنیت در چه وضعیتی است؟",
+               "مهلت تدوین سند چند بار تغییر کرد؟"] },
+  { id: "exchange", parent: "program", title: "پروژهٔ خدمات تبادل داده",
+    note: "اتصال دستگاه‌های اجرایی به سامانهٔ تبادل داده.",
+    starters: ["چند دستگاه به سامانهٔ تبادل داده متصل شده‌اند؟",
+               "تفاهم‌نامهٔ دادهٔ سلامت چه تعهدی ایجاد می‌کند؟"] },
 ];
+
+function childCases(id) { return CASE_LIST.filter((c) => c.parent === id); }
+function parentCase(c) { return c && c.parent ? CASE_LIST.find((x) => x.id === c.parent) : null; }
+
+/* A subject and everything filed under it, however deep. */
+function caseTree(id) {
+  const ids = [id];
+  for (let i = 0; i < ids.length; i++) {
+    childCases(ids[i]).forEach((c) => { if (ids.indexOf(c.id) === -1) ids.push(c.id); });
+  }
+  return ids;
+}
 
 /* --- the archive -------------------------------------------------------- */
 const ARCHIVE = [
@@ -1994,7 +2027,7 @@ const ARCHIVE = [
     text: "ماده ۴ — دستگاه‌های اجرایی مکلف‌اند ظرف دو سال داده‌های مرجع خود را روی زیرساخت دادهٔ کشور در دسترس قرار دهند. تبصره ۱ — سازمان فناوری اطلاعات موظف است سند معماری امنیت تبادل داده را ظرف یک سال تهیه و ابلاغ کند." },
 
   { id: "a2", kind: "resolution", title: "مصوبهٔ جلسهٔ ۴۱ شورای راهبری فناوری اطلاعات",
-    date: "۱۳۹۶/۰۹/۱۵", party: "شورای راهبری فناوری اطلاعات", cases: ["program", "security", "datacenter"],
+    date: "۱۳۹۶/۰۹/۱۵", party: "شورای راهبری فناوری اطلاعات", cases: ["program", "security", "datacenter", "exchange"],
     text: "اجرای برنامه در سه پروژه تصویب و چهار اقدام ابلاغ شد: تدوین سند معماری امنیت تا پایان ۱۳۹۷، راه‌اندازی فاز نخست مرکز داده تا پایان ۱۳۹۸، پیاده‌سازی سامانهٔ تبادل داده تا خرداد ۱۳۹۸، و ارائهٔ گزارش پیشرفت هر شش ماه." },
 
   { id: "a3", kind: "contract", title: "قرارداد اجرای فاز نخست مرکز داده ملی", ref: "۹۷/۲۲-۱۴",
@@ -2021,7 +2054,7 @@ const ARCHIVE = [
     text: "مدت قرارداد ۹۷/۲۲-۱۴ به‌دلیل تأخیر در تأمین تجهیزات، چهار ماه تمدید شد. سایر شرایط قرارداد بدون تغییر است." },
 
   { id: "a8", kind: "progress_report", title: "گزارش پیشرفت شش‌ماههٔ نخست ۱۳۹۸",
-    date: "۱۳۹۸/۰۷/۰۱", party: "دبیرخانهٔ شورا", cases: ["program", "security", "datacenter"],
+    date: "۱۳۹۸/۰۷/۰۱", party: "دبیرخانهٔ شورا", cases: ["program", "security", "datacenter", "exchange"],
     text: "فاز نخست مرکز داده در شهریور ۱۳۹۸ راه‌اندازی شد. سامانهٔ تبادل داده در حال انجام است (هفت دستگاه متصل). تدوین سند معماری امنیت متوقف است؛ علت: عدم تخصیص اعتبار." },
 
   { id: "a9", kind: "meeting_minutes", title: "صورت‌جلسهٔ کمیتهٔ راهبری — بازنگری مهلت‌ها",
@@ -2037,11 +2070,11 @@ const ARCHIVE = [
     text: "شنیدم تدوین سند معماری امنیت عملاً تکمیل شده و تنها ابلاغ رسمی آن باقی مانده است. این برداشت شخصی است و باید با گزارش رسمی راستی‌آزمایی شود." },
 
   { id: "a12", kind: "progress_report", title: "گزارش وضعیت سالانهٔ ۱۳۹۹",
-    date: "۱۳۹۹/۱۰/۳۰", party: "دبیرخانهٔ شورا", cases: ["program", "security", "datacenter"],
+    date: "۱۳۹۹/۱۰/۳۰", party: "دبیرخانهٔ شورا", cases: ["program", "security", "datacenter", "exchange"],
     text: "بهره‌برداری کامل از فاز نخست مرکز داده انجام شد (ظرفیت ۸۰ درصد). اتصال دستگاه‌ها به سامانهٔ تبادل داده با تأخیر مواجه است (۱۲ از ۲۰ دستگاه). تدوین سند معماری امنیت همچنان متوقف است." },
 
   { id: "a13", kind: "mou", title: "تفاهم‌نامهٔ همکاری در تبادل دادهٔ سلامت",
-    date: "۱۴۰۰/۰۲/۱۸", party: "وزارت بهداشت", cases: ["program"],
+    date: "۱۴۰۰/۰۲/۱۸", party: "وزارت بهداشت", cases: ["program", "exchange"],
     term: "دو سال، قابل تمدید",
     text: "چارچوب همکاری برای اتصال سامانه‌های سلامت به سامانهٔ تبادل داده. تفاهم‌نامه تعهد مالی ایجاد نمی‌کند و اجرای آن منوط به انعقاد قرارداد جداگانه است." },
 
@@ -2174,13 +2207,6 @@ const SYN = (() => {
   return map;
 })();
 
-/* Sentences, so an answer can quote the line that matched rather than the
-   whole document. */
-function sentences(text) {
-  return String(text || "").split(/(?<=[.؛:!؟])\s+|\n+/)
-    .map((s) => s.trim()).filter((s) => s.length > 12);
-}
-
 /* The words of one document, stemmed and deduplicated. Comparing word to word
    rather than by substring is what keeps «رد» out of «مورد» and «نامه» out of
    «برنامه». */
@@ -2208,13 +2234,16 @@ function termHit(tokens, term) {
 /* The best line to show for a match: the sentence carrying most of the
    question. */
 function bestQuote(doc, matched) {
-  const list = sentences(doc.text);
+  // A colon does not end a sentence: quoting "موضوع قرارداد:" back at someone
+  // answers nothing.
+  const list = clauses(doc.text);
   if (!list.length) return String(doc.text || "").slice(0, 180);
   let best = list[0], bestHits = -1;
   list.forEach((s) => {
     const tokens = new Set(terms(s));
     const hits = matched.reduce((sum, t) => sum + termHit(tokens, t), 0);
-    if (hits > bestHits) { bestHits = hits; best = s; }
+    // On a tie the fuller line is the more useful one.
+    if (hits > bestHits || (hits === bestHits && s.length > best.length)) { bestHits = hits; best = s; }
   });
   return best;
 }
@@ -2237,7 +2266,16 @@ const UBIQUITOUS = 0.7;
    nothing — «رد و بدل» is a way of saying "exchanged", not a subject. */
 const SUBSTANTIVE = 4;
 
-function searchDocs(query, pool) {
+function searchDocs(query, pool, opts) {
+  // The chat asks a question and must be allowed to answer "nothing"; a search
+  // box is a search box and should cast wider. Same engine, different nerve.
+  const o = opts || {};
+  const minCoverage   = o.minCoverage   != null ? o.minCoverage   : MIN_COVERAGE;
+  const minScore      = o.minScore      != null ? o.minScore      : MIN_SCORE;
+  const minUnderstood = o.minUnderstood != null ? o.minUnderstood : MIN_UNDERSTOOD;
+  const needsDiscriminating = o.requireDiscriminating !== false;
+  const limit = o.limit || 5;
+
   const asked = [...new Set(terms(query))];
   if (!asked.length || !pool.length) return [];
 
@@ -2257,10 +2295,10 @@ function searchDocs(query, pool) {
   // words, because a question is about its nouns.
   const substantive = asked.filter((t) => t.length >= SUBSTANTIVE || df[t] > 0);
   const understood = substantive.filter((t) => df[t] > 0).length;
-  if (substantive.length && understood / substantive.length < MIN_UNDERSTOOD) return [];
+  if (substantive.length && understood / substantive.length < minUnderstood) return [];
 
   // And at least one understood word has to discriminate.
-  if (!qt.some((t) => df[t] / pool.length < UBIQUITOUS)) return [];
+  if (needsDiscriminating && !qt.some((t) => df[t] / pool.length < UBIQUITOUS)) return [];
 
   const idf = {};
   let totalIdf = 0;
@@ -2287,10 +2325,88 @@ function searchDocs(query, pool) {
       if (phrase && norm(doc.title + " " + doc.text).indexOf(phrase) !== -1) score += 0.4;
       return { doc, score, coverage: covered / qt.length, matched };
     })
-    .filter((r) => r.coverage >= MIN_COVERAGE && r.score > MIN_SCORE)
+    .filter((r) => r.coverage >= minCoverage && r.score > minScore)
     .sort((a, b) => b.score - a.score)
-    .slice(0, 5)
+    .slice(0, limit)
     .map((r) => Object.assign(r, { quote: bestQuote(r.doc, r.matched) }));
+}
+
+/* ==========================================================================
+   Where the file contradicts itself
+
+   An archive that spans five years will say two different things about the
+   same subject, and the manager's real question is which of the two to
+   believe. So the two lines are put side by side, each labelled with what its
+   document is — an official progress report and a personal note are not equal
+   evidence — and the reader decides. Nothing is hidden and nothing wins
+   automatically; picking a side is not this product's job.
+   ========================================================================== */
+const STANCES = [
+  { key: "stalled", label: "متوقف / بی‌نتیجه", tone: "danger",
+    res: [/متوقف/, /توقف/, /راکد/, /معلق/, /بلاتکلیف/, /انجام\s*نشده/, /پاسخی\s*(?:ثبت|دریافت)\s*نشده/] },
+  { key: "done", label: "انجام‌شده / تکمیل", tone: "success",
+    res: [/تکمیل\s*شده/, /انجام\s*‌?شده/, /نهایی\s*شده/, /راه‌?اندازی\s*شد/,
+          /بهره‌?برداری\s*(?:کامل|شد)/, /تحویل\s*شد/] },
+];
+
+function stanceOf(text) {
+  for (const st of STANCES) { for (const re of st.res) if (re.test(text)) return st; }
+  return null;
+}
+
+/* The sentences of a document that assert a state of affairs. */
+function claimsOf(doc) {
+  return clauses(doc.text)
+    .map((t) => ({ doc: doc, text: t.trim(), stance: stanceOf(t) }))
+    .filter((c) => c.stance);
+}
+
+/* Not every document carries the same weight, and the order they are read in
+   should say so. */
+const AUTHORITY = ["law", "resolution", "contract", "contract_annex", "mou",
+                   "letter_in", "letter_out", "progress_report", "meeting_minutes",
+                   "analysis", "negotiation", "content_doc", "related_docs", "note"];
+function authority(doc) {
+  const i = AUTHORITY.indexOf(doc.kind);
+  return i === -1 ? 0 : AUTHORITY.length - i;
+}
+
+function findConflicts(docs) {
+  const claims = [];
+  docs.forEach((d) => claimsOf(d).forEach((c) => claims.push(c)));
+  const out = [], seen = {};
+  for (let i = 0; i < claims.length; i++) {
+    for (let j = i + 1; j < claims.length; j++) {
+      const a = claims[i], b = claims[j];
+      if (a.doc.id === b.doc.id || a.stance.key === b.stance.key) continue;
+      // Two lines only contradict each other if they are about the same thing.
+      if (overlap(a.text, b.text) < 0.5) continue;
+      const key = [a.doc.id, b.doc.id].sort().join("|");
+      if (seen[key]) continue;
+      seen[key] = true;
+      // The weightier document always sits first, so every pair reads the same
+      // way: what the record says, then what disputes it.
+      const pair = authority(a.doc) >= authority(b.doc) ? { a: a, b: b } : { a: b, b: a };
+      out.push(pair);
+    }
+  }
+  return out.slice(0, 4);
+}
+
+/* A letter that went out and was never answered is the one thing in an archive
+   nobody notices until it is too late. */
+function unansweredLetters(docs) {
+  return docs.filter((d) => d.kind === "letter_out" && d.ref &&
+    !docs.some((x) => x.kind === "letter_in" && x.reply === d.ref));
+}
+
+function caseCounts(docs) {
+  return {
+    docs: docs.length,
+    unanswered: unansweredLetters(docs).length,
+    stalled: docs.filter((d) => claimsOf(d).some((c) => c.stance.key === "stalled")).length,
+    conflicts: findConflicts(docs).length,
+  };
 }
 
 /* ==========================================================================
@@ -2348,8 +2464,9 @@ function seedDocMeta() {
 /* Every document filed under a subject: the seeded archive plus anything
    entered in the first tab whose own words put it here. */
 function caseDocs(caseId) {
-  const live = liveMeetingDocs().filter((d) => d.cases.includes(caseId));
-  return ARCHIVE.filter((d) => d.cases.includes(caseId)).concat(live);
+  const ids = caseTree(caseId);
+  const inScope = (d) => d.cases.some((c) => ids.indexOf(c) !== -1);
+  return ARCHIVE.filter(inScope).concat(liveMeetingDocs().filter(inScope));
 }
 
 /* --- views -------------------------------------------------------------- */
@@ -2366,12 +2483,33 @@ function viewCases() {
     </div>
 
     <div class="stack" style="gap:.75rem">
-      ${CASE_LIST.map((c) => `
-        <div class="card subject" data-open-case="${c.id}">
-          <p style="font-weight:600;font-size:1.0625rem">${esc(c.title)}</p>
-          <p class="muted small tnum" style="margin-top:.35rem">${fa(caseDocs(c.id).length)} سند مرتبط</p>
-        </div>`).join("")}
+      ${CASE_LIST.filter((c) => !c.parent).map(caseCard).join("")}
     </div>`;
+}
+
+/* A subject and, indented under it, the projects it contains — because a
+   programme's documents are its projects' documents. */
+function caseCard(c, depth) {
+  const kids = childCases(c.id);
+  const counts = caseCounts(caseDocs(c.id));
+  const pad = depth ? `margin-inline-start:${depth * 1.5}rem` : "";
+  return `
+    <div class="card subject" data-open-case="${c.id}" style="${pad}">
+      <div class="spread">
+        <div>
+          <p style="font-weight:600;font-size:${depth ? ".9375rem" : "1.0625rem"}">${esc(c.title)}</p>
+          ${c.note ? `<p class="muted small" style="margin-top:.25rem">${esc(c.note)}</p>` : ""}
+          <p class="muted small tnum" style="margin-top:.35rem">
+            ${fa(counts.docs)} سند${kids.length ? ` · ${fa(kids.length)} پروژهٔ زیرمجموعه` : ""}
+          </p>
+        </div>
+        <div class="row" style="gap:.35rem">
+          ${counts.conflicts ? `<span class="badge badge-warning tnum">${fa(counts.conflicts)} ناهم‌خوانی</span>` : ""}
+          ${counts.unanswered ? `<span class="badge badge-danger tnum">${fa(counts.unanswered)} مکاتبهٔ بی‌پاسخ</span>` : ""}
+        </div>
+      </div>
+    </div>
+    ${kids.map((k) => caseCard(k, (depth || 0) + 1)).join("")}`;
 }
 
 /* --- the subject page: ask, then read ------------------------------------ */
@@ -2381,17 +2519,46 @@ function viewCase() {
   if (!c) return `<p>موضوع پیدا نشد.</p>`;
   const docs = caseDocs(id);
   const thread = state.chat[id] || [];
+  const parent = parentCase(c);
+  const kids = childCases(c.id);
+  const counts = caseCounts(docs);
+  const asked = thread.filter((t) => t.from === "user").map((t) => t.text);
 
   return `
     <button class="linkish" style="font-size:.875rem;margin-bottom:1rem;text-decoration:none;color:var(--s-500)" data-go="cases">← بازگشت به موضوع‌ها</button>
 
     <div class="card">
+      ${parent ? `<p class="muted small" style="margin-bottom:.35rem">زیرمجموعهٔ
+        <button class="linkish" style="font-size:.8125rem;color:var(--brand-600)" data-open-case="${parent.id}">${esc(parent.title)}</button></p>` : ""}
       <h1 style="font-size:1.25rem;font-weight:600">${esc(c.title)}</h1>
-      <p class="muted small tnum" style="margin-top:.25rem">${fa(docs.length)} سند مرتبط</p>
+      ${c.note ? `<p class="muted small" style="margin-top:.35rem">${esc(c.note)}</p>` : ""}
+      ${kids.length ? `
+        <div class="row" style="margin-top:.75rem">
+          <span class="muted small">پروژه‌های زیرمجموعه:</span>
+          ${kids.map((k) => `<button class="btn btn-secondary btn-sm" data-open-case="${k.id}">
+            ${esc(k.title)} <span class="muted tnum">(${fa(caseDocs(k.id).length)})</span>
+          </button>`).join("")}
+        </div>` : ""}
+
+      <div class="countbar">
+        <div class="countbox"><b class="tnum">${fa(counts.docs)}</b><span>سند</span></div>
+        <div class="countbox ${counts.unanswered ? "bad" : ""}"><b class="tnum">${fa(counts.unanswered)}</b><span>مکاتبهٔ بی‌پاسخ</span></div>
+        <div class="countbox ${counts.stalled ? "warn" : ""}"><b class="tnum">${fa(counts.stalled)}</b><span>سند با موضوع متوقف</span></div>
+        <div class="countbox ${counts.conflicts ? "warn" : ""}"><b class="tnum">${fa(counts.conflicts)}</b><span>ناهم‌خوانی</span></div>
+      </div>
     </div>
+
+    ${conflictPanel(findConflicts(docs))}
 
     <div class="card chat" style="margin-top:1rem">
       <div class="section-title"><h3>سؤال‌هایتان را از من بپرسید</h3></div>
+
+      ${(c.starters || []).length ? `
+        <div class="qgrid" style="margin-bottom:.875rem">
+          ${c.starters.map((q) => `
+            <button class="qbtn ${asked.indexOf(q) !== -1 ? "on" : ""}" data-ask="${esc(q)}">${esc(q)}</button>
+          `).join("")}
+        </div>` : ""}
 
       <div class="chat-log">
         ${thread.length === 0 ? `
@@ -2412,7 +2579,36 @@ function viewCase() {
 
     <div class="card" style="margin-top:1rem;padding:.5rem">
       <div class="section-title" style="padding:.5rem .75rem 0"><h3>اسناد مرتبط با این موضوع <span class="count">${fa(docs.length)}</span></h3></div>
-      <div class="stack" style="gap:.5rem;padding:.5rem">${docs.map(docRow).join("")}</div>
+      <div class="stack" style="gap:.5rem;padding:.5rem">${docs.map((d) => docRow(d)).join("")}</div>
+    </div>`;
+}
+
+/* Two documents, one subject, two answers. Both stay on the record. */
+function conflictPanel(pairs) {
+  if (!pairs.length) return "";
+  const side = (claim) => {
+    const k = DOC_KINDS[claim.doc.kind];
+    return `
+      <div class="side">
+        <div class="row" style="gap:.35rem;margin-bottom:.4rem">
+          <span class="badge badge-${claim.stance.tone}">${claim.stance.label}</span>
+          <span class="badge badge-${k.tone}">${k.glyph} ${k.label}</span>
+          <span class="muted small">${esc(k.weight)}</span>
+        </div>
+        <p>«${esc(claim.text)}»</p>
+        <button class="cite" data-doc="${claim.doc.id}">${esc(claim.doc.title)} · ${esc(claim.doc.date)}</button>
+      </div>`;
+  };
+  return `
+    <div class="card" style="margin-top:1rem">
+      <div class="section-title">
+        <h3>⚠️ موارد ناهم‌خوان <span class="count">${fa(pairs.length)}</span></h3>
+      </div>
+      <p class="muted small" style="margin:-.5rem 0 .25rem;line-height:1.9">
+        دو سند دربارهٔ یک موضوع دو چیز متفاوت گفته‌اند. هیچ‌کدام حذف یا ترجیح داده نمی‌شود؛
+        در کنار هم و همراه با نوع سند نشان داده می‌شود تا خودتان قضاوت کنید.
+      </p>
+      ${pairs.map((p) => `<div class="conflict-sides">${side(p.a)}${side(p.b)}</div>`).join("")}
     </div>`;
 }
 
@@ -2473,9 +2669,42 @@ function askChat(caseId, question) {
 /* Archive dates are written the way the documents are: ۱۳۹۶/۰۳/۱۰. Folded to
    digits they sort chronologically as plain text, which is all a range filter
    needs. */
+function asciiDigits(v) {
+  return String(v == null ? "" : v).replace(/[۰-۹]/g, (d) => String("۰۱۲۳۴۵۶۷۸۹".indexOf(d)));
+}
+
+/* Whatever a person types, the archive stores one written form: ۱۴۰۵/۰۶/۱۵.
+   A date that cannot be read is kept as the person wrote it and marked
+   undated, rather than silently becoming a wrong date. */
+function normalizeJalali(raw) {
+  const t = asciiDigits(raw).trim();
+  if (!t) return null;
+  let m = /^(\d{4})[\/\-.](\d{1,2})[\/\-.](\d{1,2})$/.exec(t);
+  if (m) {
+    const y = +m[1], mo = +m[2], d = +m[3];
+    if (mo < 1 || mo > 12 || d < 1 || d > 31) return null;
+    if (y >= 1900) { const j = toJalali(y, mo, d); return fa(j[0] + "/" + pad2(j[1]) + "/" + pad2(j[2])); }
+    return fa(y + "/" + pad2(mo) + "/" + pad2(d));
+  }
+  m = /^(\d{1,2})\s+(\S+)\s+(\d{4})$/.exec(t);
+  if (m) {
+    const idx = JMONTHS.findIndex((x) => x === m[2]);
+    if (idx !== -1) return fa(+m[3] + "/" + pad2(idx + 1) + "/" + pad2(+m[1]));
+  }
+  return null;
+}
+
 function jYear(dateStr) {
-  const m = /^([۰-۹\d]{4})/.exec(String(dateStr || ""));
-  return m ? +norm(m[1]) : null;
+  const t = asciiDigits(dateStr);
+  const m = /(\d{4})/.exec(t);
+  if (!m) return null;
+  const y = +m[1];
+  if (y >= 1200 && y <= 1499) return y;
+  if (y >= 1900 && y <= 2200) {
+    const g = /(\d{4})-(\d{1,2})-(\d{1,2})/.exec(t);
+    return g ? toJalali(+g[1], +g[2], +g[3])[0] : y - 621;
+  }
+  return null;
 }
 
 function viewArchive() {
@@ -2487,14 +2716,27 @@ function viewArchive() {
 
   const years = [...new Set(all.map((d) => jYear(d.date)).filter(Boolean))].sort();
 
-  const list = all.filter((d) => {
+  // The same retrieval the chat uses, with the thresholds a search box wants:
+  // «قراردادها» has to find «قرارداد», and a word the archive does not use is
+  // not grounds for refusing to answer.
+  const ranked = q ? searchDocs(q, all, {
+    minCoverage: 0.2, minScore: 0.05, minUnderstood: 0,
+    requireDiscriminating: false, limit: 500,
+  }) : null;
+  const quotes = {};
+  if (ranked) ranked.forEach((r) => { quotes[r.doc.id] = r.quote; });
+
+  let hiddenUndated = 0;
+  const list = (ranked ? ranked.map((r) => r.doc) : all).filter((d) => {
     if (kind && d.kind !== kind) return false;
+    if (!from && !to) return true;
     const y = jYear(d.date);
-    if (from && (!y || y < from)) return false;
-    if (to && (!y || y > to)) return false;
-    if (!q) return true;
-    return norm(d.title + " " + (d.ref || "") + " " + (d.party || "") + " " + d.text)
-      .indexOf(norm(q)) !== -1;
+    // A document with no readable date is not "outside the range" — it is
+    // unfiled, and saying so out loud beats dropping it without a word.
+    if (y == null) { hiddenUndated += 1; return false; }
+    if (from && y < from) return false;
+    if (to && y > to) return false;
+    return true;
   });
 
   const kinds = [...new Set(all.map((d) => d.kind))];
@@ -2537,7 +2779,13 @@ function viewArchive() {
       </div>
     </div>
 
-    <p class="muted small tnum" style="margin-bottom:.5rem">${fa(list.length)} سند از ${fa(all.length)} سند نمایش داده می‌شود</p>
+    <p class="muted small tnum" style="margin-bottom:.5rem">
+      ${fa(list.length)} سند از ${fa(all.length)} سند نمایش داده می‌شود${q ? " — به ترتیب نزدیکی به عبارت جست‌وجو" : ""}
+    </p>
+    ${hiddenUndated ? `<div class="alert alert-warning" style="margin-bottom:.75rem">
+      ${fa(hiddenUndated)} سند تاریخ خوانا ندارد و با فیلتر تاریخ نمایش داده نمی‌شود.
+      <button class="linkish" style="color:inherit" data-clear-dates>حذف فیلتر تاریخ</button>
+    </div>` : ""}
 
     ${list.length === 0 ? `
       <div class="empty">
@@ -2546,7 +2794,7 @@ function viewArchive() {
         <p class="muted small">فیلتر را بردارید یا سند تازه‌ای اضافه کنید.</p>
       </div>` : `
       <div class="card" style="padding:.5rem">
-        <div class="stack" style="gap:.5rem">${list.map(docRow).join("")}</div>
+        <div class="stack" style="gap:.5rem">${list.map((d) => docRow(d, quotes[d.id])).join("")}</div>
       </div>`}
 
     <div class="demo-note" style="margin-top:1.5rem">
@@ -2555,7 +2803,7 @@ function viewArchive() {
     </div>`;
 }
 
-function docRow(d) {
+function docRow(d, quote) {
   const k = DOC_KINDS[d.kind];
   const meta = state.docMeta[d.id];
   const bits = [d.date, d.party].filter(Boolean);
@@ -2567,6 +2815,7 @@ function docRow(d) {
       <div class="info">
         <p class="fname">${esc(d.title)}</p>
         <p class="fmeta tnum">${bits.map(esc).join(" · ")}</p>
+        ${quote ? `<p class="hit-quote" style="margin-top:.3rem">«${esc(quote)}»</p>` : ""}
       </div>
       ${meta && meta.comments.length ? `<span class="chip">💬 ${fa(meta.comments.length)}</span>` : ""}
       ${meta && meta.assignment && meta.assignment.status === "open"
@@ -2599,6 +2848,10 @@ function wire() {
     askChat(state.route.id, text);
   };
   on("[data-chat-send]", "click", sendChat);
+  on("[data-ask]", "click", (e) => {
+    if (state.chatBusy) return;
+    askChat(state.route.id, e.currentTarget.dataset.ask);
+  });
   const chatBox = document.getElementById("chat-q");
   if (chatBox) {
     chatBox.addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); sendChat(); } });
@@ -2645,6 +2898,7 @@ function wire() {
   });
 
   on("[data-assign]", "click", (e) => {
+    if (!requires("assign")) return;
     const id = e.currentTarget.dataset.assign;
     const task = (document.getElementById("as-task").value || "").trim();
     if (!task) { toast("شرح کار را بنویسید"); return; }
@@ -2658,6 +2912,7 @@ function wire() {
   });
 
   on("[data-assign-done]", "click", (e) => {
+    if (!requires("completeAssignment")) return;
     const a = docMeta(e.currentTarget.dataset.assignDone).assignment;
     a.status = "done"; a.done = stamp();
     toast("انجام کار اعلام شد");
@@ -2665,13 +2920,17 @@ function wire() {
   });
 
   on("[data-assign-reopen]", "click", (e) => {
+    if (!requires("assign")) return;
     const a = docMeta(e.currentTarget.dataset.assignReopen).assignment;
     a.status = "open"; a.done = null;
     toast("کار دوباره باز شد");
     render();
   });
 
-  on("[data-assign-remind]", "click", () => toast("یادآوری برای منشی فرستاده شد"));
+  on("[data-assign-remind]", "click", () => {
+    if (!requires("assign")) return;
+    toast("یادآوری برای منشی فرستاده شد");
+  });
 
   on("[data-add-doc]", "click", () => { state.modal = { type: "adddoc", draft: {} }; render(); });
 
@@ -2691,11 +2950,14 @@ function wire() {
     const title = val("nd-title");
     if (!title) { toast("عنوان سند را بنویسید"); return; }
     const caseId = val("nd-case");
+    const rawDate = val("nd-date");
+    const onDate = normalizeJalali(rawDate);
+    if (rawDate && !onDate) toast("تاریخ خوانده نشد و همان‌طور که نوشتید ثبت می‌شود");
     ARCHIVE.unshift({
       id: nid("doc"),
       kind: val("nd-kind") || "contract",
       title: title,
-      date: val("nd-date") || "بدون تاریخ",
+      date: onDate || rawDate || "بدون تاریخ",
       ref: val("nd-ref") || null,
       party: val("nd-party") || null,
       cases: caseId ? [caseId] : [],
@@ -2713,6 +2975,9 @@ function wire() {
   };
   bindSelect("arch-from", "archiveFrom");
   bindSelect("arch-to", "archiveTo");
+  on("[data-clear-dates]", "click", () => {
+    state.archiveFrom = ""; state.archiveTo = ""; render();
+  });
   on("[data-clear-filters]", "click", () => {
     state.archiveFrom = ""; state.archiveTo = ""; state.archiveKind = ""; state.archiveQuery = "";
     render();
@@ -2819,6 +3084,7 @@ function wire() {
   }
 
   on("[data-remove-source]", "click", (e) => {
+    if (!requires("removeRecord")) return;
     const m = currentMeeting();
     const id = e.currentTarget.dataset.removeSource;
     const s = m.sources.find((x) => x.id === id);
@@ -2885,6 +3151,7 @@ function wire() {
     bumpVersion(m, "user_edit"); resetEditing(); toast("اقدام ذخیره شد"); render();
   });
   on("[data-delete-action]", "click", (e) => {
+    if (!requires("removeRecord")) return;
     const m = currentMeeting(); const id = e.currentTarget.dataset.deleteAction;
     m.minutes.actions = m.minutes.actions.filter((x) => x.id !== id);
     bumpVersion(m, "user_edit"); resetEditing(); toast("اقدام حذف شد"); render();
@@ -2918,6 +3185,7 @@ function wire() {
     bumpVersion(m, "user_edit"); resetEditing(); toast("تصمیم ذخیره شد"); render();
   });
   on("[data-delete-decision]", "click", (e) => {
+    if (!requires("removeRecord")) return;
     const m = currentMeeting(); const id = e.currentTarget.dataset.deleteDecision;
     m.minutes.decisions = m.minutes.decisions.filter((x) => x.id !== id);
     bumpVersion(m, "user_edit"); resetEditing(); toast("تصمیم حذف شد"); render();
@@ -2978,6 +3246,7 @@ function wire() {
   });
 
   on("[data-delete-meeting]", "click", (e) => {
+    if (!requires("removeRecord")) return;
     const id = e.currentTarget.dataset.deleteMeeting;
     confirmModal("حذف جلسه",
       "این جلسه و همهٔ فایل‌ها و صورت‌جلسه‌های آن برای همیشه حذف می‌شود. مطمئن هستید؟",
@@ -3052,7 +3321,7 @@ function docAssignment(d, meta) {
   const a = meta.assignment;
 
   if (!a) {
-    if (state.role !== "manager") {
+    if (!can("assign")) {
       return `<div class="panel"><p class="muted small">کاری روی این سند واگذار نشده است. واگذاری کار از عهدهٔ مدیر است.</p></div>`;
     }
     return `
@@ -3085,11 +3354,11 @@ function docAssignment(d, meta) {
       </div>
 
       <div class="row" style="margin-top:.75rem">
-        ${state.role === "secretary" && a.status === "open"
+        ${can("completeAssignment") && a.status === "open"
           ? `<button class="btn btn-primary btn-sm" data-assign-done="${d.id}">انجام شد</button>` : ""}
-        ${state.role === "manager" && a.status === "done"
+        ${can("assign") && a.status === "done"
           ? `<button class="btn btn-secondary btn-sm" data-assign-reopen="${d.id}">دوباره باز کن</button>` : ""}
-        ${state.role === "manager"
+        ${can("assign")
           ? `<button class="btn btn-ghost btn-sm" data-assign-remind="${d.id}">یادآوری به منشی</button>` : ""}
       </div>
     </div>`;
@@ -3163,9 +3432,10 @@ const CUES = [
                 /(?:چقدر|چند\s|آیا|چه\s*زمانی|چه\s*کسی|تعیین\s*تکلیف)[^.]*[؟?]/]],
 ];
 
-/* Sentence boundaries for classification. Unlike the search splitter, this one
-   leaves a colon alone: "مسئول: سارا" is one clause, and splitting it turns a
-   name into a stray punctuation mark. */
+/* The unit everything works on: the line an answer can quote, a claim can be
+   read from, and a decision can be recognised in. A colon deliberately does
+   not end one — "مسئول: سارا" is a single clause, and splitting it there turns
+   a name into a stray punctuation mark. */
 function clauses(text) {
   return String(text || "").split(/(?<=[.؛!؟])\s+|\n+/)
     .map((x) => x.trim()).filter((x) => x.length > 12);
@@ -3474,18 +3744,18 @@ function deriveMinutes(m, sources) {
     // One turn can settle one thing, promise another and flag a third, so the
     // sentence is what gets classified — while the citation stays the whole
     // statement, because a quote has to be readable on its own.
-    const units = clauses(st.text);
+    const units = clauses(st.text).length ? clauses(st.text) : [st.text];
     const pick = {};
-    (units.length ? units : [st.text]).forEach((u) => {
+    units.forEach((u, ui) => {
       const k = classify(u);
       if (!k) return;
-      if (!pick[k] || u.length > pick[k].length) pick[k] = u;
+      if (!pick[k] || u.length > pick[k].text.length) pick[k] = { text: u, at: ui };
     });
     const kinds = Object.keys(pick);
     if (!kinds.length) { if (worthKeeping(st.text)) leftovers.push(st); return; }
 
     kinds.forEach((kind) => {
-      const unit = pick[kind];
+      const unit = pick[kind].text;
       const title = headline(kind, { text: unit });
       if (title.length < 8) return;
 
@@ -3499,8 +3769,14 @@ function deriveMinutes(m, sources) {
         // A line written as "عنوان — مسئول: علی — مهلت: جمعه" keeps only its
         // first part as the title; the rest is already in the fields.
         const parts = unit.split(/\s*[—–]\s*/);
-        const structured = parts.length > 1 && /مسئول|مهلت/.test(unit)
+        let structured = parts.length > 1 && /مسئول|مهلت/.test(unit)
           ? parts[0].replace(/^[-•*۰-۹0-9]+[.)]?\s*/, "").trim() : null;
+        // "…تأمین شود. مسئول پیگیری: خانم موسوی — مهلت: ۱۵ آبان." A clause that
+        // is nothing but fields does not name the work; the clause before it does.
+        if (/^(?:مسئول|مهلت|وضعیت|اولویت)/.test(structured || title)) {
+          const prev = units[pick[kind].at - 1];
+          structured = prev ? headline("action", { text: prev }) : structured;
+        }
         // "…آماده کنی؟" — "بله، تا جمعه." The commitment is in the reply.
         if (!due && next && next.type === "audio" && next.src === st.src && next.text.length < 120) {
           due = extractDeadline(next.text);
