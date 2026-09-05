@@ -4391,6 +4391,14 @@ function seedAll() {
   seedSubmissions();
 }
 
+/* The webfont link is parked on media="print" so it cannot block this script.
+   Promote it here rather than relying only on its inline onload, which some
+   embedding contexts refuse to run. */
+(function promoteFont() {
+  const link = document.querySelector('link[rel="stylesheet"][media="print"]');
+  if (link) link.media = "all";
+})();
+
 if (!loadState()) seedAll();
 render();
 </script>
