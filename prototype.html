@@ -1,0 +1,3737 @@
+<meta charset="utf-8">
+<title>دستیار صورت‌جلسه و پرونده</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<!-- Loaded without blocking: a stylesheet in the head holds up the inline
+     script until it resolves, so on a slow or offline machine the whole
+     prototype stays blank until the font request gives up. The fallback stack
+     carries the page until Vazirmatn arrives. -->
+<link rel="stylesheet" media="print" onload="this.media='all'"
+      href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700&display=swap">
+<noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700&display=swap"></noscript>
+
+<style>
+/* ==========================================================================
+   Clickable prototype of the whole product: meeting minutes on one side,
+   case tracking and the document archive on the other.
+   Same interface as the real React app; all state lives in memory.
+   ========================================================================== */
+:root {
+  --brand-50:#eef4fb; --brand-100:#d8e6f6; --brand-200:#b3cdec; --brand-300:#82abdd;
+  --brand-400:#5386c9; --brand-500:#3467ae; --brand-600:#27528f; --brand-700:#1e3a5f;
+  --s-50:#f8fafc; --s-100:#f1f5f9; --s-200:#e2e8f0; --s-300:#cbd5e1; --s-400:#94a3b8;
+  --s-500:#64748b; --s-600:#475569; --s-700:#334155; --s-800:#1e293b; --s-900:#0f172a;
+  --ok-50:#ecfdf5; --ok-200:#a7f3d0; --ok-700:#047857;
+  --warn-50:#fffbeb; --warn-200:#fde68a; --warn-700:#b45309;
+  --bad-50:#fef2f2; --bad-200:#fecaca; --bad-600:#dc2626; --bad-700:#b91c1c;
+  --sky-50:#f0f9ff; --sky-200:#bae6fd; --sky-700:#0369a1;
+  --card-shadow: 0 1px 2px rgba(15,23,42,.04), 0 8px 24px -12px rgba(15,23,42,.15);
+  --font: "Vazirmatn", "Segoe UI", Tahoma, system-ui, sans-serif;
+}
+
+* { box-sizing: border-box; }
+
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  margin: 0;
+  direction: rtl;
+  background: var(--s-50);
+  color: var(--s-900);
+  font-family: var(--font);
+  font-size: 15px;
+  line-height: 1.65;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Latin runs inside an RTL document need their own direction. */
+.ltr { direction: ltr; unicode-bidi: isolate; text-align: left; }
+
+h1,h2,h3,h4 { margin: 0; line-height: 1.3; }
+p { margin: 0; }
+button { font: inherit; }
+
+:focus-visible { outline: 2px solid var(--brand-500); outline-offset: 2px; border-radius: 6px; }
+
+::selection { background: var(--brand-200); color: var(--brand-700); }
+
+.hidden { display: none !important; }
+
+/* ---------- primitives ---------- */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: .5rem;
+  border-radius: 12px; font-weight: 500; font-size: .875rem;
+  padding: .625rem 1rem; border: 1px solid transparent; cursor: pointer;
+  transition: background-color .15s, border-color .15s, color .15s;
+  white-space: nowrap;
+}
+.btn:disabled { opacity: .55; cursor: not-allowed; }
+.btn-primary { background: var(--brand-600); color: #fff; }
+.btn-primary:not(:disabled):hover { background: var(--brand-700); }
+.btn-secondary { background: #fff; color: var(--s-700); border-color: var(--s-300); }
+.btn-secondary:not(:disabled):hover { background: var(--s-50); }
+.btn-ghost { background: transparent; color: var(--s-600); }
+.btn-ghost:not(:disabled):hover { background: var(--s-100); }
+.btn-danger { background: #fff; color: var(--bad-600); border-color: var(--bad-200); }
+.btn-danger:not(:disabled):hover { background: var(--bad-50); }
+.btn-sm { padding: .35rem .7rem; font-size: .8125rem; border-radius: 10px; }
+.btn-lg { padding: .8rem 1.5rem; font-size: 1rem; }
+
+.field {
+  width: 100%; border-radius: 12px; border: 1px solid var(--s-300); background: #fff;
+  padding: .625rem .875rem; font-size: .875rem; color: var(--s-900);
+  outline: none; transition: border-color .15s, box-shadow .15s; font-family: inherit;
+}
+.field::placeholder { color: var(--s-400); }
+.field:focus { border-color: var(--brand-500); box-shadow: 0 0 0 4px var(--brand-50); }
+select.field { appearance: none; background-image: none; }
+textarea.field { resize: vertical; min-height: 4.5rem; }
+
+.label { display: block; font-size: .875rem; font-weight: 500; color: var(--s-700); margin-bottom: .375rem; }
+.hint { font-size: .75rem; color: var(--s-500); margin-top: .25rem; }
+
+.card {
+  background: #fff; border: 1px solid var(--s-200); border-radius: 16px;
+  box-shadow: var(--card-shadow); padding: 1.25rem;
+}
+@media (min-width: 640px) { .card { padding: 1.5rem; } }
+
+.badge {
+  display: inline-flex; align-items: center; gap: .35rem;
+  border-radius: 999px; padding: .125rem .625rem; font-size: .75rem; font-weight: 500;
+  border: 1px solid; white-space: nowrap;
+}
+.badge-neutral { background: var(--s-100); color: var(--s-600); border-color: var(--s-200); }
+.badge-info    { background: var(--sky-50); color: var(--sky-700); border-color: var(--sky-200); }
+.badge-success { background: var(--ok-50); color: var(--ok-700); border-color: var(--ok-200); }
+.badge-warning { background: var(--warn-50); color: var(--warn-700); border-color: var(--warn-200); }
+.badge-danger  { background: var(--bad-50); color: var(--bad-700); border-color: var(--bad-200); }
+.badge-brand   { background: var(--brand-50); color: var(--brand-700); border-color: var(--brand-200); }
+.badge .dot { width: 6px; height: 6px; border-radius: 999px; background: currentColor; }
+
+@keyframes pulse-ring {
+  0%   { box-shadow: 0 0 0 0 rgba(52,103,174,.35); }
+  70%  { box-shadow: 0 0 0 8px rgba(52,103,174,0); }
+  100% { box-shadow: 0 0 0 0 rgba(52,103,174,0); }
+}
+.pulse { animation: pulse-ring 1.8s cubic-bezier(.4,0,.6,1) infinite; }
+
+.alert { border-radius: 12px; border: 1px solid; padding: .75rem 1rem; font-size: .875rem; }
+.alert-danger  { background: var(--bad-50); border-color: var(--bad-200); color: #7f1d1d; }
+.alert-warning { background: var(--warn-50); border-color: var(--warn-200); color: #78350f; }
+.alert-info    { background: var(--sky-50); border-color: var(--sky-200); color: #0c4a6e; }
+
+.section-title {
+  display: flex; align-items: center; justify-content: space-between; gap: .75rem;
+  margin-bottom: 1rem; flex-wrap: wrap;
+}
+.section-title h3 { font-size: 1rem; font-weight: 600; display: flex; align-items: center; gap: .5rem; }
+.section-title .count {
+  background: var(--s-100); color: var(--s-500); border-radius: 999px;
+  padding: 0 .5rem; font-size: .75rem; font-weight: 400;
+}
+
+.stack { display: grid; gap: 1.5rem; }
+.row { display: flex; align-items: center; gap: .5rem; flex-wrap: wrap; }
+.spread { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
+.muted { color: var(--s-500); }
+.small { font-size: .8125rem; }
+.tnum { font-variant-numeric: tabular-nums; }
+
+/* ---------- app chrome ---------- */
+.appbar {
+  position: sticky; top: 0; z-index: 30;
+  background: rgba(255,255,255,.88); backdrop-filter: blur(8px);
+  border-bottom: 1px solid var(--s-200);
+}
+.appbar-inner {
+  max-width: 72rem; margin: 0 auto; padding: .75rem 1rem;
+  display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+}
+@media (min-width: 640px) { .appbar-inner { padding: .75rem 1.5rem; } }
+
+.brand { display: flex; align-items: center; gap: .625rem; cursor: pointer; background: none; border: 0; padding: 0; }
+.brand .mark {
+  width: 32px; height: 32px; border-radius: 10px; background: var(--brand-600);
+  display: grid; place-items: center; color: #fff; font-size: 1rem;
+}
+.brand .name { font-weight: 600; font-size: .95rem; color: var(--s-900); }
+
+main.wrap { max-width: 72rem; margin: 0 auto; padding: 1.5rem 1rem 4rem; }
+@media (min-width: 640px) { main.wrap { padding: 2rem 1.5rem 5rem; } }
+
+/* ---------- landing ---------- */
+.landing { background: #fff; min-height: 100vh; }
+.landing-hero { position: relative; overflow: hidden; text-align: center; }
+.landing-hero::before {
+  content: ""; position: absolute; inset-inline: 0; top: -8rem; height: 20rem;
+  background: linear-gradient(to bottom, var(--brand-50), transparent); pointer-events: none;
+}
+.landing-inner { position: relative; max-width: 48rem; margin: 0 auto; padding: 4rem 1.5rem 3.5rem; }
+.eyebrow {
+  display: inline-flex; align-items: center; gap: .5rem; border: 1px solid var(--brand-200);
+  background: #fff; border-radius: 999px; padding: .25rem .75rem;
+  font-size: .75rem; font-weight: 500; color: var(--brand-700); margin-bottom: 1rem;
+}
+.eyebrow .dot { width: 6px; height: 6px; border-radius: 999px; background: var(--brand-500); }
+.landing h1 { font-size: clamp(1.75rem, 5vw, 3rem); font-weight: 700; line-height: 1.18; letter-spacing: -.01em; }
+.landing .lede { margin: 1.25rem auto 0; max-width: 42rem; font-size: 1.0625rem; line-height: 1.9; color: var(--s-600); }
+.landing .cta { display: flex; gap: .75rem; justify-content: center; flex-wrap: wrap; margin-top: 2rem; }
+
+.landing-band { border-block: 1px solid var(--s-200); background: rgba(248,250,252,.7); }
+.landing-band-inner { max-width: 56rem; margin: 0 auto; padding: 3.5rem 1.5rem; }
+.band-title { text-align: center; font-size: .75rem; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: var(--s-500); margin-bottom: 2.5rem; }
+
+.flow-grid { display: grid; gap: 1rem; }
+@media (min-width: 640px) { .flow-grid { grid-template-columns: 1fr 1fr; } }
+.flow-item { display: flex; align-items: center; gap: 1rem; }
+.flow-item .glyph { width: 48px; height: 48px; border-radius: 12px; background: var(--s-100); display: grid; place-items: center; font-size: 1.5rem; flex: none; }
+
+.arrow { display: flex; justify-content: center; padding: 1.25rem 0; color: var(--s-300); }
+
+.out-list { display: grid; gap: .625rem; margin-top: 1rem; }
+@media (min-width: 640px) { .out-list { grid-template-columns: 1fr 1fr; } }
+.out-list li { display: flex; align-items: center; gap: .625rem; font-size: .875rem; color: var(--s-700); }
+.out-list .tick { width: 20px; height: 20px; border-radius: 999px; background: var(--ok-50); color: var(--ok-700); display: grid; place-items: center; font-size: .7rem; font-weight: 700; flex: none; }
+
+.principles { max-width: 64rem; margin: 0 auto; padding: 4rem 1.5rem; }
+.principles h2 { text-align: center; font-size: 1.5rem; font-weight: 700; }
+.principles .sub { text-align: center; color: var(--s-600); margin: .5rem auto 2.5rem; max-width: 36rem; }
+.principle-grid { display: grid; gap: 1rem; }
+@media (min-width: 640px) { .principle-grid { grid-template-columns: 1fr 1fr; } }
+
+.landing-close { border-top: 1px solid var(--s-200); background: var(--brand-700); color: #fff; text-align: center; }
+.landing-close-inner { max-width: 48rem; margin: 0 auto; padding: 3.5rem 1.5rem; }
+.landing-close h2 { font-size: 1.5rem; font-weight: 700; }
+.landing-close p { color: var(--brand-100); margin-top: .75rem; }
+
+.landing-footer { border-top: 1px solid var(--s-200); text-align: center; padding: 2rem 1rem; color: var(--s-500); font-size: .875rem; }
+
+/* ---------- auth ---------- */
+.auth-screen { min-height: 100vh; display: grid; place-items: center; padding: 2.5rem 1rem; background: var(--s-50); }
+.auth-box { width: 100%; max-width: 26rem; }
+.auth-brand { display: flex; align-items: center; justify-content: center; gap: .625rem; margin-bottom: 1.5rem; }
+
+/* ---------- dashboard ---------- */
+.table-wrap { overflow-x: auto; border-radius: 16px; }
+table.meetings { width: 100%; border-collapse: collapse; font-size: .875rem; min-width: 40rem; }
+table.meetings thead th {
+  background: var(--s-50); text-align: right; font-weight: 500;
+  font-size: .6875rem; letter-spacing: .05em; text-transform: uppercase; color: var(--s-500);
+  padding: .75rem 1.25rem; white-space: nowrap;
+}
+table.meetings tbody td { padding: .875rem 1.25rem; border-top: 1px solid var(--s-100); }
+table.meetings tbody tr { cursor: pointer; transition: background-color .12s; }
+table.meetings tbody tr:hover { background: rgba(248,250,252,.7); }
+table.meetings .title { font-weight: 500; color: var(--s-900); }
+table.meetings tbody tr:hover .title { color: var(--brand-700); }
+
+.mobile-cards { display: grid; gap: .75rem; }
+@media (min-width: 768px) { .mobile-cards { display: none; } .table-wrap { display: block; } }
+@media (max-width: 767px) { .table-wrap { display: none; } }
+
+.empty {
+  display: grid; place-items: center; text-align: center; gap: .25rem;
+  border: 2px dashed var(--s-300); border-radius: 16px; padding: 3rem 1.5rem;
+}
+.empty .glyph { font-size: 2rem; margin-bottom: .5rem; }
+
+/* ---------- sources ---------- */
+.source-row {
+  display: flex; align-items: center; gap: .75rem; flex-wrap: wrap;
+  border: 1px solid var(--s-200); border-radius: 12px; padding: .75rem 1rem; background: #fff;
+}
+.source-row .glyph { font-size: 1.25rem; flex: none; }
+.source-row .info { flex: 1 1 12rem; min-width: 0; }
+.source-row .fname { font-size: .875rem; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.source-row .fmeta { font-size: .75rem; color: var(--s-500); margin-top: .125rem; }
+.source-row .ferr { font-size: .75rem; color: var(--bad-600); margin-top: .375rem; }
+
+.dropzone {
+  display: grid; place-items: center; text-align: center; gap: .25rem;
+  border: 2px dashed var(--s-300); border-radius: 16px; padding: 2.5rem 1.5rem;
+  cursor: pointer; transition: border-color .15s, background-color .15s;
+}
+.dropzone:hover { border-color: var(--brand-400); background: rgba(238,244,251,.4); }
+.dropzone.drag { border-color: var(--brand-500); background: var(--brand-50); }
+.dropzone.disabled { cursor: not-allowed; opacity: .6; background: var(--s-50); }
+.dropzone .glyph { font-size: 1.75rem; }
+
+/* ---------- processing timeline ---------- */
+.timeline { display: grid; }
+.tl-item { display: flex; gap: .75rem; }
+.tl-rail { display: flex; flex-direction: column; align-items: center; }
+.tl-mark {
+  width: 28px; height: 28px; border-radius: 999px; border: 1px solid var(--s-200);
+  display: grid; place-items: center; font-size: .75rem; color: var(--s-300);
+  background: #fff; flex: none; transition: all .2s;
+}
+.tl-line { width: 1px; flex: 1; min-height: 14px; background: var(--s-200); }
+.tl-item:last-child .tl-line { display: none; }
+.tl-text { padding: .25rem 0 .875rem; }
+.tl-label { font-size: .875rem; color: var(--s-400); }
+.tl-detail { font-size: .75rem; color: var(--s-500); margin-top: .125rem; }
+
+.tl-item[data-state="running"] .tl-mark { color: var(--brand-600); border-color: var(--brand-300); background: var(--brand-50); }
+.tl-item[data-state="running"] .tl-label { color: var(--s-900); font-weight: 500; }
+.tl-item[data-state="done"] .tl-mark { color: var(--ok-700); border-color: var(--ok-200); background: var(--ok-50); }
+.tl-item[data-state="done"] .tl-label { color: var(--s-700); }
+.tl-item[data-state="done"] .tl-line { background: var(--ok-200); }
+.tl-item[data-state="failed"] .tl-mark { color: var(--bad-600); border-color: var(--bad-200); background: var(--bad-50); }
+.tl-item[data-state="failed"] .tl-label { color: var(--bad-700); font-weight: 500; }
+.tl-item[data-state="skipped"] .tl-label { color: var(--s-400); }
+
+/* ---------- minutes ---------- */
+.minutes-head { display: flex; align-items: center; justify-content: space-between; gap: .75rem; flex-wrap: wrap; }
+.minutes-head h2 { font-size: 1.125rem; font-weight: 600; }
+
+.kv { display: flex; flex-wrap: wrap; gap: .25rem 1.25rem; font-size: .875rem; color: var(--s-600); margin-top: .5rem; }
+.kv > div { display: flex; gap: .375rem; }
+.kv dt { color: var(--s-500); }
+.kv dd { margin: 0; }
+
+.people { display: flex; flex-wrap: wrap; gap: .5rem; }
+.person { border: 1px solid var(--s-200); border-radius: 10px; padding: .375rem .75rem; font-size: .875rem; }
+.person .role { color: var(--s-500); font-size: .75rem; margin-inline-start: .375rem; }
+
+.decision-item { border: 1px solid var(--s-200); border-radius: 12px; padding: 1rem; }
+.decision-item .txt { line-height: 1.8; }
+.decision-item .num { color: var(--s-400); margin-inline-end: .375rem; }
+
+.proposal-item {
+  border: 1px solid var(--warn-200); background: rgba(255,251,235,.5);
+  border-radius: 12px; padding: .75rem 1rem; font-size: .875rem; line-height: 1.8;
+  display: flex; justify-content: space-between; gap: .75rem; align-items: flex-start; flex-wrap: wrap;
+}
+
+.action-card { border: 1px solid var(--s-200); border-radius: 12px; padding: 1rem; background: #fff; transition: border-color .15s; }
+.action-card:hover { border-color: var(--s-300); }
+.action-card.editing { border-color: var(--brand-300); background: rgba(238,244,251,.35); }
+.action-card .atitle { font-weight: 500; line-height: 1.8; }
+.action-card .adesc { font-size: .875rem; color: var(--s-600); margin-top: .375rem; line-height: 1.8; }
+.action-foot {
+  display: flex; align-items: center; justify-content: space-between; gap: .5rem;
+  border-top: 1px solid var(--s-100); padding-top: .625rem; margin-top: .75rem; flex-wrap: wrap;
+}
+.linkish {
+  background: none; border: 0; padding: .125rem; cursor: pointer;
+  font-size: .75rem; color: var(--s-400); text-decoration: underline;
+  text-underline-offset: 2px; text-decoration-color: var(--s-300);
+}
+.linkish:hover { color: var(--brand-600); text-decoration-color: currentColor; }
+
+.bullet-list { display: grid; gap: .5rem; }
+.bullet-list li { display: flex; gap: .5rem; font-size: .875rem; line-height: 1.8; color: var(--s-700); }
+.bullet-list .b { color: var(--s-300); flex: none; }
+
+.topic + .topic { margin-top: 1.25rem; }
+.topic .tname { font-weight: 500; }
+.topic .tsum { font-size: .875rem; color: var(--s-600); line-height: 1.8; margin-top: .25rem; }
+
+/* ---------- modal ---------- */
+.overlay {
+  position: fixed; inset: 0; z-index: 50; background: rgba(15,23,42,.45);
+  backdrop-filter: blur(4px); display: flex; align-items: flex-start; justify-content: center;
+  padding: 1rem; overflow-y: auto;
+}
+@media (min-width: 640px) { .overlay { padding: 2rem; } }
+.modal { background: #fff; border-radius: 16px; box-shadow: var(--card-shadow); width: 100%; max-width: 32rem; margin: auto; padding: 1.25rem; }
+@media (min-width: 640px) { .modal { padding: 1.5rem; } }
+.modal.wide { max-width: 48rem; }
+.modal-head { display: flex; align-items: center; justify-content: space-between; gap: .75rem; margin-bottom: 1rem; }
+.modal-head h3 { font-size: 1rem; font-weight: 600; }
+.icon-btn { background: none; border: 0; padding: .375rem; border-radius: 8px; cursor: pointer; color: var(--s-400); line-height: 0; }
+.icon-btn:hover { background: var(--s-100); color: var(--s-600); }
+
+.evidence-item { border: 1px solid var(--s-200); border-radius: 12px; padding: .875rem; }
+.evidence-item .src { display: flex; align-items: center; gap: .5rem; font-weight: 500; font-size: .875rem; }
+.evidence-item blockquote {
+  margin: .5rem 0 0; border-inline-start: 2px solid var(--brand-300);
+  padding-inline-start: .75rem; font-size: .875rem; line-height: 1.8; color: var(--s-600);
+}
+
+.transcript { max-height: 60vh; overflow-y: auto; background: var(--s-50); border-radius: 12px; padding: 1rem; }
+.transcript p { font-size: .875rem; line-height: 1.9; color: var(--s-700); }
+.transcript p + p { margin-top: .5rem; }
+.ts { display: inline-block; background: #fff; border-radius: 4px; padding: 0 .375rem; font-size: .6875rem; color: var(--s-400); margin-inline-end: .5rem; }
+
+/* speaker separation */
+.turn + .turn { margin-top: .875rem; }
+.turn-head { display: flex; align-items: center; gap: .5rem; margin-bottom: .125rem; }
+.spk-chip { border-radius: 4px; padding: .0625rem .375rem; font-size: .75rem; font-weight: 500; color: var(--spk); background: var(--spk-bg); }
+.spk-dot { width: .625rem; height: .625rem; border-radius: 999px; flex-shrink: 0; background: var(--spk); }
+.spk-panel { border: 1px solid var(--s-200); border-radius: 12px; padding: 1rem; margin-bottom: 1rem; }
+.spk-row { display: flex; align-items: center; gap: .75rem; }
+.spk-row + .spk-row { margin-top: .5rem; }
+.spk-row input { flex: 1; min-width: 0; }
+.spk-stat { width: 8rem; flex-shrink: 0; text-align: left; font-size: .75rem; color: var(--s-400); }
+.spk-1 { --spk: #4f46e5; --spk-bg: #eef2ff; }
+.spk-2 { --spk: #059669; --spk-bg: #ecfdf5; }
+.spk-3 { --spk: #d97706; --spk-bg: #fffbeb; }
+.spk-4 { --spk: #7c3aed; --spk-bg: #f5f3ff; }
+.spk-5 { --spk: #e11d48; --spk-bg: #fff1f2; }
+.spk-6 { --spk: #0284c7; --spk-bg: #f0f9ff; }
+
+.version-row { display: flex; align-items: center; justify-content: space-between; gap: .75rem; border: 1px solid var(--s-200); border-radius: 12px; padding: .75rem 1rem; }
+
+/* document preview inside the export modal */
+.docpreview { background: #fff; border: 1px solid var(--s-200); border-radius: 8px; padding: 1.75rem; max-height: 60vh; overflow-y: auto; }
+.docpreview h1 { text-align: center; font-size: 1.375rem; color: var(--brand-700); }
+.docpreview .doclabel { text-align: center; color: var(--s-500); font-size: .8125rem; margin-bottom: 1.5rem; }
+.docpreview h2 { font-size: 1rem; color: var(--brand-700); margin-top: 1.25rem; padding-bottom: .25rem; border-bottom: 1px solid var(--s-200); }
+.docpreview p, .docpreview li { font-size: .875rem; line-height: 1.85; }
+.docpreview table { width: 100%; border-collapse: collapse; margin-top: .5rem; font-size: .8125rem; }
+.docpreview th, .docpreview td { border: 1px solid var(--s-300); padding: .375rem .5rem; text-align: right; vertical-align: top; }
+.docpreview th { background: var(--s-100); color: var(--brand-700); font-weight: 600; }
+.docpreview ul { padding-inline-start: 1.25rem; margin: .5rem 0; }
+
+/* ---------- toast ---------- */
+.toasts { position: fixed; inset-block-end: 1.25rem; inset-inline-start: 1.25rem; z-index: 60; display: grid; gap: .5rem; }
+.toast {
+  background: var(--s-900); color: #fff; border-radius: 12px; padding: .625rem 1rem;
+  font-size: .875rem; box-shadow: 0 10px 30px -10px rgba(15,23,42,.5);
+  animation: toast-in .2s ease-out;
+}
+@keyframes toast-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+
+/* demo affordance */
+.demo-note {
+  border: 1px dashed var(--brand-200); background: var(--brand-50); color: var(--brand-700);
+  border-radius: 12px; padding: .625rem .875rem; font-size: .8125rem;
+  display: flex; gap: .5rem; align-items: center; justify-content: space-between; flex-wrap: wrap;
+}
+
+@media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+
+/* ---------- case & archive ---------- */
+.mainnav { display: flex; gap: .25rem; margin-inline-start: .75rem; flex: 1; }
+.mainnav button {
+  background: none; border: 0; cursor: pointer; border-radius: 10px;
+  padding: .4rem .7rem; font-size: .875rem; color: var(--s-600);
+}
+.mainnav button:hover { background: var(--s-100); }
+.mainnav button[aria-current="true"] { background: var(--brand-50); color: var(--brand-700); font-weight: 600; }
+
+.qgrid { display: grid; gap: .5rem; grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr)); }
+.qbtn {
+  text-align: start; border: 1px solid var(--s-200); background: #fff; border-radius: 12px;
+  padding: .8rem .9rem; font-size: .9375rem; cursor: pointer; color: var(--s-800); line-height: 1.7;
+  transition: border-color .15s, background .15s;
+}
+.qbtn:hover { border-color: var(--brand-300); background: rgba(238,244,251,.5); }
+.qbtn.on { border-color: var(--brand-500); background: var(--brand-50); color: var(--brand-700); font-weight: 500; }
+
+.countbar { display: grid; grid-template-columns: repeat(4, 1fr); gap: .5rem; margin-top: 1.25rem; }
+.countbox { background: var(--s-50); border-radius: 12px; padding: .75rem; text-align: center; }
+.countbox b { display: block; font-size: 1.375rem; font-weight: 600; }
+.countbox span { font-size: .75rem; color: var(--s-500); }
+.countbox.warn b { color: var(--warn-700); }
+.countbox.bad b { color: var(--bad-600); }
+@media (max-width: 520px) { .countbar { grid-template-columns: repeat(2, 1fr); } }
+
+.conflict-sides { display: grid; gap: .75rem; margin-top: .75rem; }
+@media (min-width: 640px) { .conflict-sides { grid-template-columns: 1fr 1fr; } }
+.conflict-sides .side {
+  border: 1px solid var(--warn-200); background: rgba(255,251,235,.5);
+  border-radius: 12px; padding: .75rem .875rem; font-size: .875rem; line-height: 1.8;
+}
+
+.cite {
+  border: 1px solid var(--s-200); background: var(--s-50); color: var(--s-500);
+  border-radius: 6px; padding: 0 .3rem; font-size: .75rem; cursor: pointer;
+  margin-inline-start: .2rem; font-family: inherit;
+}
+.cite:hover { border-color: var(--brand-300); color: var(--brand-700); }
+
+@media print {
+  .appbar, .mainnav, .btn, .qgrid, .demo-note, .linkish { display: none !important; }
+  .card { box-shadow: none; break-inside: avoid; }
+}
+
+/* ---- role switch ---- */
+.roleswitch { display:inline-flex; border:1px solid var(--s-200); border-radius:.625rem; overflow:hidden; background:#fff; }
+.roleswitch button { border:0; background:transparent; font:inherit; font-size:.8125rem; color:var(--s-600);
+  padding:.3rem .625rem; cursor:pointer; }
+.roleswitch button + button { border-inline-start:1px solid var(--s-200); }
+.roleswitch button.on { background:var(--brand-50); color:var(--brand-700); font-weight:500; }
+
+/* ---- subjects ---- */
+.card.subject { cursor:pointer; transition:border-color .15s, box-shadow .15s; }
+.card.subject:hover { border-color:var(--brand-300); box-shadow:var(--card-shadow); }
+
+/* ---- the chat ---- */
+.chat-log { display:flex; flex-direction:column; gap:.75rem; max-height:26rem; overflow-y:auto; padding:.25rem; }
+.chat-hint { background:var(--s-50); border:1px dashed var(--s-200); border-radius:.75rem; padding:.875rem 1rem;
+  color:var(--s-600); font-size:.875rem; line-height:1.9; }
+.chat-row { display:flex; }
+.chat-row.user { justify-content:flex-start; }
+.chat-row.bot { justify-content:flex-end; }
+.chat-row .bubble { max-width:46rem; border-radius:1rem; padding:.75rem .9rem; font-size:.875rem; line-height:1.9; }
+.chat-row.user .bubble { background:var(--brand-600); color:#fff; border-end-start-radius:.25rem; }
+.chat-row.bot .bubble { background:var(--s-50); border:1px solid var(--s-200); color:var(--s-800); border-end-end-radius:.25rem; }
+.bubble.typing { display:flex; gap:.25rem; align-items:center; padding:.9rem 1rem; }
+.bubble.typing span { width:.375rem; height:.375rem; border-radius:50%; background:var(--s-400); animation:blink 1.2s infinite; }
+.bubble.typing span:nth-child(2) { animation-delay:.2s; }
+.bubble.typing span:nth-child(3) { animation-delay:.4s; }
+@keyframes blink { 0%,80%,100% { opacity:.25 } 40% { opacity:1 } }
+
+.hit { border:1px solid var(--s-200); background:#fff; border-radius:.625rem; padding:.6rem .75rem;
+  margin-bottom:.5rem; cursor:pointer; transition:border-color .15s; }
+.hit:hover { border-color:var(--brand-300); }
+.hit-head { font-weight:600; font-size:.8125rem; color:var(--s-900); }
+.hit-quote { margin-top:.35rem; font-size:.8125rem; color:var(--s-600); line-height:1.9; }
+
+/* ---- archive filters ---- */
+.filters { margin-top:.75rem; padding-top:.75rem; border-top:1px solid var(--s-100); }
+.filter-group { display:flex; align-items:center; gap:.5rem; flex-wrap:wrap; }
+.field-sm { height:2rem; width:auto; padding-block:0; font-size:.8125rem; }
+.chip { font-size:.75rem; color:var(--s-500); white-space:nowrap; }
+
+/* ---- one document's record ---- */
+.doc-tabs { display:flex; gap:.25rem; margin-top:1.25rem; border-bottom:1px solid var(--s-200); }
+.doc-tabs button { border:0; background:transparent; font:inherit; font-size:.8125rem; color:var(--s-500);
+  padding:.5rem .75rem; cursor:pointer; border-bottom:2px solid transparent; margin-bottom:-1px; }
+.doc-tabs button.on { color:var(--brand-700); border-bottom-color:var(--brand-600); font-weight:500; }
+.doc-tabs .count { background:var(--s-100); border-radius:999px; padding:0 .35rem; font-size:.6875rem; }
+.panel { padding-top:.875rem; }
+
+.comment { border-inline-start:3px solid var(--s-300); background:var(--s-50); border-radius:.5rem;
+  padding:.6rem .75rem; margin-bottom:.5rem; font-size:.875rem; line-height:1.9; }
+.comment.manager { border-inline-start-color:var(--brand-500); background:var(--brand-50); }
+.who { font-size:.8125rem; font-weight:500; color:var(--s-700); }
+
+.change { border:1px solid var(--s-200); border-radius:.5rem; padding:.6rem .75rem; margin-bottom:.5rem;
+  font-size:.875rem; }
+.change .was { text-decoration:line-through; color:var(--bad-600); }
+.change .now { color:var(--ok-700); font-weight:500; }
+.change .arrow { color:var(--s-400); margin:0 .25rem; }
+
+.assign { border:1px solid var(--warn-200); background:var(--warn-50); border-radius:.75rem; padding:.75rem .875rem; }
+.assign.done { border-color:var(--ok-200); background:var(--ok-50); }
+</style>
+
+<div id="root"></div>
+<div class="toasts" id="toasts"></div>
+
+<script>
+"use strict";
+
+/* ==========================================================================
+   State — everything the real backend would hold, kept in memory instead.
+   ========================================================================== */
+
+const STAGE_DEFS = [
+  { key: "upload",            label: "بارگذاری فایل‌ها" },
+  { key: "extract_documents", label: "استخراج متن اسناد" },
+  { key: "transcribe_audio",  label: "پیاده‌سازی صوت" },
+  { key: "analyze_sources",   label: "تحلیل منابع" },
+  { key: "consolidate",       label: "یکپارچه‌سازی اطلاعات" },
+  { key: "generate_minutes",  label: "تولید صورت‌جلسه" },
+];
+
+const MEETING_STATUS = {
+  draft:           { label: "پیش‌نویس",              tone: "neutral" },
+  uploaded:        { label: "آمادهٔ پردازش",          tone: "info" },
+  processing:      { label: "در حال پردازش",          tone: "brand" },
+  ready:           { label: "آماده",                  tone: "success" },
+  partial_failure: { label: "آماده (با خطای جزئی)",   tone: "warning" },
+  failed:          { label: "ناموفق",                 tone: "danger" },
+};
+
+const SOURCE_STATUS = {
+  uploaded:   { label: "بارگذاری‌شده", tone: "neutral" },
+  processing: { label: "در حال پردازش", tone: "brand" },
+  processed:  { label: "پردازش‌شده",    tone: "success" },
+  failed:     { label: "ناموفق",        tone: "danger" },
+};
+
+const ACTION_STATUS = {
+  open:        "باز",
+  in_progress: "در حال انجام",
+  done:        "انجام‌شده",
+  blocked:     "متوقف",
+};
+const ACTION_TONE = { open: "info", in_progress: "brand", done: "success", blocked: "danger" };
+const PRIORITY = { low: "کم", medium: "متوسط", high: "زیاد" };
+
+const AUDIO_EXT = ["mp3","wav","m4a","mp4","aac","ogg","flac","webm"];
+const DOC_EXT = ["pdf","docx","txt","md","markdown"];
+/* The ones a browser can read without a server. */
+const TEXT_EXT = ["txt","md","markdown"];
+
+let uid = 0;
+const nid = (p) => p + "-" + (++uid);
+
+// A diarized recording: every turn carries the voice it came from. The
+// labels are anonymous on purpose — separating voices never reveals whose
+// they are, so names stay empty until a person assigns them.
+const TRANSCRIPT_TURNS = [
+  { speaker: "speaker_1", text: "خب سلام به همه. ساعت ده است، شروع می‌کنیم. آقای کریمی امروز مرخصی هستند و در جلسه حضور ندارند." },
+  { speaker: "speaker_1", text: "اول برویم سراغ عملکرد فروش. علی، شما گزارش بدهید." },
+  { speaker: "speaker_2", text: "بله. سه‌ماههٔ دوم را با رشد دوازده درصدی نسبت به فصل قبل بستیم. رشد عمدتاً از منطقهٔ شمال بوده. در بخش B2B اما افت داشتیم، حدود پنج درصد." },
+  { speaker: "speaker_1", text: "خیلی خوب. علی، می‌شود گزارش کامل فروش سه‌ماهه را با تفکیک منطقه‌ای آماده کنی؟" },
+  { speaker: "speaker_2", text: "بله حتماً، تا جمعه آماده می‌کنم." },
+  { speaker: "speaker_1", text: "عالی. برویم سراغ نسخهٔ ۳.۲. سارا، وضعیت فنی چطور است؟" },
+  { speaker: "speaker_3", text: "تست‌های نهایی تمام شده. یک مسئله با rate limiter داشتیم که حل شد. از نظر ما آمادهٔ انتشار است." },
+  { speaker: "speaker_1", text: "پس تصمیم می‌گیریم نسخهٔ ۳.۲ هفتهٔ آینده منتشر شود. موافقید؟ … خوب، تصویب شد." },
+  { speaker: "speaker_3", text: "یک نکته: ما هنوز محیط staging را برای تست نهایی آماده نکرده‌ایم. اگر تا قبل از انتشار آماده نشود ممکن است مشکل‌ساز شود." },
+  { speaker: "speaker_1", text: "در مورد بودجهٔ بازاریابی هم صحبت شد. من فکر می‌کنم شاید بهتر باشد بودجهٔ فصل بعد را افزایش بدهیم، ولی باید اول با تیم مالی چک کنیم. الان تصمیمی نمی‌گیریم." },
+  { speaker: "speaker_1", text: "آخرین مورد، قرارداد با شرکت آریا. تصویب شد که قرارداد برای یک سال دیگر تمدید شود." },
+  { speaker: "speaker_1", text: "یک نفر هم باید اتاق جلسهٔ بعدی را رزرو کند، فعلاً مشخص نیست چه کسی این کار را انجام می‌دهد." },
+];
+
+const TRANSCRIPT = TRANSCRIPT_TURNS.map((t) => t.text);
+
+const NOTES_TEXT = `# یادداشت‌های جلسهٔ هیئت‌مدیره
+
+حاضران: علی رضایی (مدیر فروش)، سارا احمدی (مدیر فنی)
+غایب: حسن کریمی (مرخصی)
+
+## عملکرد فروش
+- رشد ۱۲٪ نسبت به فصل قبل
+- افت ۵٪ در بخش B2B
+
+## تصمیمات
+۱. انتشار نسخهٔ ۳.۲ در هفتهٔ آینده — مصوب
+۲. تمدید قرارداد شرکت آریا برای یک سال — مصوب
+
+## اقدامات
+گزارش فروش سه‌ماهه — مسئول: علی — مهلت: جمعه
+به‌روزرسانی مستندات استقرار — مسئول: سارا — مهلت: سه‌شنبه
+رزرو اتاق جلسهٔ بعدی — مسئول: ؟`;
+
+const AGENDA_TEXT = `BOARD MEETING - AGENDA
+Date: 18 August 2026    Time: 10:00 - 12:00
+Location: 3rd Floor Meeting Room
+
+Objective: Review Q2 performance and approve the 3.2 release plan.
+
+1. Q2 sales performance review        (Ali Rezaei, 20 min)
+2. Release 3.2 readiness              (Sara Ahmadi, 20 min)
+3. Marketing budget for Q3            (discussion, 15 min)
+4. Aria Co. contract renewal          (decision, 15 min)`;
+
+function boardSources() {
+  return [
+    { id: nid("s"), name: "meeting-recording.mp3", type: "audio", size: 18874368,
+      status: "processed", chars: 1407, duration: 2340, text: TRANSCRIPT.join("\n\n"), segments: true, diarized: true, turns: TRANSCRIPT_TURNS, speakerNames: {} },
+    { id: nid("s"), name: "agenda.pdf", type: "document", size: 1362,
+      status: "processed", chars: 564, text: AGENDA_TEXT },
+    { id: nid("s"), name: "previous-minutes.docx", type: "document", size: 37169,
+      status: "processed", chars: 475, text: "صورت‌جلسهٔ هیئت‌مدیره — جلسهٔ قبل\n\nتصمیمات جلسهٔ قبل:\n۱. تست‌های نسخهٔ ۳.۲ تا پایان مرداد تکمیل شود.\n۲. گزارش اولیهٔ فروش در جلسهٔ بعد ارائه شود.\n\nاقدامات باز:\nعنوان | مسئول | مهلت | وضعیت\nتکمیل تست‌های نسخه ۳.۲ | سارا احمدی | پایان مرداد | انجام‌شده" },
+    { id: nid("s"), name: "notes.md", type: "document", size: 1364,
+      status: "processed", chars: 808, text: NOTES_TEXT },
+  ];
+}
+
+function boardMinutes(sources) {
+  const mp3 = sources.find((s) => s.type === "audio") || sources[0];
+  const notes = sources.find((s) => s.name.endsWith(".md")) || sources[sources.length - 1];
+  return {
+    title: "جلسهٔ هیئت‌مدیره — بازبینی سه‌ماههٔ دوم",
+    info: { date: "2026-08-18", time: "۱۰:۰۰ تا ۱۲:۰۰", location: "اتاق جلسات طبقهٔ سوم",
+            objective: "بررسی عملکرد سه‌ماههٔ دوم و تأیید برنامهٔ انتشار نسخهٔ ۳.۲" },
+    summary: "جلسه برای بررسی عملکرد سه‌ماههٔ دوم و تصمیم‌گیری دربارهٔ انتشار نسخهٔ ۳.۲ برگزار شد. فروش با رشد ۱۲ درصدی بسته شد، هرچند بخش B2B افت داشت. انتشار نسخهٔ ۳.۲ برای هفتهٔ آینده و تمدید قرارداد شرکت آریا تصویب شد. بودجهٔ بازاریابی فصل بعد مطرح شد اما به تصمیم نرسید.",
+    participants: [
+      { name: "علی رضایی", role: "مدیر فروش" },
+      { name: "سارا احمدی", role: "مدیر فنی" },
+    ],
+    absentees: [{ name: "حسن کریمی", role: "مرخصی" }],
+    topics: [
+      { title: "عملکرد فروش سه‌ماههٔ دوم",
+        summary: "رشد ۱۲ درصدی نسبت به فصل قبل، عمدتاً از منطقهٔ شمال.",
+        points: ["رشد اصلی از منطقهٔ شمال", "افت ۵٪ در بخش B2B", "علت: تأخیر تحویل دو پروژه"] },
+      { title: "آمادگی انتشار نسخهٔ ۳.۲",
+        summary: "تست‌های نهایی تمام شده و مسئلهٔ rate limiter برطرف شده است.",
+        points: ["تست‌های نهایی کامل", "مسئلهٔ rate limiter حل شد"] },
+    ],
+    decisions: [
+      { id: nid("d"), text: "انتشار نسخهٔ ۳.۲ در هفتهٔ آینده", context: "پس از تأیید تیم فنی مبنی بر اتمام تست‌ها.",
+        by: "هیئت‌مدیره",
+        evidence: [{ src: mp3.name, type: "audio", quote: "پس تصمیم می‌گیریم نسخهٔ ۳.۲ هفتهٔ آینده منتشر شود. موافقید؟ … خوب، تصویب شد." },
+                   { src: notes.name, type: "document", quote: "انتشار نسخهٔ ۳.۲ در هفتهٔ آینده — مصوب" }] },
+      { id: nid("d"), text: "تمدید قرارداد شرکت آریا برای یک سال", context: null, by: null,
+        evidence: [{ src: mp3.name, type: "audio", quote: "تصویب شد که قرارداد برای یک سال دیگر تمدید شود." }] },
+    ],
+    proposals: [
+      { id: nid("p"), text: "افزایش بودجهٔ بازاریابی در فصل بعد",
+        context: "نیازمند بررسی با تیم مالی؛ در این جلسه تصمیمی گرفته نشد.",
+        evidence: [{ src: mp3.name, type: "audio", quote: "شاید بهتر باشد بودجهٔ فصل بعد را افزایش بدهیم، ولی باید اول با تیم مالی چک کنیم." }] },
+    ],
+    actions: [
+      { id: nid("a"), title: "تهیهٔ گزارش کامل فروش سه‌ماهه", desc: "با تفکیک منطقه‌ای و تحلیل افت بخش B2B",
+        owner: "علی رضایی", ownerConfirmed: true, deadline: null, deadlineText: "تا جمعه",
+        priority: "high", status: "open",
+        evidence: [{ src: mp3.name, type: "audio", quote: "علی، می‌شود گزارش کامل فروش سه‌ماهه را با تفکیک منطقه‌ای آماده کنی؟ — بله حتماً، تا جمعه آماده می‌کنم." },
+                   { src: notes.name, type: "document", quote: "گزارش فروش سه‌ماهه — مسئول: علی — مهلت: جمعه" }] },
+      { id: nid("a"), title: "به‌روزرسانی مستندات استقرار", desc: null,
+        owner: "سارا احمدی", ownerConfirmed: true, deadline: "2026-08-25", deadlineText: null,
+        priority: "medium", status: "in_progress",
+        evidence: [{ src: notes.name, type: "document", quote: "به‌روزرسانی مستندات استقرار — مسئول: سارا — مهلت: سه‌شنبه" }] },
+      { id: nid("a"), title: "بررسی آمادگی محیط staging", desc: null,
+        owner: "حسن کریمی", ownerConfirmed: false, deadline: null, deadlineText: "پیش از انتشار",
+        priority: null, status: "open",
+        evidence: [{ src: mp3.name, type: "audio", quote: "فکر کنم حسن بتواند این را بررسی کند، ولی هنوز با خودش صحبت نکرده‌ایم." }] },
+      { id: nid("a"), title: "رزرو اتاق جلسهٔ بعدی", desc: null,
+        owner: null, ownerConfirmed: false, deadline: null, deadlineText: null,
+        priority: null, status: "open",
+        evidence: [{ src: mp3.name, type: "audio", quote: "یک نفر هم باید اتاق جلسهٔ بعدی را رزرو کند، فعلاً مشخص نیست چه کسی این کار را انجام می‌دهد." }] },
+    ],
+    questions: [
+      { text: "بودجهٔ دقیق سه‌ماههٔ سوم چقدر است؟", context: "عدد نهایی هنوز اعلام نشده است." },
+    ],
+    risks: [
+      { text: "محیط staging هنوز آمادهٔ تست نهایی نیست", impact: "احتمال تأخیر در انتشار نسخهٔ ۳.۲", mitigation: "آماده‌سازی پیش از پایان هفته" },
+    ],
+    nextSteps: [{ text: "برگزاری جلسهٔ پیگیری", owner: "علی رضایی", when: "هفتهٔ آینده" }],
+    notes: ["قرارداد جدید با شرکت آریا امضا شد."],
+    sourcesUsed: sources.filter((s) => s.status === "processed").map((s) => s.name),
+    failedSources: sources.filter((s) => s.status === "failed").map((s) => s.name),
+    model: "gpt-4o-mini",
+    generatedAt: "2026-08-18T12:40:00Z",
+  };
+}
+
+function seedMeetings() {
+  const boardSrc = boardSources();
+  const boardMin = boardMinutes(boardSrc);
+
+  const productSrc = [
+    { id: nid("s"), name: "standup.m4a", type: "audio", size: 9437184, status: "processed",
+      chars: 640, duration: 1080, text: "امروز sprint planning داریم. Sara said the API gateway migration is blocked by the rate limiter. تصمیم گرفتیم migration را به sprint بعدی منتقل کنیم. Reza will update the deployment runbook by Thursday." },
+    { id: nid("s"), name: "board-scan.pdf", type: "document", size: 2411724, status: "failed",
+      error: "این PDF متن قابل استخراجی ندارد. اگر اسکن‌شده است، ابتدا آن را OCR کنید.", chars: 0 },
+  ];
+
+  return [
+    {
+      id: nid("m"), title: "جلسهٔ هیئت‌مدیره — بازبینی سه‌ماههٔ دوم",
+      date: "2026-08-18", time: "۱۰:۰۰ تا ۱۲:۰۰", location: "اتاق جلسات طبقهٔ سوم",
+      description: "بررسی عملکرد سه‌ماههٔ دوم، وضعیت انتشار نسخهٔ ۳.۲ و برنامهٔ فصل بعد.",
+      status: "ready", sources: boardSrc, minutes: boardMin, job: finishedJob(boardSrc, boardMin),
+      versions: [{ n: 1, origin: "generated", at: "2026-08-18T12:40:00Z" }],
+    },
+    {
+      id: nid("m"), title: "جلسهٔ هفتگی تیم محصول",
+      date: "2026-08-15", time: "۰۹:۳۰", location: "آنلاین",
+      description: null, status: "partial_failure", sources: productSrc,
+      minutes: productMinutes(productSrc), job: finishedJob(productSrc, null, ["board-scan.pdf"]),
+      versions: [{ n: 1, origin: "generated", at: "2026-08-15T10:15:00Z" }],
+    },
+    {
+      id: nid("m"), title: "جلسهٔ برنامه‌ریزی فروش",
+      date: "2026-08-21", time: "۱۴:۰۰", location: "اتاق جلسات طبقهٔ دوم",
+      description: "برنامه‌ریزی فروش فصل پاییز.",
+      status: "uploaded",
+      sources: [
+        { id: nid("s"), name: "sales-meeting.mp3", type: "audio", size: 22020096, status: "uploaded" },
+        { id: nid("s"), name: "sales-notes.md", type: "document", size: 2048, status: "uploaded" },
+        { id: nid("s"), name: "q3-targets.docx", type: "document", size: 41984, status: "uploaded" },
+      ],
+      minutes: null, job: null, versions: [],
+    },
+  ];
+}
+
+function productMinutes(sources) {
+  const audio = sources[0];
+  return {
+    title: "جلسهٔ هفتگی تیم محصول",
+    info: { date: "2026-08-15", time: "۰۹:۳۰", location: "آنلاین", objective: "برنامه‌ریزی sprint جاری" },
+    summary: "جلسهٔ برنامه‌ریزی sprint برگزار شد. مهاجرت API gateway به دلیل مسئلهٔ rate limiter به sprint بعدی منتقل شد.",
+    participants: [{ name: "Sara", role: null }, { name: "Reza", role: null }],
+    absentees: [],
+    topics: [{ title: "API gateway migration", summary: "به دلیل rate limiter مسدود شده است.", points: ["blocked by the rate limiter"] }],
+    decisions: [{ id: nid("d"), text: "انتقال API gateway migration به sprint بعدی", context: null, by: null,
+      evidence: [{ src: audio.name, type: "audio", quote: "تصمیم گرفتیم migration را به sprint بعدی منتقل کنیم." }] }],
+    proposals: [],
+    actions: [{ id: nid("a"), title: "به‌روزرسانی deployment runbook", desc: null, owner: "Reza",
+      ownerConfirmed: true, deadline: null, deadlineText: "Thursday", priority: "medium", status: "open",
+      evidence: [{ src: audio.name, type: "audio", quote: "Reza will update the deployment runbook by Thursday." }] }],
+    questions: [{ text: "آیا staging environment قبل از release آماده می‌شود؟", context: null }],
+    risks: [{ text: "rate limiter مانع migration است", impact: "تأخیر در sprint", mitigation: null }],
+    nextSteps: [],
+    notes: [],
+    sourcesUsed: [audio.name],
+    failedSources: ["board-scan.pdf"],
+    model: "gpt-4o-mini",
+    generatedAt: "2026-08-15T10:15:00Z",
+  };
+}
+
+function finishedJob(sources, minutes, failed) {
+  const docs = sources.filter((s) => s.type === "document");
+  const auds = sources.filter((s) => s.type === "audio");
+  const okDocs = docs.filter((s) => s.status === "processed").length;
+  const badDocs = docs.length - okDocs;
+  return {
+    status: "succeeded",
+    stages: STAGE_DEFS.map((d) => {
+      let detail = null, state = "done";
+      if (d.key === "upload") detail = fa(sources.length) + " فایل";
+      if (d.key === "extract_documents") {
+        if (!docs.length) { state = "skipped"; detail = "سند متنی وجود ندارد"; }
+        else detail = badDocs ? fa(okDocs) + " موفق، " + fa(badDocs) + " ناموفق" : fa(okDocs) + " مورد";
+      }
+      if (d.key === "transcribe_audio") {
+        if (!auds.length) { state = "skipped"; detail = "فایل صوتی وجود ندارد"; }
+        else detail = fa(auds.length) + " مورد";
+      }
+      if (d.key === "analyze_sources") detail = fa(sources.filter((s) => s.status === "processed").length) + " منبع تحلیل شد";
+      if (d.key === "consolidate") detail = "بدون هشدار";
+      if (d.key === "generate_minutes" && minutes)
+        detail = fa(minutes.actions.length) + " اقدام، " + fa(minutes.decisions.length) + " تصمیم";
+      return { key: d.key, label: d.label, state: state, detail: detail };
+    }),
+    error: null,
+    isRegeneration: false,
+  };
+}
+
+const state = {
+  user: null,
+  route: { name: "landing" },
+  meetings: [],
+  modal: null,
+  editingAction: null,
+  editingDecision: null,
+  editingTitle: false,
+  editingSummary: false,
+  addingAction: false,
+  dragging: false,
+  authTab: "login",
+  authError: null,
+
+  /* case & archive */
+  archiveQuery: "",
+  archiveKind: "",
+  archiveFrom: "",
+  archiveTo: "",
+
+  /* who is using the product right now. A manager assigns and follows up; a
+     secretary files and answers. Both can comment on anything. */
+  role: "manager",
+  docTab: "comments",
+  chat: {},        // caseId -> [{ from, text, hits }]
+  chatBusy: false,
+  docMeta: {},     // document id -> { comments, changes, assignment }
+};
+
+/* The two people this product is for. Everything either of them does to a
+   document is recorded against their name, because "who changed this" is the
+   first question anyone asks of a file. */
+const ROLES = {
+  manager:   { label: "مدیر",  name: "دکتر رضایی",   glyph: "👔" },
+  secretary: { label: "منشی",  name: "خانم موسوی",   glyph: "🗂" },
+};
+function me() { return ROLES[state.role]; }
+
+/* ==========================================================================
+   Helpers
+   ========================================================================== */
+const FA_DIGITS = ["۰","۱","۲","۳","۴","۵","۶","۷","۸","۹"];
+function fa(v) { return String(v).replace(/[0-9]/g, (d) => FA_DIGITS[+d]); }
+
+function esc(v) {
+  return String(v == null ? "" : v)
+    .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+}
+
+/* Gregorian → Jalali. Written out rather than left to Intl so the file keeps
+   working offline, in an old browser, and identically on every machine that
+   opens it during a presentation. */
+const JMONTHS = ["فروردین","اردیبهشت","خرداد","تیر","مرداد","شهریور",
+                 "مهر","آبان","آذر","دی","بهمن","اسفند"];
+
+function toJalali(gy, gm, gd) {
+  const gdm = [0,31,59,90,120,151,181,212,243,273,304,334];
+  let jy = gy <= 1600 ? 0 : 979;
+  const gy2 = gy <= 1600 ? gy - 621 : gy - 1600;
+  const gm2 = gm > 2 ? 1 : 0;
+  let days = 365 * gy2 + Math.floor((gy2 + 3) / 4) - Math.floor((gy2 + 99) / 100)
+    + Math.floor((gy2 + 399) / 400) - 80 + gd + gdm[gm - 1] + gm2 * leapG(gy);
+  jy += 33 * Math.floor(days / 12053);
+  days %= 12053;
+  jy += 4 * Math.floor(days / 1461);
+  days %= 1461;
+  if (days > 365) { jy += Math.floor((days - 1) / 365); days = (days - 1) % 365; }
+  const jm = days < 186 ? 1 + Math.floor(days / 31) : 7 + Math.floor((days - 186) / 30);
+  const jd = 1 + (days < 186 ? days % 31 : (days - 186) % 30);
+  return [jy, jm, jd];
+}
+function leapG(y) { return (y % 4 === 0 && y % 100 !== 0) || y % 400 === 0 ? 1 : 0; }
+
+const pad2 = (v) => (v < 10 ? "0" + v : String(v));
+
+/* The numeric form the archive already uses, so one file reads as one file. */
+function formatDate(iso) {
+  if (!iso) return "مشخص نشده";
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(iso);
+  if (!m) return iso;
+  const [jy, jm, jd] = toJalali(+m[1], +m[2], +m[3]);
+  return fa(jy + "/" + pad2(jm) + "/" + pad2(jd));
+}
+/* The long form, for a document header where the date is read, not scanned. */
+function formatDateLong(iso) {
+  if (!iso) return "مشخص نشده";
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(iso);
+  if (!m) return iso;
+  const [jy, jm, jd] = toJalali(+m[1], +m[2], +m[3]);
+  return fa(jd) + " " + JMONTHS[jm - 1] + " " + fa(jy);
+}
+function todayIso() {
+  const d = new Date();
+  return d.getFullYear() + "-" + pad2(d.getMonth() + 1) + "-" + pad2(d.getDate());
+}
+function formatBytes(b) {
+  if (b < 1024) return fa(b) + " بایت";
+  if (b < 1048576) return fa((b / 1024).toFixed(0)) + " کیلوبایت";
+  return fa((b / 1048576).toFixed(1)) + " مگابایت";
+}
+function formatDuration(sec) {
+  if (!sec) return null;
+  const m = Math.floor(sec / 60);
+  return fa(m) + " دقیقه";
+}
+
+// A diarization label identifies a voice, not a person. Until someone says
+// whose voice it is, this is all we are entitled to call them.
+function fallbackSpeaker(label) {
+  return "گویندهٔ " + fa(label.replace("speaker_", ""));
+}
+
+function speakerLabel(source, label) {
+  const given = source.speakerNames && source.speakerNames[label];
+  return (given || "").trim() || fallbackSpeaker(label);
+}
+
+/* The transcript as text, carrying whatever names have been assigned. This is
+   what the archive searches and what a quote is taken from, so naming a voice
+   has to rewrite it. */
+function speakerText(source) {
+  if (!source.turns || !source.turns.length) return source.text || "";
+  return source.turns.map((t) => speakerLabel(source, t.speaker) + ": " + t.text).join("\n\n");
+}
+
+function speakerStats(source) {
+  const order = [];
+  const totals = {};
+  source.turns.forEach((t) => {
+    if (!totals[t.speaker]) { order.push(t.speaker); totals[t.speaker] = { count: 0, chars: 0 }; }
+    totals[t.speaker].count += 1;
+    totals[t.speaker].chars += t.text.length;
+  });
+  const allChars = source.turns.reduce((n, t) => n + t.text.length, 0) || 1;
+  return order.map((label) => ({
+    label,
+    count: totals[label].count,
+    seconds: Math.round((source.duration || 0) * totals[label].chars / allChars),
+  }));
+}
+
+function extOf(name) { const p = name.split("."); return p.length > 1 ? p.pop().toLowerCase() : ""; }
+function deadlineLabel(a) {
+  if (a.deadline) return { text: formatDate(a.deadline), exact: true };
+  if (a.deadlineText) return { text: a.deadlineText, exact: false };
+  return { text: "مشخص نشده", exact: false };
+}
+function currentMeeting() {
+  return state.meetings.find((m) => m.id === state.route.id) || null;
+}
+function toast(msg) {
+  const box = document.getElementById("toasts");
+  const el = document.createElement("div");
+  el.className = "toast";
+  el.textContent = msg;
+  box.appendChild(el);
+  setTimeout(() => el.remove(), 2600);
+}
+function go(route) { state.route = route; state.modal = null; resetEditing(); render(); window.scrollTo(0, 0); }
+function resetEditing() {
+  state.editingAction = null; state.editingDecision = null;
+  state.editingTitle = false; state.editingSummary = false; state.addingAction = false;
+}
+function snapshot(minutes) {
+  return minutes ? JSON.parse(JSON.stringify(minutes)) : null;
+}
+
+/* A version is only worth keeping if it keeps the text. Storing the document
+   alongside the row is what lets "نسخهٔ ۱" actually show version 1 — without
+   it the history is a list of dates that all open the same page. */
+function bumpVersion(m, origin) {
+  const last = m.versions[m.versions.length - 1];
+  // A run of edits in one sitting stays one revision, but that revision has to
+  // carry the document as it looks now, not as it looked when the run started.
+  if (origin === "user_edit" && last && last.origin === "user_edit") {
+    last.at = new Date().toISOString();
+    last.snapshot = snapshot(m.minutes);
+    return;
+  }
+  m.versions.push({
+    n: m.versions.length + 1, origin: origin,
+    at: new Date().toISOString(), snapshot: snapshot(m.minutes),
+  });
+}
+
+/* ==========================================================================
+   Keeping the session
+
+   A prototype that forgets everything on refresh is a prototype nobody can
+   show twice. Everything the two tabs hold is small and plain, so it goes
+   straight to localStorage; the modal never does, because a confirm dialog
+   carries a callback and a callback is not data.
+   ========================================================================== */
+const STORE_KEY = "astan-prototype-v1";
+
+function saveState() {
+  try {
+    localStorage.setItem(STORE_KEY, JSON.stringify({
+      uid: uid, user: state.user, route: state.route, role: state.role,
+      meetings: state.meetings, docMeta: state.docMeta, chat: state.chat,
+      archive: ARCHIVE, docTab: state.docTab,
+      archiveQuery: state.archiveQuery, archiveKind: state.archiveKind,
+      archiveFrom: state.archiveFrom, archiveTo: state.archiveTo,
+    }));
+  } catch (e) { /* private window, or the quota is full — the demo still runs */ }
+}
+
+function loadState() {
+  let saved = null;
+  try { saved = JSON.parse(localStorage.getItem(STORE_KEY) || "null"); } catch (e) { return false; }
+  if (!saved || !Array.isArray(saved.meetings)) return false;
+
+  uid = saved.uid || uid;
+  state.user = saved.user || null;
+  state.role = ROLES[saved.role] ? saved.role : "manager";
+  state.meetings = saved.meetings;
+  state.docMeta = saved.docMeta || {};
+  state.chat = saved.chat || {};
+  state.docTab = saved.docTab || "comments";
+  ["archiveQuery", "archiveKind", "archiveFrom", "archiveTo"].forEach((k) => { state[k] = saved[k] || ""; });
+  if (Array.isArray(saved.archive)) { ARCHIVE.length = 0; saved.archive.forEach((d) => ARCHIVE.push(d)); }
+
+  // A job that was mid-flight when the tab closed has no timer behind it any
+  // more; leaving it "processing" would freeze that entry for good.
+  state.meetings.forEach((m) => {
+    if (m.status !== "processing") return;
+    m.status = m.minutes ? "ready" : m.sources.length ? "uploaded" : "draft";
+    if (m.job) m.job.status = m.minutes ? "succeeded" : "failed";
+  });
+
+  const r = saved.route;
+  state.route = r && r.name ? r : { name: state.user ? "dashboard" : "landing" };
+  if (state.route.name === "meeting" && !state.meetings.some((m) => m.id === state.route.id)) state.route = { name: "dashboard" };
+  if (state.route.name === "case" && !CASE_LIST.some((c) => c.id === state.route.id)) state.route = { name: "cases" };
+  return true;
+}
+
+function resetDemo() {
+  try { localStorage.removeItem(STORE_KEY); } catch (e) { /* nothing to clear */ }
+  location.reload();
+}
+
+/* ==========================================================================
+   Render
+   ========================================================================== */
+function render() {
+  const root = document.getElementById("root");
+  let html = "";
+  const r = state.route;
+
+  if (r.name === "landing") html = viewLanding();
+  else if (r.name === "auth") html = viewAuth();
+  else if (r.name === "dashboard") html = shell(viewDashboard());
+  else if (r.name === "new") html = shell(viewNewMeeting());
+  else if (r.name === "meeting") html = shell(viewMeeting());
+  else if (r.name === "cases") html = shell(viewCases());
+  else if (r.name === "case") html = shell(viewCase());
+  else if (r.name === "archive") html = shell(viewArchive());
+  else html = shell("<p>صفحه پیدا نشد.</p>");
+
+  if (state.modal) html += viewModal();
+  root.innerHTML = html;
+  wire();
+  saveState();
+}
+
+function shell(inner) {
+  const label = state.user ? esc(state.user.name || state.user.email) : "";
+  return `
+    <div class="appbar">
+      <div class="appbar-inner">
+        <button class="brand" data-go="dashboard">
+          <span class="mark">📝</span>
+          <span class="name">دستیار صورت‌جلسه و پرونده</span>
+        </button>
+        <nav class="mainnav">
+          <button data-go="dashboard" aria-current="${["dashboard","new","meeting"].includes(state.route.name)}">ورود دیتا</button>
+          <button data-go="cases" aria-current="${["cases","case"].includes(state.route.name)}">پرونده‌ها</button>
+          <button data-go="archive" aria-current="${state.route.name === "archive"}">بایگانی</button>
+        </nav>
+        <div class="row">
+          <div class="roleswitch" role="group" aria-label="نقش کاربر">
+            ${Object.keys(ROLES).map((k) => `
+              <button data-role="${k}" class="${state.role === k ? "on" : ""}">${ROLES[k].glyph} ${ROLES[k].label}</button>
+            `).join("")}
+          </div>
+          <span class="muted small">${esc(me().name)}</span>
+          <button class="btn btn-ghost btn-sm" data-reset>بازنشانی دمو</button>
+          <button class="btn btn-ghost btn-sm" data-logout>خروج</button>
+        </div>
+      </div>
+    </div>
+    <main class="wrap">${inner}</main>`;
+}
+
+/* ---------- landing ---------- */
+function viewLanding() {
+  return `
+  <div class="landing">
+    <div class="appbar">
+      <div class="appbar-inner">
+        <button class="brand" data-go="landing">
+          <span class="mark">📝</span><span class="name">دستیار صورت‌جلسه</span>
+        </button>
+        <div class="row">
+          <button class="btn btn-ghost btn-sm" data-auth="login">ورود</button>
+          <button class="btn btn-primary btn-sm" data-auth="register">شروع کنید</button>
+        </div>
+      </div>
+    </div>
+
+    <section class="landing-hero">
+      <div class="landing-inner">
+        <span class="eyebrow"><span class="dot"></span>تحلیل هوشمند جلسه‌ها</span>
+        <h1>جلسه‌های خود را به صورت‌جلسه‌ای روشن و قابل اقدام تبدیل کنید</h1>
+        <p class="lede">فایل صوتی، یادداشت‌ها و اسناد جلسه را بارگذاری کنید. هوش مصنوعی تصمیم‌ها، اقدام‌ها، مسئولان، مهلت‌ها و نکات کلیدی را استخراج می‌کند و همه را در یک صورت‌جلسهٔ حرفه‌ای کنار هم می‌گذارد.</p>
+        <div class="cta">
+          <button class="btn btn-primary btn-lg" data-auth="register">شروع یک جلسه</button>
+          <button class="btn btn-secondary btn-lg" data-auth="login">قبلاً حساب دارم</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="landing-band">
+      <div class="landing-band-inner">
+        <p class="band-title">چطور کار می‌کند</p>
+        <div class="flow-grid">
+          <div class="card flow-item"><span class="glyph">🎙</span><div><p style="font-weight:500">فایل صوتی جلسه</p><p class="muted small">MP3، WAV، M4A یا MP4</p></div></div>
+          <div class="card flow-item"><span class="glyph">📄</span><div><p style="font-weight:500">اسناد جلسه</p><p class="muted small">PDF، Word، متن و Markdown</p></div></div>
+        </div>
+        <div class="arrow">${arrowSvg()}</div>
+        <div class="card" style="max-width:28rem;margin:0 auto;text-align:center">
+          <p style="font-weight:600;color:var(--brand-700)">تحلیل هوش مصنوعی</p>
+          <p class="muted small" style="margin-top:.25rem">پیاده‌سازی صوت، استخراج متن اسناد و یکپارچه‌سازی همهٔ منابع</p>
+        </div>
+        <div class="arrow">${arrowSvg()}</div>
+        <div class="card" style="max-width:36rem;margin:0 auto">
+          <p style="font-weight:600;text-align:center">📝 صورت‌جلسهٔ نهایی</p>
+          <ul class="out-list" style="list-style:none;padding:0">
+            ${["تصمیمات","اقدامات و مسئولان","مهلت‌ها","پرسش‌های باز"].map((t) =>
+              `<li><span class="tick">✓</span>${t}</li>`).join("")}
+          </ul>
+          <p class="muted small" style="text-align:center;border-top:1px solid var(--s-100);margin-top:1.25rem;padding-top:1rem">قابل ویرایش · خروجی Word و PDF</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="principles">
+      <h2>چرا می‌توان به این صورت‌جلسه اعتماد کرد</h2>
+      <p class="sub">این ابزار فقط خلاصه‌نویسی نمی‌کند؛ سندی می‌سازد که می‌توانید بر اساس آن تصمیم بگیرید.</p>
+      <div class="principle-grid">
+        ${[
+          ["هیچ چیز از خودش نمی‌سازد","اگر نام، تاریخ یا مسئولی در منابع نباشد، سیستم آن را «مشخص نشده» گزارش می‌کند؛ حدس نمی‌زند."],
+          ["اطلاعات منابع را یکپارچه می‌کند","اگر یک اقدام هم در فایل صوتی و هم در یادداشت‌ها آمده باشد، یک بار ثبت می‌شود — نه دو بار."],
+          ["قطعیت را مشخص می‌کند","«شاید هفته آینده منتشر کنیم» تصمیم نیست؛ به عنوان پیشنهاد ثبت می‌شود."],
+          ["منبع هر نکته قابل ردیابی است","برای هر تصمیم و اقدام می‌توانید ببینید از کدام فایل استخراج شده است."],
+        ].map(([t, d]) => `<div class="card"><p style="font-weight:600">${t}</p><p class="muted small" style="margin-top:.5rem;line-height:1.9">${d}</p></div>`).join("")}
+      </div>
+    </section>
+
+    <section class="landing-close">
+      <div class="landing-close-inner">
+        <h2>آمادهٔ شروع هستید؟</h2>
+        <p>اولین جلسهٔ خود را بسازید و ببینید نتیجه چطور از آب درمی‌آید.</p>
+        <button class="btn btn-secondary btn-lg" style="margin-top:1.75rem" data-auth="register">شروع یک جلسه</button>
+      </div>
+    </section>
+
+    <footer class="landing-footer">دستیار صورت‌جلسه — نسخهٔ نمایشی</footer>
+  </div>`;
+}
+
+function arrowSvg() {
+  return `<svg viewBox="0 0 24 40" width="24" height="40" fill="none" aria-hidden="true"><path d="M12 2v30m0 0-7-7m7 7 7-7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+}
+
+/* ---------- auth ---------- */
+function viewAuth() {
+  const isLogin = state.authTab === "login";
+  return `
+  <div class="auth-screen">
+    <div class="auth-box">
+      <button class="auth-brand brand" data-go="landing">
+        <span class="mark">📝</span><span class="name">دستیار صورت‌جلسه</span>
+      </button>
+      <div class="card">
+        <h1 style="font-size:1.25rem;font-weight:600">${isLogin ? "ورود به حساب" : "ساخت حساب کاربری"}</h1>
+        <p class="muted small" style="margin-top:.25rem">${isLogin ? "برای دسترسی به جلسه‌های خود وارد شوید." : "در کمتر از یک دقیقه شروع کنید."}</p>
+        <form id="auth-form" style="margin-top:1.5rem;display:grid;gap:1rem">
+          ${state.authError ? `<div class="alert alert-danger">${esc(state.authError)}</div>` : ""}
+          ${isLogin ? "" : `<div><label class="label" for="au-name">نام و نام خانوادگی (اختیاری)</label><input class="field" id="au-name" value="کاربر نمونه"></div>`}
+          <div><label class="label" for="au-email">ایمیل</label><input class="field ltr" id="au-email" type="email" value="demo@example.com" placeholder="you@example.com"></div>
+          <div>
+            <label class="label" for="au-pass">رمز عبور</label>
+            <input class="field ltr" id="au-pass" type="password" value="demo-password-1234">
+            ${isLogin ? "" : `<p class="hint">حداقل ۸ کاراکتر</p>`}
+          </div>
+          <button class="btn btn-primary" type="submit" style="width:100%">${isLogin ? "ورود" : "ساخت حساب"}</button>
+        </form>
+      </div>
+      <p class="muted small" style="text-align:center;margin-top:1.25rem">
+        ${isLogin ? "حساب ندارید؟" : "قبلاً ثبت‌نام کرده‌اید؟"}
+        <button class="linkish" style="color:var(--brand-600);font-size:.875rem;text-decoration-color:currentColor" data-auth="${isLogin ? "register" : "login"}">${isLogin ? "ثبت‌نام کنید" : "وارد شوید"}</button>
+      </p>
+      <p class="muted small" style="text-align:center;margin-top:.75rem">نمونهٔ آماده در فرم پر شده است — فقط دکمه را بزنید.</p>
+    </div>
+  </div>`;
+}
+
+/* ---------- dashboard ---------- */
+function viewDashboard() {
+  const rows = state.meetings;
+  return `
+    <div class="spread" style="margin-bottom:1.5rem">
+      <div>
+        <h1 style="font-size:1.5rem;font-weight:600">ورود دیتا</h1>
+        <p class="muted small" style="margin-top:.25rem">
+          هرچه وارد می‌کنید به بایگانی اضافه می‌شود و از همان لحظه در جست‌وجوی پرونده‌ها دیده می‌شود.
+        </p>
+      </div>
+      <button class="btn btn-primary" data-go="new">+ ورود دیتا</button>
+    </div>
+
+    ${rows.length === 0 ? `
+      <div class="empty">
+        <span class="glyph">📥</span>
+        <p style="font-weight:500">هنوز داده‌ای وارد نکرده‌اید</p>
+        <p class="muted small" style="max-width:28rem">عنوان، تاریخ و نوع را وارد کنید و بعد فایل صوتی، فایل سند یا متن آن را بدهید.</p>
+        <button class="btn btn-primary" style="margin-top:1rem" data-go="new">ورود اولین داده</button>
+      </div>` : `
+      <div class="card table-wrap" style="padding:0;overflow:hidden">
+        <table class="meetings">
+          <thead><tr><th>عنوان</th><th>نوع</th><th>تاریخ</th></tr></thead>
+          <tbody>
+            ${rows.map((m) => {
+              const k = DOC_KINDS[m.kind || "meeting_minutes"];
+              return `<tr data-open="${m.id}">
+                <td class="title">${esc(m.title)}</td>
+                <td class="muted">${k.glyph} ${k.label}</td>
+                <td class="muted tnum">${m.date ? formatDate(m.date) : "—"}</td>
+              </tr>`;
+            }).join("")}
+          </tbody>
+        </table>
+      </div>
+      <div class="mobile-cards">
+        ${rows.map((m) => {
+          const k = DOC_KINDS[m.kind || "meeting_minutes"];
+          return `
+          <div class="card" data-open="${m.id}" style="cursor:pointer;padding:1rem">
+            <p style="font-weight:500">${esc(m.title)}</p>
+            <p class="muted small tnum" style="margin-top:.5rem">${k.glyph} ${k.label} · ${m.date ? formatDate(m.date) : "بدون تاریخ"}</p>
+          </div>`;
+        }).join("")}
+      </div>`}
+  `;
+}
+
+/* ---------- new meeting ---------- */
+function viewNewMeeting() {
+  return `
+    <div style="max-width:38rem;margin:0 auto">
+      <button class="linkish" style="font-size:.875rem;margin-bottom:1rem;text-decoration:none;color:var(--s-500)" data-go="dashboard">← بازگشت به فهرست</button>
+      <div class="card">
+        <h1 style="font-size:1.125rem;font-weight:600">ورود دیتا</h1>
+        <p class="muted small" style="margin-top:.25rem">
+          اول بگویید چه چیزی را وارد می‌کنید؛ در گام بعد فایل صوتی، فایل سند یا متن آن را می‌گیریم.
+        </p>
+        <form id="new-form" style="margin-top:1.5rem;display:grid;gap:1rem">
+          <div><label class="label" for="nm-title">عنوان</label><input class="field" id="nm-title" placeholder="مثلاً: نامهٔ پیگیری اعتبار مطالعات امنیت"></div>
+          <div style="display:grid;gap:1rem;grid-template-columns:1fr 1fr">
+            <div><label class="label" for="nm-date">تاریخ</label><input class="field ltr" id="nm-date" type="date" value="${todayIso()}"></div>
+            <div><label class="label" for="nm-time">ساعت</label><input class="field" id="nm-time" placeholder="۱۰:۰۰"></div>
+          </div>
+          <div>
+            <label class="label" for="nm-kind">نوع</label>
+            <select class="field" id="nm-kind">
+              ${ENTRY_KINDS.map((k) => `<option value="${k}">${DOC_KINDS[k].glyph} ${DOC_KINDS[k].label}</option>`).join("")}
+            </select>
+            <p class="hint">نوع تعیین می‌کند سند در بایگانی کجا بنشیند و در پاسخ‌ها چقدر وزن داشته باشد.</p>
+          </div>
+          <div>
+            <label class="label" for="nm-desc">توضیح <span class="muted" style="font-weight:400">(اختیاری)</span></label>
+            <textarea class="field" id="nm-desc" rows="3" placeholder="اگر توضیحی دارید بنویسید؛ خالی هم بماند اشکالی ندارد."></textarea>
+          </div>
+          <div class="row" style="padding-top:.25rem">
+            <button class="btn btn-primary" type="submit">ادامه و افزودن محتوا</button>
+            <button class="btn btn-secondary" type="button" data-go="dashboard">انصراف</button>
+          </div>
+        </form>
+      </div>
+    </div>`;
+}
+
+/* ---------- meeting workspace ---------- */
+function viewMeeting() {
+  const m = currentMeeting();
+  if (!m) return `<div class="empty"><span class="glyph">🔍</span><p style="font-weight:500">این جلسه پیدا نشد</p></div>`;
+
+  const processing = m.status === "processing";
+  const hasSources = m.sources.length > 0;
+
+  return `
+    <div class="stack">
+      <div>
+        <button class="linkish" style="font-size:.875rem;text-decoration:none;color:var(--s-500)" data-go="dashboard">← فهرست ورود دیتا</button>
+        <div class="spread" style="margin-top:.5rem">
+          <div>
+            <h1 style="font-size:1.5rem;font-weight:600">${esc(m.title)}</h1>
+            <p class="muted small tnum" style="margin-top:.25rem">
+              ${DOC_KINDS[m.kind || "meeting_minutes"].label} · ${m.date ? formatDate(m.date) : "بدون تاریخ"}${m.time ? " · " + esc(m.time) : ""}${m.location ? " · " + esc(m.location) : ""}
+            </p>
+            ${m.description ? `<p class="muted small" style="margin-top:.35rem;max-width:46rem">${esc(m.description)}</p>` : ""}
+          </div>
+          <div class="row">
+            <button class="btn btn-ghost btn-sm" style="color:var(--bad-600)" data-delete-meeting="${m.id}">حذف</button>
+          </div>
+        </div>
+      </div>
+
+      ${m.status === "failed" ? `<div class="alert alert-danger">آخرین پردازش ناموفق بود: ${esc(m.job && m.job.error || "خطای نامشخص")}</div>` : ""}
+
+      <div class="card">
+        <div class="section-title"><h3>محتوای این ورودی <span class="count">${fa(m.sources.length)}</span></h3></div>
+        <div class="stack" style="gap:1rem">
+          ${m.sources.length ? `<div style="display:grid;gap:.5rem">${m.sources.map((s) => sourceRow(s, processing)).join("")}</div>` : ""}
+          <div class="dropzone ${processing ? "disabled" : ""} ${state.dragging ? "drag" : ""}" data-drop tabindex="0" role="button">
+            <span class="glyph">📎</span>
+            <p style="font-weight:500;color:var(--s-800)">فایل‌های جلسه را اینجا رها کنید</p>
+            <p class="muted small">یا برای انتخاب کلیک کنید</p>
+            <p class="muted" style="font-size:.75rem;margin-top:.5rem">صوت: MP3، WAV، M4A، MP4 — اسناد: PDF، Word، متن، Markdown · حداکثر ۲۰۰ مگابایت</p>
+            <input type="file" id="file-input" multiple hidden>
+          </div>
+          <div>
+            <label class="label" for="text-in">یا متن سند را مستقیم بنویسید</label>
+            <textarea class="field" id="text-in" rows="4" placeholder="متن نامه، مصوبه، یادداشت یا گزارش را اینجا وارد کنید…"></textarea>
+            <div class="row" style="margin-top:.5rem">
+              <button class="btn btn-secondary btn-sm" data-add-text>افزودن این متن</button>
+              <span class="muted small">متن وارد‌شده مثل یک فایل، منبع این ورودی می‌شود.</span>
+            </div>
+          </div>
+        </div>
+        <div class="row" style="border-top:1px solid var(--s-100);margin-top:1.25rem;padding-top:1.25rem">
+          ${!m.minutes ? `
+            <button class="btn btn-primary" data-process ${!hasSources || processing ? "disabled" : ""}>
+              ${processing ? "در حال پردازش…" : "شروع پردازش"}
+            </button>
+            ${!hasSources ? `<p class="muted small">برای شروع پردازش حداقل یک فایل بارگذاری کنید.</p>` : ""}
+          ` : `<p class="muted small">پس از افزودن یا حذف منابع، صورت‌جلسه را دوباره تولید کنید.</p>`}
+        </div>
+      </div>
+
+      ${m.job ? `
+        <div class="card">
+          <div class="section-title"><h3>وضعیت پردازش</h3>${m.job.isRegeneration ? `<span class="badge badge-brand">تولید مجدد</span>` : ""}</div>
+          <p class="small" style="font-weight:500;color:var(--s-700);margin-bottom:1rem">
+            ${m.job.status === "running" ? "در حال پردازش…" : m.job.status === "succeeded" ? "پردازش کامل شد" : m.job.status === "failed" ? "پردازش ناموفق بود" : "در صف پردازش"}
+          </p>
+          <div class="timeline">${m.job.stages.map(stageRow).join("")}</div>
+          ${m.job.error ? `<div class="alert alert-danger" style="margin-top:1rem">${esc(m.job.error)}</div>` : ""}
+        </div>` : ""}
+
+      ${m.minutes ? minutesSection(m) : (hasSources && !m.job ? `
+        <div class="empty">
+          <span class="glyph">✨</span>
+          <p style="font-weight:500">آمادهٔ پردازش</p>
+          <p class="muted small" style="max-width:32rem">با شروع پردازش، فایل صوتی پیاده‌سازی و متن اسناد استخراج می‌شود، سپس صورت‌جلسه تولید می‌گردد.</p>
+        </div>` : "")}
+    </div>`;
+}
+
+function sourceRow(s, processing) {
+  const st = SOURCE_STATUS[s.status];
+  const bits = [formatBytes(s.size)];
+  if (s.chars) bits.push(fa(s.chars) + " کاراکتر متن");
+  if (s.duration) bits.push(formatDuration(s.duration));
+  return `
+    <div class="source-row">
+      <span class="glyph">${s.type === "audio" ? "🎙" : "📄"}</span>
+      <div class="info">
+        <p class="fname ltr">${esc(s.name)}</p>
+        <p class="fmeta tnum">${bits.join(" · ")}</p>
+        ${s.error ? `<p class="ferr">${esc(s.error)} <button class="btn btn-secondary btn-sm" style="margin-inline-start:.5rem;padding:.1rem .5rem" data-retry>تلاش دوباره</button></p>` : ""}
+      </div>
+      <span class="badge badge-${st.tone}">${s.status === "processing" ? `<span class="dot pulse"></span>` : ""}${st.label}</span>
+      ${s.simulated ? `<span class="badge badge-warning" title="در این نسخهٔ نمایشی متن این فایل استخراج نشده و متن نمونه جایگزین آن شده است">متن نمونه</span>` : ""}
+      <div class="row" style="gap:.25rem">
+        ${s.text ? `<button class="btn btn-ghost btn-sm" data-view-source="${s.id}">مشاهدهٔ متن</button>` : ""}
+        <button class="btn btn-ghost btn-sm" data-download-source="${esc(s.name)}">دانلود</button>
+        ${processing ? "" : `<button class="btn btn-ghost btn-sm" style="color:var(--bad-600)" data-remove-source="${s.id}">حذف</button>`}
+      </div>
+    </div>`;
+}
+
+function stageRow(st) {
+  const glyph = { pending: "○", running: "●", done: "✓", failed: "✕", skipped: "–" }[st.state] || "○";
+  return `
+    <div class="tl-item" data-state="${st.state}">
+      <div class="tl-rail"><span class="tl-mark ${st.state === "running" ? "pulse" : ""}">${glyph}</span><span class="tl-line"></span></div>
+      <div class="tl-text">
+        <p class="tl-label">${st.label}</p>
+        ${st.detail ? `<p class="tl-detail tnum">${esc(st.detail)}</p>` : ""}
+      </div>
+    </div>`;
+}
+
+/* ---------- minutes ---------- */
+function minutesSection(m) {
+  const d = m.minutes;
+  const version = m.versions[m.versions.length - 1];
+  return `
+    <div class="minutes-head">
+      <h2>صورت‌جلسه</h2>
+      <div class="row" style="gap:.5rem">
+        <button class="btn btn-secondary btn-sm" data-regenerate ${m.status === "processing" ? "disabled" : ""}>تولید مجدد</button>
+        ${m.versions.length > 1 ? `<button class="btn btn-ghost btn-sm" data-versions>تاریخچهٔ نسخه‌ها (${fa(m.versions.length)})</button>` : ""}
+        <button class="btn btn-secondary btn-sm" data-export="docx">دانلود Word</button>
+        <button class="btn btn-secondary btn-sm" data-export="pdf">دانلود PDF</button>
+        <button class="btn btn-ghost btn-sm" data-export="md">Markdown</button>
+      </div>
+    </div>
+
+    ${d.simulatedSources && d.simulatedSources.length ? `<div class="alert alert-info">
+      این صورت‌جلسه از متن این فایل‌ها ساخته شده، اما متن آن‌ها در نسخهٔ نمایشی استخراج نشد و متن نمونه جایگزین شد:
+      <span class="ltr" style="display:inline-block">${d.simulatedSources.map(esc).join("، ")}</span>.
+      فایل‌های متنی (TXT و Markdown) همین‌جا واقعاً خوانده می‌شوند.
+    </div>` : ""}
+
+    ${d.failedSources.length ? `<div class="alert alert-warning">این صورت‌جلسه بر پایهٔ منابع موفق تهیه شده است. فایل‌های زیر پردازش نشدند: <span class="ltr" style="display:inline-block">${d.failedSources.map(esc).join("، ")}</span></div>` : ""}
+
+    <div class="card">
+      ${state.editingTitle ? `
+        <div style="display:grid;gap:.75rem">
+          <div><label class="label" for="ed-title">عنوان صورت‌جلسه</label><input class="field" id="ed-title" value="${esc(d.title)}"></div>
+          <div class="row"><button class="btn btn-primary btn-sm" data-save-title>ذخیره</button><button class="btn btn-secondary btn-sm" data-cancel-edit>انصراف</button></div>
+        </div>` : `
+        <div class="spread">
+          <div>
+            <h2 style="font-size:1.25rem;font-weight:600">${esc(d.title)}</h2>
+            <dl class="kv">
+              ${d.info.date ? `<div><dt>تاریخ:</dt><dd class="tnum">${formatDate(d.info.date)}</dd></div>` : ""}
+              ${d.info.time ? `<div><dt>ساعت:</dt><dd class="tnum">${esc(d.info.time)}</dd></div>` : ""}
+              ${d.info.location ? `<div><dt>محل برگزاری:</dt><dd>${esc(d.info.location)}</dd></div>` : ""}
+            </dl>
+          </div>
+          <button class="btn btn-ghost btn-sm" data-edit-title>ویرایش</button>
+        </div>`}
+      ${d.info.objective ? `
+        <div style="border-top:1px solid var(--s-100);margin-top:1rem;padding-top:1rem">
+          <p class="muted" style="font-size:.6875rem;letter-spacing:.06em;text-transform:uppercase;font-weight:500">هدف جلسه</p>
+          <p class="small" style="margin-top:.25rem;color:var(--s-700);line-height:1.9">${esc(d.info.objective)}</p>
+        </div>` : ""}
+    </div>
+
+    <div class="card">
+      <div class="section-title">
+        <h3>خلاصهٔ اجرایی</h3>
+        ${state.editingSummary ? "" : `<button class="btn btn-ghost btn-sm" data-edit-summary>ویرایش</button>`}
+      </div>
+      ${state.editingSummary ? `
+        <div style="display:grid;gap:.75rem">
+          <textarea class="field" id="ed-summary" rows="5">${esc(d.summary)}</textarea>
+          <div class="row"><button class="btn btn-primary btn-sm" data-save-summary>ذخیره</button><button class="btn btn-secondary btn-sm" data-cancel-edit>انصراف</button></div>
+        </div>` : `<p style="line-height:2;color:var(--s-700);font-size:.9375rem">${esc(d.summary)}</p>`}
+    </div>
+
+    ${d.participants.length || d.absentees.length ? `
+      <div class="card">
+        <div class="section-title"><h3>شرکت‌کنندگان <span class="count">${fa(d.participants.length)}</span></h3></div>
+        <div class="people">${d.participants.map((p) => `<span class="person">${esc(p.name)}${p.role ? `<span class="role">${esc(p.role)}</span>` : ""}</span>`).join("")}</div>
+        ${d.absentees.length ? `<p class="muted small" style="margin-top:.75rem">غایبان: ${d.absentees.map((p) => esc(p.name)).join("، ")}</p>` : ""}
+      </div>` : ""}
+
+    ${d.decisions.length ? `
+      <div class="card">
+        <div class="section-title"><h3>تصمیمات <span class="count">${fa(d.decisions.length)}</span></h3></div>
+        <div style="display:grid;gap:.75rem">${d.decisions.map((dec, i) => decisionCard(dec, i)).join("")}</div>
+      </div>` : ""}
+
+    ${d.proposals.length ? `
+      <div class="card">
+        <div class="section-title"><h3>پیشنهادهای مطرح‌شده <span class="count">${fa(d.proposals.length)}</span></h3></div>
+        <p class="muted small" style="margin:-.5rem 0 .75rem">این موارد مطرح شده‌اند اما به تصمیم قطعی نرسیده‌اند.</p>
+        <div style="display:grid;gap:.5rem">
+          ${d.proposals.map((p) => `
+            <div class="proposal-item">
+              <span>${esc(p.text)}${p.context ? `<br><span class="muted" style="font-size:.75rem">${esc(p.context)}</span>` : ""}</span>
+              <button class="linkish" data-evidence="proposal:${p.id}">مشاهدهٔ منبع</button>
+            </div>`).join("")}
+        </div>
+      </div>` : ""}
+
+    <div class="card">
+      <div class="section-title">
+        <h3>اقدامات <span class="count">${fa(d.actions.length)}</span></h3>
+        ${state.addingAction ? "" : `<button class="btn btn-secondary btn-sm" data-add-action>+ افزودن اقدام</button>`}
+      </div>
+      ${state.addingAction ? `
+        <div class="row" style="margin-bottom:.75rem;gap:.5rem">
+          <input class="field" id="new-action-title" placeholder="عنوان اقدام" style="max-width:20rem">
+          <button class="btn btn-primary btn-sm" data-save-new-action>افزودن</button>
+          <button class="btn btn-ghost btn-sm" data-cancel-edit>انصراف</button>
+        </div>` : ""}
+      ${d.actions.length ? `<div style="display:grid;gap:.75rem">${d.actions.map(actionCard).join("")}</div>`
+        : `<p class="muted small" style="text-align:center;padding:1.5rem 0">اقدامی از منابع استخراج نشد.</p>`}
+    </div>
+
+    ${d.topics.length ? `
+      <div class="card">
+        <div class="section-title"><h3>موضوعات مطرح‌شده <span class="count">${fa(d.topics.length)}</span></h3></div>
+        ${d.topics.map((t, i) => `
+          <div class="topic">
+            <p class="tname">${fa(i + 1)}. ${esc(t.title)}</p>
+            ${t.summary ? `<p class="tsum">${esc(t.summary)}</p>` : ""}
+            ${t.points.length ? `<ul class="bullet-list" style="margin-top:.5rem;list-style:none;padding:0">${t.points.map((p) => `<li><span class="b">•</span>${esc(p)}</li>`).join("")}</ul>` : ""}
+          </div>`).join("")}
+      </div>` : ""}
+
+    ${d.questions.length ? `
+      <div class="card">
+        <div class="section-title"><h3>پرسش‌های باز <span class="count">${fa(d.questions.length)}</span></h3></div>
+        <ul class="bullet-list" style="list-style:none;padding:0">
+          ${d.questions.map((q) => `<li><span class="b">•</span><span>${esc(q.text)}${q.context ? `<span class="muted"> — ${esc(q.context)}</span>` : ""}</span></li>`).join("")}
+        </ul>
+      </div>` : ""}
+
+    ${d.risks.length ? `
+      <div class="card">
+        <div class="section-title"><h3>ریسک‌ها و نکات مهم <span class="count">${fa(d.risks.length)}</span></h3></div>
+        <ul class="bullet-list" style="list-style:none;padding:0">
+          ${d.risks.map((r) => `<li><span class="b">•</span><span>${esc(r.text)}${r.impact ? `<br><span class="muted" style="font-size:.75rem">اثر: ${esc(r.impact)}${r.mitigation ? " · اقدام کاهنده: " + esc(r.mitigation) : ""}</span>` : ""}</span></li>`).join("")}
+        </ul>
+      </div>` : ""}
+
+    ${d.nextSteps.length ? `
+      <div class="card">
+        <div class="section-title"><h3>گام‌های بعدی <span class="count">${fa(d.nextSteps.length)}</span></h3></div>
+        <ul class="bullet-list" style="list-style:none;padding:0">
+          ${d.nextSteps.map((s) => `<li><span class="b">→</span><span>${esc(s.text)}${s.owner || s.when ? `<span class="muted" style="font-size:.75rem"> (${[s.owner, s.when].filter(Boolean).map(esc).join(" · ")})</span>` : ""}</span></li>`).join("")}
+        </ul>
+      </div>` : ""}
+
+    ${d.notes.length ? `
+      <div class="card">
+        <div class="section-title"><h3>یادداشت‌ها <span class="count">${fa(d.notes.length)}</span></h3></div>
+        <ul class="bullet-list" style="list-style:none;padding:0">${d.notes.map((n) => `<li><span class="b">•</span>${esc(n)}</li>`).join("")}</ul>
+      </div>` : ""}
+
+    <p class="muted small tnum" style="text-align:center;padding-bottom:.5rem">
+      نسخهٔ ${fa(version.n)} · تولیدشده در ${formatDate(d.generatedAt)}${d.model ? ` · <span class="ltr" style="display:inline-block">${esc(d.model)}</span>` : ""}
+    </p>`;
+}
+
+function decisionCard(dec, i) {
+  if (state.editingDecision === dec.id) {
+    return `
+      <div class="decision-item editing" style="border-color:var(--brand-300);background:rgba(238,244,251,.35)">
+        <div style="display:grid;gap:.75rem">
+          <div><label class="label" for="dec-text">متن تصمیم</label><textarea class="field" id="dec-text" rows="2">${esc(dec.text)}</textarea></div>
+          <div><label class="label" for="dec-ctx">توضیح</label><textarea class="field" id="dec-ctx" rows="2">${esc(dec.context || "")}</textarea></div>
+          <div><label class="label" for="dec-by">تصمیم‌گیرنده</label><input class="field" id="dec-by" value="${esc(dec.by || "")}" placeholder="مشخص نشده"></div>
+          <div class="row">
+            <button class="btn btn-primary btn-sm" data-save-decision="${dec.id}">ذخیره</button>
+            <button class="btn btn-secondary btn-sm" data-cancel-edit>انصراف</button>
+            <button class="btn btn-danger btn-sm" style="margin-inline-start:auto" data-delete-decision="${dec.id}">حذف</button>
+          </div>
+        </div>
+      </div>`;
+  }
+  return `
+    <div class="decision-item">
+      <div class="spread">
+        <p class="txt"><span class="num">${fa(i + 1)}.</span>${esc(dec.text)}</p>
+        <button class="btn btn-ghost btn-sm" data-edit-decision="${dec.id}">ویرایش</button>
+      </div>
+      ${dec.context ? `<p class="muted small" style="margin-top:.375rem;line-height:1.8">${esc(dec.context)}</p>` : ""}
+      <div class="action-foot" style="margin-top:.625rem">
+        ${dec.by ? `<span class="badge badge-neutral">تصمیم‌گیرنده: ${esc(dec.by)}</span>` : "<span></span>"}
+        <button class="linkish" data-evidence="decision:${dec.id}">مشاهدهٔ منبع${dec.evidence.length > 1 ? ` (${fa(dec.evidence.length)} منبع)` : ""}</button>
+      </div>
+    </div>`;
+}
+
+function actionCard(a) {
+  if (state.editingAction === a.id) {
+    return `
+      <div class="action-card editing">
+        <div style="display:grid;gap:.75rem">
+          <div><label class="label" for="ac-title">عنوان اقدام</label><input class="field" id="ac-title" value="${esc(a.title)}"></div>
+          <div><label class="label" for="ac-desc">توضیح</label><textarea class="field" id="ac-desc" rows="2">${esc(a.desc || "")}</textarea></div>
+          <div style="display:grid;gap:.75rem;grid-template-columns:1fr 1fr">
+            <div><label class="label" for="ac-owner">مسئول</label><input class="field" id="ac-owner" value="${esc(a.owner || "")}" placeholder="مشخص نشده"></div>
+            <div><label class="label" for="ac-deadline">مهلت (تاریخ دقیق)</label><input class="field ltr" id="ac-deadline" type="date" value="${esc(a.deadline || "")}"></div>
+          </div>
+          <div><label class="label" for="ac-dtext">مهلت (متنی)</label><input class="field" id="ac-dtext" value="${esc(a.deadlineText || "")}" placeholder="اگر تاریخ دقیق مشخص نیست، مثلاً «تا جمعه»"></div>
+          <div style="display:grid;gap:.75rem;grid-template-columns:1fr 1fr">
+            <div><label class="label" for="ac-status">وضعیت</label>
+              <select class="field" id="ac-status">${Object.keys(ACTION_STATUS).map((k) => `<option value="${k}" ${a.status === k ? "selected" : ""}>${ACTION_STATUS[k]}</option>`).join("")}</select>
+            </div>
+            <div><label class="label" for="ac-priority">اولویت</label>
+              <select class="field" id="ac-priority"><option value="">مشخص نشده</option>${Object.keys(PRIORITY).map((k) => `<option value="${k}" ${a.priority === k ? "selected" : ""}>${PRIORITY[k]}</option>`).join("")}</select>
+            </div>
+          </div>
+          <div class="row">
+            <button class="btn btn-primary btn-sm" data-save-action="${a.id}">ذخیره</button>
+            <button class="btn btn-secondary btn-sm" data-cancel-edit>انصراف</button>
+            <button class="btn btn-danger btn-sm" style="margin-inline-start:auto" data-delete-action="${a.id}">حذف</button>
+          </div>
+        </div>
+      </div>`;
+  }
+
+  const dl = deadlineLabel(a);
+  return `
+    <div class="action-card">
+      <div class="spread">
+        <p class="atitle">${esc(a.title)}</p>
+        <button class="btn btn-ghost btn-sm" data-edit-action="${a.id}">ویرایش</button>
+      </div>
+      ${a.desc ? `<p class="adesc">${esc(a.desc)}</p>` : ""}
+      <dl class="kv" style="margin-top:.75rem">
+        <div><dt>مسئول:</dt><dd>${a.owner
+          ? esc(a.owner) + (a.ownerConfirmed ? "" : ` <span class="badge badge-warning" style="margin-inline-start:.25rem">نیازمند تأیید</span>`)
+          : `<span class="muted">مشخص نشده</span>`}</dd></div>
+        <div><dt>مهلت:</dt><dd class="${dl.exact ? "" : "muted"} tnum">${esc(dl.text)}</dd></div>
+        ${a.priority ? `<div><dt>اولویت:</dt><dd>${PRIORITY[a.priority]}</dd></div>` : ""}
+      </dl>
+      <div class="action-foot">
+        <select class="field" style="width:auto;padding:.2rem .5rem;font-size:.75rem;border-radius:8px" data-status-for="${a.id}">
+          ${Object.keys(ACTION_STATUS).map((k) => `<option value="${k}" ${a.status === k ? "selected" : ""}>${ACTION_STATUS[k]}</option>`).join("")}
+        </select>
+        <button class="linkish" data-evidence="action:${a.id}">مشاهدهٔ منبع${a.evidence.length > 1 ? ` (${fa(a.evidence.length)} منبع)` : ""}</button>
+      </div>
+    </div>`;
+}
+
+/* ---------- modals ---------- */
+function viewModal() {
+  const mod = state.modal;
+  let title = "", body = "", wide = false;
+
+  if (mod.type === "evidence") {
+    title = "منبع این اطلاعات";
+    body = `
+      <div style="display:grid;gap:.75rem">
+        ${mod.items.map((e) => `
+          <div class="evidence-item">
+            <p class="src"><span>${e.type === "audio" ? "🎙" : "📄"}</span><span class="ltr">${esc(e.src)}</span></p>
+            ${e.quote ? `<blockquote>«${esc(e.quote)}»</blockquote>` : ""}
+          </div>`).join("")}
+      </div>
+      <p class="muted" style="font-size:.75rem;margin-top:1rem">نقل‌قول‌ها مستقیماً از متن منابع بارگذاری‌شده استخراج شده‌اند.</p>`;
+  }
+
+  else if (mod.type === "source") {
+    const s = mod.source;
+    title = s.name;
+    wide = true;
+
+    if (s.diarized && s.turns) {
+      const stats = speakerStats(s);
+      const draft = mod.draft || {};
+      const nameOf = (label) => {
+        const typed = draft[label] !== undefined ? draft[label] : (s.speakerNames[label] || "");
+        return typed.trim() || fallbackSpeaker(label);
+      };
+      const toneOf = (label) => "spk-" + ((stats.findIndex((x) => x.label === label) % 6) + 1);
+
+      // Consecutive turns from one voice read as a single turn.
+      const grouped = [];
+      s.turns.forEach((t, i) => {
+        const last = grouped[grouped.length - 1];
+        if (last && last.speaker === t.speaker) { last.text += " " + t.text; return; }
+        grouped.push({ speaker: t.speaker, text: t.text, at: i });
+      });
+
+      body = `
+        <div class="row" style="margin-bottom:1rem;gap:.5rem">
+          <span class="badge badge-neutral">زبان: fa</span>
+          ${s.duration ? `<span class="badge badge-neutral">مدت: ${formatDuration(s.duration)}</span>` : ""}
+          ${s.chars ? `<span class="badge badge-neutral tnum">${fa(s.chars)} کاراکتر</span>` : ""}
+          <span class="badge badge-brand tnum">${fa(stats.length)} گوینده</span>
+        </div>
+
+        <div class="spk-panel">
+          <p style="font-weight:500;font-size:.875rem;margin-bottom:.25rem">گویندگان</p>
+          <p class="muted" style="font-size:.75rem;line-height:1.8;margin-bottom:.75rem">
+            صداها از هم تفکیک شده‌اند، اما سامانه نمی‌داند هر صدا متعلق به چه کسی است.
+            اگر نام هر گوینده را وارد کنید، در متن و در صورت‌جلسه به همان نام ارجاع داده می‌شود.
+          </p>
+          ${stats.map((sp) => `
+            <div class="spk-row ${toneOf(sp.label)}">
+              <span class="spk-dot"></span>
+              <input class="field" data-spk-name="${sp.label}"
+                     value="${esc(draft[sp.label] !== undefined ? draft[sp.label] : (s.speakerNames[sp.label] || ""))}"
+                     placeholder="${esc(fallbackSpeaker(sp.label))}"
+                     aria-label="نام ${esc(fallbackSpeaker(sp.label))}" />
+              <span class="spk-stat tnum">${fa(sp.count)} نوبت · ${formatDuration(sp.seconds)}</span>
+            </div>`).join("")}
+          <div class="row" style="margin-top:.75rem;gap:.75rem">
+            <button class="btn btn-primary btn-sm" data-spk-save>ذخیرهٔ نام‌ها</button>
+            <span class="muted" style="font-size:.75rem">نام‌گذاری، تحلیل این منبع را دوباره اجرا می‌کند.</span>
+          </div>
+        </div>
+
+        <div class="transcript">
+          ${grouped.map((t) => `
+            <div class="turn ${toneOf(t.speaker)}">
+              <div class="turn-head">
+                <span class="ts ltr" style="margin:0">${String(Math.floor(t.at * 3.2)).padStart(2, "0")}:${String((t.at * 17) % 60).padStart(2, "0")}</span>
+                <span class="spk-chip">${esc(nameOf(t.speaker))}</span>
+              </div>
+              <p>${esc(t.text)}</p>
+            </div>`).join("")}
+        </div>`;
+    } else {
+      const paras = (s.text || "").split("\n\n");
+      body = `
+        <div class="row" style="margin-bottom:1rem;gap:.5rem">
+          ${s.type === "audio" ? `<span class="badge badge-neutral">زبان: fa</span>` : ""}
+          ${s.duration ? `<span class="badge badge-neutral">مدت: ${formatDuration(s.duration)}</span>` : ""}
+          ${s.chars ? `<span class="badge badge-neutral tnum">${fa(s.chars)} کاراکتر</span>` : ""}
+        </div>
+        <div class="transcript">
+          ${paras.map((t, i) => s.segments
+            ? `<p><span class="ts ltr">${String(Math.floor(i * 3.2)).padStart(2, "0")}:${String((i * 17) % 60).padStart(2, "0")}</span>${esc(t)}</p>`
+            : `<p>${esc(t)}</p>`).join("")}
+        </div>`;
+    }
+  }
+
+  else if (mod.type === "versions") {
+    const m = currentMeeting();
+    title = "تاریخچهٔ نسخه‌ها";
+    const labels = { generated: "تولید اولیه", regenerated: "تولید مجدد", user_edit: "ویرایش کاربر" };
+    body = `
+      <div style="display:grid;gap:.5rem">
+        ${m.versions.slice().reverse().map((v, i) => `
+          <div class="version-row">
+            <div>
+              <p style="font-weight:500;font-size:.875rem">نسخهٔ ${fa(v.n)} ${i === 0 ? `<span class="badge badge-success" style="margin-inline-start:.25rem">فعلی</span>` : ""}</p>
+              <p class="muted" style="font-size:.75rem;margin-top:.125rem">${labels[v.origin]} · ${formatDate(v.at)}</p>
+            </div>
+            ${i === 0 ? "" : `<button class="btn btn-ghost btn-sm" data-view-version="${v.n}">مشاهده</button>`}
+          </div>`).join("")}
+      </div>
+      <p class="muted" style="font-size:.75rem;margin-top:1rem">نسخه‌های قبلی هرگز حذف نمی‌شوند؛ تولید مجدد فقط نسخهٔ تازه‌ای اضافه می‌کند.</p>`;
+  }
+
+  else if (mod.type === "export") {
+    const m = currentMeeting();
+    const fmt = { docx: "Word", pdf: "PDF", md: "Markdown" }[mod.format];
+    title = "پیش‌نمایش خروجی " + fmt;
+    wide = true;
+    body = mod.format === "md"
+      ? `<div class="transcript"><pre class="ltr" style="white-space:pre-wrap;font-size:.8125rem;line-height:1.8;margin:0;font-family:var(--font);direction:rtl;text-align:right">${esc(toMarkdown(m.minutes))}</pre></div>`
+      : `<div class="docpreview">${documentHtml(m.minutes)}</div>`;
+    body += `<p class="muted" style="font-size:.75rem;margin-top:1rem">در نسخهٔ نمایشی، خروجی به جای دانلود در همین‌جا نمایش داده می‌شود. در نسخهٔ کامل فایل ${fmt} دانلود می‌شود.</p>`;
+  }
+
+  else if (mod.type === "oldVersion") {
+    const labels = { generated: "تولید اولیه", regenerated: "تولید مجدد", user_edit: "ویرایش کاربر" };
+    title = "نسخهٔ " + fa(mod.n) + " (فقط خواندنی)";
+    wide = true;
+    body = `<p class="muted small" style="margin-bottom:.75rem">${esc(labels[mod.origin] || "")} · ${formatDate(mod.at)}</p>
+            <div class="docpreview">${documentHtml(mod.minutes)}</div>`;
+  }
+
+  else if (mod.type === "doc") {
+    const d = mod.doc;
+    const k = DOC_KINDS[d.kind];
+    title = d.title;
+    wide = true;
+    const facts = [
+      ["نوع سند", k.label],
+      ["وزن سند در پاسخ‌ها", k.weight],
+      ["تاریخ", d.date],
+      ["شماره", d.ref],
+      ["طرف / مرجع", d.party],
+      ["مبلغ", d.amount],
+      ["مدت", d.term],
+      ["در پاسخ به", d.reply],
+    ].filter((f) => f[1]);
+    const meta = docMeta(d.id);
+    body = `
+      <div class="kv" style="margin-bottom:1rem">
+        ${facts.map((f) => `<div><dt>${esc(f[0])}:</dt><dd class="tnum">${esc(f[1])}</dd></div>`).join("")}
+      </div>
+      <div class="transcript"><p>${esc(d.text)}</p></div>
+      ${d.fromMeeting ? `<p class="muted small" style="margin-top:1rem">این سند در بخش «ورود دیتا» ثبت شده و خودکار به بایگانی افزوده شده است.</p>` : ""}
+
+      <div class="doc-tabs">
+        ${[["comments", "گفت‌وگو", meta.comments.length],
+           ["changes", "تغییرات", meta.changes.length],
+           ["assign", "واگذاری", meta.assignment ? 1 : 0]].map(([key, lbl, count]) => `
+          <button data-doc-tab="${key}" class="${state.docTab === key ? "on" : ""}">
+            ${lbl}${count ? ` <span class="count">${fa(count)}</span>` : ""}
+          </button>`).join("")}
+      </div>
+
+      ${state.docTab === "comments" ? docComments(d, meta)
+        : state.docTab === "changes" ? docChanges(d, meta)
+        : docAssignment(d, meta)}`;
+  }
+
+  else if (mod.type === "adddoc") {
+    title = "افزودن سند به بایگانی";
+    const draft = mod.draft || {};
+    body = `
+      <p class="muted small" style="line-height:1.9;margin-bottom:1rem">
+        هر نوع سندی را می‌توانید اضافه کنید — قرارداد، الحاقیه، تفاهم‌نامه، نامه، مصوبه، گزارش یا یادداشت.
+        صورت‌جلسه‌ها خودشان از بخش جلسه‌ها می‌آیند.
+      </p>
+      <label class="label">نوع سند</label>
+      <select class="field" id="nd-kind">
+        ${DOC_KIND_ORDER.map((k) => `<option value="${k}" ${draft.kind === k ? "selected" : ""}>${DOC_KINDS[k].glyph} ${DOC_KINDS[k].label}</option>`).join("")}
+      </select>
+      <label class="label" style="margin-top:.875rem">عنوان سند</label>
+      <input class="field" id="nd-title" placeholder="مثلاً: قرارداد نگهداری مرکز داده" value="${esc(draft.title || "")}">
+      <div class="row" style="margin-top:.875rem;align-items:flex-start">
+        <div style="flex:1;min-width:10rem">
+          <label class="label">تاریخ</label>
+          <input class="field" id="nd-date" placeholder="۱۴۰۰/۰۵/۱۲" value="${esc(draft.date || "")}">
+        </div>
+        <div style="flex:1;min-width:10rem">
+          <label class="label">شماره (اختیاری)</label>
+          <input class="field" id="nd-ref" placeholder="۹۷/۲۲-۱۴" value="${esc(draft.ref || "")}">
+        </div>
+      </div>
+      <label class="label" style="margin-top:.875rem">طرف قرارداد / فرستنده / مرجع</label>
+      <input class="field" id="nd-party" placeholder="مثلاً: شرکت زیرساخت ارتباطات" value="${esc(draft.party || "")}">
+      <label class="label" style="margin-top:.875rem">مربوط به کدام پرونده است؟</label>
+      <select class="field" id="nd-case">
+        <option value="">— هیچ‌کدام —</option>
+        ${CASE_LIST.map((c) => `<option value="${c.id}">${esc(c.title)}</option>`).join("")}
+      </select>
+      <label class="label" style="margin-top:.875rem">متن یا خلاصهٔ سند</label>
+      <textarea class="field" id="nd-text" rows="4" placeholder="متن سند را بچسبانید یا خلاصه‌اش را بنویسید…">${esc(draft.text || "")}</textarea>
+      <label class="dropzone" style="margin-top:.875rem;display:block">
+        <span class="glyph">📄</span>
+        <p style="font-weight:500;margin-top:.5rem">یا فایل سند را انتخاب کنید</p>
+        <p class="muted small">PDF، Word، متن — در این نمونه فایل جایی ارسال نمی‌شود.</p>
+        <input type="file" id="nd-file" accept=".pdf,.docx,.txt,.md" style="display:none">
+      </label>
+      <div class="row" style="margin-top:1.25rem;justify-content:flex-end">
+        <button class="btn btn-secondary btn-sm" data-close-modal>انصراف</button>
+        <button class="btn btn-primary btn-sm" data-save-doc>افزودن به بایگانی</button>
+      </div>`;
+  }
+
+  else if (mod.type === "confirm") {
+    title = mod.title;
+    body = `
+      <p class="small" style="color:var(--s-600);line-height:1.9">${esc(mod.message)}</p>
+      <div class="row" style="margin-top:1.25rem;justify-content:flex-end">
+        <button class="btn btn-secondary btn-sm" data-close-modal>انصراف</button>
+        <button class="btn ${mod.danger ? "btn-danger" : "btn-primary"} btn-sm" data-confirm-yes>${esc(mod.confirmLabel || "تأیید")}</button>
+      </div>`;
+  }
+
+  return `
+    <div class="overlay" data-overlay>
+      <div class="modal ${wide ? "wide" : ""}" role="dialog" aria-modal="true" aria-label="${esc(title)}">
+        <div class="modal-head">
+          <h3>${esc(title)}</h3>
+          <button class="icon-btn" data-close-modal aria-label="بستن">
+            <svg viewBox="0 0 20 20" width="20" height="20" fill="currentColor"><path d="M6.28 5.22a.75.75 0 0 0-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 1 0 1.06 1.06L10 11.06l3.72 3.72a.75.75 0 1 0 1.06-1.06L11.06 10l3.72-3.72a.75.75 0 0 0-1.06-1.06L10 8.94 6.28 5.22Z"/></svg>
+          </button>
+        </div>
+        ${body}
+      </div>
+    </div>`;
+}
+
+/* rendered document, as the DOCX/PDF exporter would lay it out */
+function documentHtml(d) {
+  const NS = "مشخص نشده";
+  let h = `<h1>${esc(d.title)}</h1><p class="doclabel">صورت‌جلسه</p>`;
+  const facts = [["تاریخ", d.info.date ? formatDate(d.info.date) : null], ["ساعت", d.info.time], ["محل برگزاری", d.info.location]].filter((f) => f[1]);
+  if (facts.length) h += `<h2>اطلاعات جلسه</h2>` + facts.map((f) => `<p>${f[0]}: ${esc(f[1])}</p>`).join("");
+  if (d.info.objective) h += `<h2>هدف جلسه</h2><p>${esc(d.info.objective)}</p>`;
+  if (d.summary) h += `<h2>خلاصهٔ اجرایی</h2><p>${esc(d.summary)}</p>`;
+  if (d.participants.length) h += `<h2>شرکت‌کنندگان</h2><ul>` + d.participants.map((p) => `<li>${esc(p.name)}${p.role ? " (" + esc(p.role) + ")" : ""}</li>`).join("") + `</ul>`;
+  if (d.absentees.length) h += `<p><strong>غایبان:</strong> ${d.absentees.map((p) => esc(p.name)).join("، ")}</p>`;
+  if (d.topics.length) h += `<h2>موضوعات مطرح‌شده</h2>` + d.topics.map((t, i) => `<p><strong>${fa(i + 1)}. ${esc(t.title)}</strong></p>${t.summary ? `<p>${esc(t.summary)}</p>` : ""}${t.points.length ? `<ul>${t.points.map((p) => `<li>${esc(p)}</li>`).join("")}</ul>` : ""}`).join("");
+  if (d.decisions.length) h += `<h2>تصمیمات</h2>` + d.decisions.map((x, i) => `<p><strong>${fa(i + 1)}. ${esc(x.text)}</strong></p>${x.context ? `<p>${esc(x.context)}</p>` : ""}`).join("");
+  if (d.proposals.length) h += `<h2>پیشنهادهای مطرح‌شده (تصویب‌نشده)</h2><ul>` + d.proposals.map((p) => `<li>${esc(p.text)}</li>`).join("") + `</ul>`;
+  if (d.actions.length) {
+    h += `<h2>اقدامات</h2><table><thead><tr><th>عنوان</th><th>مسئول</th><th>مهلت</th><th>وضعیت</th></tr></thead><tbody>`;
+    h += d.actions.map((a) => {
+      const owner = a.owner ? esc(a.owner) + (a.ownerConfirmed ? "" : " (نیازمند تأیید)") : NS;
+      const dl = a.deadline ? formatDate(a.deadline) : (a.deadlineText || NS);
+      return `<tr><td>${esc(a.title)}${a.desc ? "<br><small>" + esc(a.desc) + "</small>" : ""}</td><td>${owner}</td><td>${esc(dl)}</td><td>${ACTION_STATUS[a.status]}</td></tr>`;
+    }).join("") + `</tbody></table>`;
+  }
+  if (d.questions.length) h += `<h2>پرسش‌های باز</h2><ul>` + d.questions.map((q) => `<li>${esc(q.text)}</li>`).join("") + `</ul>`;
+  if (d.risks.length) h += `<h2>ریسک‌ها و نکات مهم</h2><ul>` + d.risks.map((r) => `<li>${esc(r.text)}${r.impact ? " — اثر: " + esc(r.impact) : ""}</li>`).join("") + `</ul>`;
+  if (d.nextSteps.length) h += `<h2>گام‌های بعدی</h2><ul>` + d.nextSteps.map((s) => `<li>${esc(s.text)}</li>`).join("") + `</ul>`;
+  if (d.notes.length) h += `<h2>یادداشت‌ها</h2><ul>` + d.notes.map((n) => `<li>${esc(n)}</li>`).join("") + `</ul>`;
+  if (d.sourcesUsed.length) h += `<h2>منابع</h2><ul>` + d.sourcesUsed.map((s) => `<li>${esc(s)}</li>`).join("") + `</ul>`;
+  return h;
+}
+
+function toMarkdown(d) {
+  const NS = "مشخص نشده";
+  const L = ["# " + d.title, ""];
+  if (d.info.date) L.push("- **تاریخ:** " + formatDate(d.info.date));
+  if (d.info.time) L.push("- **ساعت:** " + d.info.time);
+  if (d.info.location) L.push("- **محل برگزاری:** " + d.info.location);
+  L.push("");
+  if (d.summary) L.push("## خلاصهٔ اجرایی", "", d.summary, "");
+  if (d.decisions.length) {
+    L.push("## تصمیمات");
+    d.decisions.forEach((x, i) => L.push(fa(i + 1) + ". **" + x.text + "**"));
+    L.push("");
+  }
+  if (d.proposals.length) { L.push("## پیشنهادهای مطرح‌شده"); d.proposals.forEach((p) => L.push("- " + p.text)); L.push(""); }
+  if (d.actions.length) {
+    L.push("## اقدامات", "", "| عنوان | مسئول | مهلت | وضعیت |", "| --- | --- | --- | --- |");
+    d.actions.forEach((a) => {
+      const owner = a.owner ? a.owner + (a.ownerConfirmed ? "" : " (نیازمند تأیید)") : NS;
+      const dl = a.deadline ? formatDate(a.deadline) : (a.deadlineText || NS);
+      L.push("| " + a.title + " | " + owner + " | " + dl + " | " + ACTION_STATUS[a.status] + " |");
+    });
+    L.push("");
+  }
+  if (d.questions.length) { L.push("## پرسش‌های باز"); d.questions.forEach((q) => L.push("- " + q.text)); L.push(""); }
+  if (d.risks.length) { L.push("## ریسک‌ها و نکات مهم"); d.risks.forEach((r) => L.push("- " + r.text)); L.push(""); }
+  return L.join("\n");
+}
+
+/* ==========================================================================
+   Behaviour
+   ========================================================================== */
+/* ==========================================================================
+   Case & document tracking — the second half of the product.
+
+   Built from the same primitives as the minutes side (cards, badges, source
+   rows, the evidence modal) so the two feel like one application, and kept
+   deliberately plain: the reader is a manager, not an operator.
+   ========================================================================== */
+
+/* Document kinds. Not everything in an archive is a meeting record — a
+   contract, its amendment and an MoU are exactly the material a manager
+   needs beside the minutes, so they are first-class here. */
+const DOC_KINDS = {
+  meeting_minutes: { label: "صورت‌جلسه",        glyph: "📝", weight: "سابقهٔ رسمی", tone: "neutral" },
+  contract:        { label: "قرارداد",           glyph: "📑", weight: "سند تعهدآور", tone: "brand" },
+  contract_annex:  { label: "الحاقیهٔ قرارداد",  glyph: "📑", weight: "سند تعهدآور", tone: "brand" },
+  mou:             { label: "تفاهم‌نامه",        glyph: "🤝", weight: "سند تعهدآور", tone: "brand" },
+  letter_in:       { label: "نامهٔ وارده",        glyph: "✉️", weight: "مکاتبهٔ رسمی", tone: "info" },
+  letter_out:      { label: "نامهٔ صادره",        glyph: "✉️", weight: "مکاتبهٔ رسمی", tone: "info" },
+  resolution:      { label: "مصوبه",             glyph: "⚖️", weight: "تصمیم رسمی", tone: "info" },
+  law:             { label: "قانون و مقررات",    glyph: "📜", weight: "الزام قانونی", tone: "brand" },
+  progress_report: { label: "گزارش پیشرفت",      glyph: "📊", weight: "سابقهٔ رسمی", tone: "neutral" },
+  analysis:        { label: "تحلیل کارشناسی",    glyph: "🔍", weight: "نظر کارشناسی", tone: "neutral" },
+  note:            { label: "یادداشت شخصی",      glyph: "🗒", weight: "برداشت شخصی", tone: "warning" },
+  negotiation:     { label: "ملاقات و مذاکره",   glyph: "🤝", weight: "سابقهٔ گفت‌وگو", tone: "neutral" },
+  letter:          { label: "نامه",              glyph: "✉️", weight: "مکاتبهٔ رسمی", tone: "info" },
+  content_doc:     { label: "سند محتوایی",       glyph: "📄", weight: "سند پشتیبان", tone: "neutral" },
+  related_docs:    { label: "اسناد مرتبط",       glyph: "🔗", weight: "سند پشتیبان", tone: "neutral" },
+};
+
+/* What the data-entry form offers, in the order it offers them. Same values
+   as the archive uses, so an entry is filed the moment it is created. */
+const ENTRY_KINDS = [
+  "meeting_minutes", "negotiation", "letter",
+  "content_doc", "related_docs", "note",
+];
+
+/* The order the "add a document" picker offers them in. */
+const DOC_KIND_ORDER = [
+  "meeting_minutes", "contract", "contract_annex", "mou",
+  "letter_in", "letter_out", "resolution", "law",
+  "progress_report", "analysis", "note",
+];
+
+const CASE_LIST = [
+  {
+    id: "program",
+    title: "برنامهٔ ملی زیرساخت داده",
+    note: "برنامهٔ کلان، شامل سه پروژه",
+    children: ["مرکز داده ملی", "امنیت و حفاظت داده", "خدمات تبادل داده"],
+  },
+  {
+    id: "security",
+    title: "پروژهٔ امنیت و حفاظت داده",
+    note: "زیرمجموعهٔ برنامهٔ ملی زیرساخت داده",
+    children: [],
+  },
+  {
+    id: "datacenter",
+    title: "پروژهٔ مرکز داده ملی",
+    note: "زیرمجموعهٔ برنامهٔ ملی زیرساخت داده",
+    children: [],
+  },
+];
+
+/* --- the archive -------------------------------------------------------- */
+const ARCHIVE = [
+  { id: "a1", kind: "law", title: "قانون توسعهٔ دولت الکترونیک و زیرساخت داده",
+    date: "۱۳۹۶/۰۳/۱۰", party: "مجلس شورای اسلامی", cases: ["program", "security"],
+    text: "ماده ۴ — دستگاه‌های اجرایی مکلف‌اند ظرف دو سال داده‌های مرجع خود را روی زیرساخت دادهٔ کشور در دسترس قرار دهند. تبصره ۱ — سازمان فناوری اطلاعات موظف است سند معماری امنیت تبادل داده را ظرف یک سال تهیه و ابلاغ کند." },
+
+  { id: "a2", kind: "resolution", title: "مصوبهٔ جلسهٔ ۴۱ شورای راهبری فناوری اطلاعات",
+    date: "۱۳۹۶/۰۹/۱۵", party: "شورای راهبری فناوری اطلاعات", cases: ["program", "security", "datacenter"],
+    text: "اجرای برنامه در سه پروژه تصویب و چهار اقدام ابلاغ شد: تدوین سند معماری امنیت تا پایان ۱۳۹۷، راه‌اندازی فاز نخست مرکز داده تا پایان ۱۳۹۸، پیاده‌سازی سامانهٔ تبادل داده تا خرداد ۱۳۹۸، و ارائهٔ گزارش پیشرفت هر شش ماه." },
+
+  { id: "a3", kind: "contract", title: "قرارداد اجرای فاز نخست مرکز داده ملی", ref: "۹۷/۲۲-۱۴",
+    date: "۱۳۹۷/۰۱/۲۵", party: "شرکت زیرساخت ارتباطات", cases: ["program", "datacenter"],
+    amount: "۴۲۰ میلیارد ریال", term: "۱۸ ماه از تاریخ ابلاغ",
+    text: "موضوع قرارداد: تأمین تجهیزات و راه‌اندازی فاز نخست مرکز داده ملی. مدت: ۱۸ ماه. تحویل موقت پس از آزمون عملکرد و تحویل قطعی شش ماه پس از آن." },
+
+  { id: "a4", kind: "meeting_minutes", title: "صورت‌جلسهٔ کارگروه فنی زیرساخت داده",
+    date: "۱۳۹۷/۰۲/۲۰", party: "کارگروه فنی", cases: ["program", "datacenter"],
+    text: "سه دیدگاه دربارهٔ معماری مرکز داده مطرح شد: تمرکز در یک سایت، توزیع در سه استان، و اجرای مرحله‌ای. مقرر شد اجرای مرحله‌ای مبنای کار قرار گیرد." },
+
+  { id: "a5", kind: "letter_out", title: "نامهٔ درخواست گزارش پیشرفت", ref: "۱۲/۴۴۷۱",
+    date: "۱۳۹۷/۰۴/۰۵", party: "دبیرخانهٔ شورا ← سازمان فناوری اطلاعات", cases: ["program", "security"],
+    text: "در اجرای بند ۲ مصوبهٔ جلسهٔ ۴۱، گزارش پیشرفت تدوین سند معماری امنیت تبادل داده خواسته شد." },
+
+  { id: "a6", kind: "letter_in", title: "پاسخ دربارهٔ سند معماری امنیت", ref: "۵۵/۲۲۱۰",
+    date: "۱۳۹۷/۰۵/۱۲", party: "سازمان فناوری اطلاعات ← دبیرخانهٔ شورا", reply: "۱۲/۴۴۷۱",
+    cases: ["program", "security"],
+    text: "پیرو نامهٔ ۱۲/۴۴۷۱: تدوین سند در حال انجام است و پیش‌نویس اولیه تهیه شده. نهایی‌سازی منوط به تخصیص اعتبار مطالعات تکمیلی است." },
+
+  { id: "a7", kind: "contract_annex", title: "الحاقیهٔ شمارهٔ ۱ — تمدید مدت قرارداد مرکز داده", ref: "۹۸/۲۲-۱۴/۱",
+    date: "۱۳۹۸/۰۲/۱۰", party: "شرکت زیرساخت ارتباطات", cases: ["program", "datacenter"],
+    amount: "بدون افزایش مبلغ", term: "چهار ماه تمدید",
+    text: "مدت قرارداد ۹۷/۲۲-۱۴ به‌دلیل تأخیر در تأمین تجهیزات، چهار ماه تمدید شد. سایر شرایط قرارداد بدون تغییر است." },
+
+  { id: "a8", kind: "progress_report", title: "گزارش پیشرفت شش‌ماههٔ نخست ۱۳۹۸",
+    date: "۱۳۹۸/۰۷/۰۱", party: "دبیرخانهٔ شورا", cases: ["program", "security", "datacenter"],
+    text: "فاز نخست مرکز داده در شهریور ۱۳۹۸ راه‌اندازی شد. سامانهٔ تبادل داده در حال انجام است (هفت دستگاه متصل). تدوین سند معماری امنیت متوقف است؛ علت: عدم تخصیص اعتبار." },
+
+  { id: "a9", kind: "meeting_minutes", title: "صورت‌جلسهٔ کمیتهٔ راهبری — بازنگری مهلت‌ها",
+    date: "۱۳۹۸/۰۸/۰۳", party: "کمیتهٔ راهبری", cases: ["program", "security"],
+    text: "مهلت تدوین سند معماری امنیت از پایان ۱۳۹۷ به پایان ۱۳۹۹ تغییر یافت. تأمین اعتبار مطالعات تکمیلی به سازمان برنامه و بودجه واگذار شد." },
+
+  { id: "a10", kind: "analysis", title: "تحلیل کارشناسی گزینه‌های معماری امنیت",
+    date: "۱۳۹۸/۱۱/۳۰", party: "مرکز راهبردی", cases: ["security"],
+    text: "سه رویکرد بررسی شد: رمزنگاری سرتاسری، دروازهٔ امنیتی متمرکز، و مدل ترکیبی. هیچ‌یک بدون تأمین اعتبار مطالعات تکمیلی قابل اجرا نیست. این سند نظر کارشناسی است و جایگزین مصوبه نیست." },
+
+  { id: "a11", kind: "note", title: "یادداشت شخصی — جمع‌بندی وضعیت امنیت",
+    date: "۱۳۹۹/۰۳/۲۱", party: "یادداشت مدیر", cases: ["security"],
+    text: "شنیدم تدوین سند معماری امنیت عملاً تکمیل شده و تنها ابلاغ رسمی آن باقی مانده است. این برداشت شخصی است و باید با گزارش رسمی راستی‌آزمایی شود." },
+
+  { id: "a12", kind: "progress_report", title: "گزارش وضعیت سالانهٔ ۱۳۹۹",
+    date: "۱۳۹۹/۱۰/۳۰", party: "دبیرخانهٔ شورا", cases: ["program", "security", "datacenter"],
+    text: "بهره‌برداری کامل از فاز نخست مرکز داده انجام شد (ظرفیت ۸۰ درصد). اتصال دستگاه‌ها به سامانهٔ تبادل داده با تأخیر مواجه است (۱۲ از ۲۰ دستگاه). تدوین سند معماری امنیت همچنان متوقف است." },
+
+  { id: "a13", kind: "mou", title: "تفاهم‌نامهٔ همکاری در تبادل دادهٔ سلامت",
+    date: "۱۴۰۰/۰۲/۱۸", party: "وزارت بهداشت", cases: ["program"],
+    term: "دو سال، قابل تمدید",
+    text: "چارچوب همکاری برای اتصال سامانه‌های سلامت به سامانهٔ تبادل داده. تفاهم‌نامه تعهد مالی ایجاد نمی‌کند و اجرای آن منوط به انعقاد قرارداد جداگانه است." },
+
+  { id: "a14", kind: "letter_out", title: "پیگیری تعیین تکلیف اعتبار سند امنیت", ref: "۱۲/۸۸۹۰",
+    date: "۱۴۰۰/۰۶/۰۲", party: "دبیرخانهٔ شورا ← سازمان برنامه و بودجه", reply: "۵۵/۲۲۱۰",
+    cases: ["program", "security"],
+    text: "پیرو نامهٔ ۵۵/۲۲۱۰ و گزارش سالانهٔ ۱۳۹۹، نتیجهٔ بررسی تأمین اعتبار مطالعات تکمیلی امنیت خواسته شد. تا این تاریخ پاسخی ثبت نشده است." },
+];
+
+/* Evidence: which document a sentence in the report came from, and the exact
+   line. The minutes side already has an evidence modal; case claims open the
+   very same one. */
+/* Whatever is entered in the first tab is an archive document from the moment
+   it has content — minutes generated from a recording, or a letter typed
+   straight in. Nothing has to be filed twice. */
+function liveMeetingDocs() {
+  return state.meetings
+    .filter((m) => m.minutes || m.sources.some((s) => s.text))
+    .map((m) => {
+      const text = m.minutes
+        ? (m.minutes.summary || "") + " " + m.minutes.actions
+            .map((a) => "اقدام: " + a.title + " — مسئول: " + (a.owner || "مشخص نشده")).join(" ")
+        : (m.description ? m.description + " " : "") +
+          m.sources.map((s) => s.text || "").join(" ");
+      return {
+        id: "m-" + m.id,
+        kind: m.kind || "meeting_minutes",
+        title: m.minutes ? m.minutes.title : m.title,
+        date: m.date ? formatDate(m.date) : "بدون تاریخ",
+        party: "ثبت‌شده در ورود دیتا",
+        cases: matchingCases(m.title + " " + text),
+        fromMeeting: m.id,
+        text: text,
+      };
+    });
+}
+
+/* Which subjects a new document belongs to, decided by the same filter that
+   answers questions — so a document that would be retrieved for a subject is
+   also listed under it. */
+function matchingCases(text) {
+  const hay = " " + norm(text) + " ";
+  return CASE_LIST.filter((c) => {
+    const words = terms(c.title).filter((w) => w.length > 2);
+    if (!words.length) return false;
+    const hits = words.filter((w) => hay.indexOf(w) !== -1).length;
+    return hits / words.length >= 0.5;
+  }).map((c) => c.id);
+}
+
+function archiveAll() { return ARCHIVE.concat(liveMeetingDocs()); }
+
+/* --- the short answer, in plain words ----------------------------------- */
+/* ==========================================================================
+   The filter
+
+   Two halves, both explicit.
+
+   Lexical: Persian writes one word several ways — «قراردادها» and «قرارداد»,
+   «ي» and «ی», a half-space or a space inside «صورت‌جلسه». All of it is folded
+   away before anything is compared, so a manager who types the word the normal
+   way finds the document that spells it the careful way.
+
+   Semantic: a manager asks about «بودجه»; the file says «اعتبار». Nothing in
+   the letters of those two words connects them, so the connection is written
+   down. It is a small dictionary rather than a model, which means it can be
+   read, corrected and argued with — the right trade at this stage.
+   ========================================================================== */
+
+const FOLD = [[/[يیى]/g, "ی"], [/[كک]/g, "ک"], [/[ۀةه]/g, "ه"], [/[أإآا]/g, "ا"],
+              [/[ؤو]/g, "و"], [/[ًٌٍَُِّْٰٔ]/g, ""], [/[\u200c\u200f\u200e]/g, " "]];
+
+function norm(v) {
+  let t = String(v == null ? "" : v);
+  FOLD.forEach(([re, to]) => { t = t.replace(re, to); });
+  t = t.replace(/[۰-۹]/g, (d) => String("۰۱۲۳۴۵۶۷۸۹".indexOf(d)));
+  return t.replace(/[^\wآ-ی\u0600-\u06FF\s]/g, " ").replace(/\s+/g, " ").trim();
+}
+
+/* Light stemming. Persian plurals and comparatives carry no meaning for
+   retrieval; stripping them is what lets «قراردادها» find «قرارداد». */
+const SUFFIXES = ["هایی", "هایم", "هایش", "های", "هام", "ها", "انی", "ترین", "تر", "ی"];
+function stem(w) {
+  for (const s of SUFFIXES) {
+    if (w.length > s.length + 2 && w.slice(-s.length) === s) return w.slice(0, -s.length);
+  }
+  return w;
+}
+
+const STOP = new Set(("و در به از با که را این آن های یک برای تا هم بر یا اگر چه چی چیست چیه "
+  + "کدام چطور چگونه آیا لطفا لطفاً بگو بده کن شود شده است هست بود می ها مورد باره درباره "
+  + "من ما شما او آنها خود همه هر نیز باید توسط طی روی زیر بین پس پیش").split(" "));
+
+function terms(v) {
+  return norm(v).split(" ")
+    .filter((w) => w.length > 1 && !STOP.has(w))
+    .map(stem)
+    .filter((w) => w.length > 1);
+}
+
+/* The written-down half of "meaning". Each row is a set of words this archive
+   uses interchangeably; any one of them retrieves the others. */
+const SYNONYMS = [
+  ["امنیت", "حفاظت", "ایمنی", "صیانت", "رمزنگاری"],
+  ["اعتبار", "بودجه", "تخصیص", "مالی", "ردیف", "هزینه", "مبلغ"],
+  ["قرارداد", "پیمان", "الحاقیه", "تفاهم", "موافقتنامه"],
+  ["تاخیر", "عقب", "معطل", "دیرکرد", "کند", "طولانی"],
+  ["متوقف", "توقف", "راکد", "معلق", "بلاتکلیف"],
+  ["مصوبه", "تصمیم", "ابلاغ", "مصوب", "شورا", "تصویب"],
+  ["نامه", "مکاتبه", "مراسله", "پاسخ", "درخواست", "پیگیری"],
+  ["مرکز", "دیتاسنتر", "سایت"],
+  ["گزارش", "پیشرفت", "وضعیت", "عملکرد", "بازخورد"],
+  ["سند", "مدرک", "مستند", "پرونده", "سابقه"],
+  ["داده", "اطلاعات", "دیتا"],
+  ["تبادل", "اتصال", "تعامل", "یکپارچه", "ارتباط"],
+  ["مهلت", "موعد", "سررسید", "زمان", "پایان", "تمدید"],
+  ["دستگاه", "سازمان", "وزارت", "نهاد", "اداره", "شرکت"],
+  ["معماری", "طراحی", "الگو", "مدل"],
+  ["جلسه", "نشست", "کمیته", "کارگروه", "ملاقات", "مذاکره"],
+  ["قانون", "مقررات", "ماده", "تبصره", "بند", "الزام"],
+  ["راهاندازی", "بهرهبرداری", "اجرا", "پیادهسازی", "تحویل"],
+];
+
+const SYN = (() => {
+  const map = {};
+  SYNONYMS.forEach((group) => {
+    const stemmed = group.map((w) => stem(norm(w)));
+    stemmed.forEach((w) => { map[w] = stemmed; });
+  });
+  return map;
+})();
+
+/* Sentences, so an answer can quote the line that matched rather than the
+   whole document. */
+function sentences(text) {
+  return String(text || "").split(/(?<=[.؛:!؟])\s+|\n+/)
+    .map((s) => s.trim()).filter((s) => s.length > 12);
+}
+
+/* The words of one document, stemmed and deduplicated. Comparing word to word
+   rather than by substring is what keeps «رد» out of «مورد» and «نامه» out of
+   «برنامه». */
+function docTokens(doc) {
+  return new Set(terms(doc.title + " " + (doc.party || "") + " " + (doc.ref || "")
+    + " " + doc.text));
+}
+
+/* How well one word of the question is answered by one document:
+   1 for the word itself, 0.55 for a word this archive uses to mean the same
+   thing — always less than a direct hit, so a document that uses the
+   manager's own words still ranks first. */
+function termHit(tokens, term) {
+  if (tokens.has(term)) return 1;
+  if (term.length >= 4) {
+    for (const w of tokens) {
+      if (w.length >= 4 && (w.indexOf(term) === 0 || term.indexOf(w) === 0)) return 1;
+    }
+  }
+  const alts = SYN[term];
+  if (alts) { for (const alt of alts) { if (tokens.has(alt)) return 0.55; } }
+  return 0;
+}
+
+/* The best line to show for a match: the sentence carrying most of the
+   question. */
+function bestQuote(doc, matched) {
+  const list = sentences(doc.text);
+  if (!list.length) return String(doc.text || "").slice(0, 180);
+  let best = list[0], bestHits = -1;
+  list.forEach((s) => {
+    const tokens = new Set(terms(s));
+    const hits = matched.reduce((sum, t) => sum + termHit(tokens, t), 0);
+    if (hits > bestHits) { bestHits = hits; best = s; }
+  });
+  return best;
+}
+
+/* Search a pool of documents.
+
+   A question about something the archive has never heard of comes back empty.
+   That is the one answer this stage of the product must never fake, so it is
+   the first thing decided: if no word of the question appears anywhere in the
+   pool — directly or through a word meaning the same — there is nothing to
+   say. */
+const MIN_COVERAGE = 0.34;
+const MIN_SCORE = 0.2;
+/* Below this share of the question understood, the honest answer is nothing. */
+const MIN_UNDERSTOOD = 0.6;
+/* A word in almost every document cannot tell them apart, so it cannot carry
+   a question on its own. */
+const UBIQUITOUS = 0.7;
+/* Words shorter than this are idiom often enough that their absence proves
+   nothing — «رد و بدل» is a way of saying "exchanged", not a subject. */
+const SUBSTANTIVE = 4;
+
+function searchDocs(query, pool) {
+  const asked = [...new Set(terms(query))];
+  if (!asked.length || !pool.length) return [];
+
+  const tokenised = pool.map((doc) => ({ doc, tokens: docTokens(doc) }));
+
+  // Keep only the words this archive can actually discriminate on. A word in
+  // no document at all is not evidence of irrelevance — it is just a word the
+  // file does not use, and letting it count would sink a good question.
+  const df = {};
+  asked.forEach((t) => {
+    df[t] = tokenised.filter((e) => termHit(e.tokens, t) > 0).length;
+  });
+  const qt = asked.filter((t) => df[t] > 0);
+  if (!qt.length) return [];
+
+  // Did we understand enough of what was asked? Counting only substantive
+  // words, because a question is about its nouns.
+  const substantive = asked.filter((t) => t.length >= SUBSTANTIVE || df[t] > 0);
+  const understood = substantive.filter((t) => df[t] > 0).length;
+  if (substantive.length && understood / substantive.length < MIN_UNDERSTOOD) return [];
+
+  // And at least one understood word has to discriminate.
+  if (!qt.some((t) => df[t] / pool.length < UBIQUITOUS)) return [];
+
+  const idf = {};
+  let totalIdf = 0;
+  qt.forEach((t) => {
+    idf[t] = Math.log(1 + pool.length / df[t]);
+    totalIdf += idf[t];
+  });
+  const phrase = asked.length > 1 ? norm(query) : null;
+
+  return tokenised
+    .map(({ doc, tokens }) => {
+      const titleTokens = new Set(terms(doc.title));
+      let weight = 0, covered = 0, inTitle = 0;
+      const matched = [];
+      qt.forEach((t) => {
+        const hit = termHit(tokens, t);
+        if (hit) { weight += hit * idf[t]; covered += 1; matched.push(t); }
+        if (termHit(titleTokens, t)) inTitle += 1;
+      });
+      let score = totalIdf ? weight / totalIdf : 0;
+      // A document whose title is about the subject beats one that mentions it
+      // in passing.
+      if (inTitle) score += 0.15 * (inTitle / qt.length);
+      if (phrase && norm(doc.title + " " + doc.text).indexOf(phrase) !== -1) score += 0.4;
+      return { doc, score, coverage: covered / qt.length, matched };
+    })
+    .filter((r) => r.coverage >= MIN_COVERAGE && r.score > MIN_SCORE)
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 5)
+    .map((r) => Object.assign(r, { quote: bestQuote(r.doc, r.matched) }));
+}
+
+/* ==========================================================================
+   What is on the record for a document
+
+   Comments, tracked changes and one assignment. Kept beside the document
+   rather than in a separate task list, because the question a manager asks is
+   always "what is happening with *this*".
+   ========================================================================== */
+function docMeta(id) {
+  if (!state.docMeta[id]) {
+    state.docMeta[id] = { comments: [], changes: [], assignment: null };
+  }
+  return state.docMeta[id];
+}
+function stamp() {
+  const d = new Date();
+  return formatDate(todayIso()) + " · " + fa(pad2(d.getHours()) + ":" + pad2(d.getMinutes()));
+}
+function addComment(id, text) {
+  docMeta(id).comments.push({
+    role: state.role, who: me().name, text: text, at: stamp(),
+  });
+}
+function addChange(id, what, from, to) {
+  docMeta(id).changes.push({
+    role: state.role, who: me().name, what: what, from: from, to: to, at: stamp(),
+  });
+}
+
+/* A few documents arrive with a history, so the feature is visible before
+   anyone has typed anything. */
+function seedDocMeta() {
+  state.docMeta = {};
+  const a5 = docMeta("a5");
+  a5.comments.push({ role: "secretary", who: ROLES.secretary.name, at: "۱۴۰۰/۰۵/۲۸ · ۰۹:۱۲",
+    text: "این نامه در بایگانی ثبت شد. پاسخ سازمان فناوری اطلاعات با شمارهٔ ۵۵/۲۲۱۰ ضمیمه است." });
+  a5.comments.push({ role: "manager", who: ROLES.manager.name, at: "۱۴۰۰/۰۵/۲۸ · ۱۱:۴۰",
+    text: "لطفاً پیگیری کنید که چرا نامهٔ ۱۲/۸۸۹۰ تا امروز بی‌پاسخ مانده است." });
+  a5.changes.push({ role: "secretary", who: ROLES.secretary.name, at: "۱۴۰۰/۰۵/۲۸ · ۰۹:۱۵",
+    what: "نوع سند", from: "سند محتوایی", to: "نامه" });
+  a5.assignment = {
+    to: "secretary", by: ROLES.manager.name, at: "۱۴۰۰/۰۵/۲۸ · ۱۱:۴۱",
+    task: "پیگیری پاسخ نامهٔ ۱۲/۸۸۹۰ از سازمان برنامه و بودجه",
+    due: "۱۴۰۰/۰۶/۱۵", status: "open", done: null,
+  };
+
+  const a8 = docMeta("a8");
+  a8.comments.push({ role: "manager", who: ROLES.manager.name, at: "۱۳۹۸/۰۷/۰۳ · ۱۶:۰۵",
+    text: "این گزارش با یادداشت شخصی من دربارهٔ وضعیت سند امنیت هم‌خوان نیست. هر دو در پرونده بماند." });
+  a8.changes.push({ role: "secretary", who: ROLES.secretary.name, at: "۱۳۹۸/۰۷/۰۲ · ۱۰:۲۰",
+    what: "تاریخ سند", from: "۱۳۹۸/۰۶/۳۱", to: "۱۳۹۸/۰۷/۰۱" });
+}
+
+/* Every document filed under a subject: the seeded archive plus anything
+   entered in the first tab whose own words put it here. */
+function caseDocs(caseId) {
+  const live = liveMeetingDocs().filter((d) => d.cases.includes(caseId));
+  return ARCHIVE.filter((d) => d.cases.includes(caseId)).concat(live);
+}
+
+/* --- views -------------------------------------------------------------- */
+function viewCases() {
+  return `
+    <div class="spread" style="margin-bottom:1.5rem">
+      <div>
+        <h1 style="font-size:1.5rem;font-weight:600">موضوع‌های من</h1>
+        <p class="muted small" style="margin-top:.25rem">
+          یک موضوع را باز کنید و هر پرسشی دارید بپرسید؛ اسناد مرتبط با آن نشان داده می‌شود.
+        </p>
+      </div>
+      <button class="btn btn-secondary" data-new-case>+ موضوع جدید</button>
+    </div>
+
+    <div class="stack" style="gap:.75rem">
+      ${CASE_LIST.map((c) => `
+        <div class="card subject" data-open-case="${c.id}">
+          <p style="font-weight:600;font-size:1.0625rem">${esc(c.title)}</p>
+          <p class="muted small tnum" style="margin-top:.35rem">${fa(caseDocs(c.id).length)} سند مرتبط</p>
+        </div>`).join("")}
+    </div>`;
+}
+
+/* --- the subject page: ask, then read ------------------------------------ */
+function viewCase() {
+  const id = state.route.id;
+  const c = CASE_LIST.find((x) => x.id === id);
+  if (!c) return `<p>موضوع پیدا نشد.</p>`;
+  const docs = caseDocs(id);
+  const thread = state.chat[id] || [];
+
+  return `
+    <button class="linkish" style="font-size:.875rem;margin-bottom:1rem;text-decoration:none;color:var(--s-500)" data-go="cases">← بازگشت به موضوع‌ها</button>
+
+    <div class="card">
+      <h1 style="font-size:1.25rem;font-weight:600">${esc(c.title)}</h1>
+      <p class="muted small tnum" style="margin-top:.25rem">${fa(docs.length)} سند مرتبط</p>
+    </div>
+
+    <div class="card chat" style="margin-top:1rem">
+      <div class="section-title"><h3>سؤال‌هایتان را از من بپرسید</h3></div>
+
+      <div class="chat-log">
+        ${thread.length === 0 ? `
+          <div class="chat-hint">
+            <p>هرچه می‌خواهید بپرسید — مثلاً «اعتبار مطالعات امنیت چه شد؟» یا «قرارداد مرکز داده».</p>
+            <p class="muted small" style="margin-top:.35rem">
+              من در این مرحله نتیجه‌گیری نمی‌کنم؛ فقط سندهای مرتبط و همان جمله‌ای را که پیدا کرده‌ام نشان می‌دهم.
+            </p>
+          </div>` : thread.map(chatBubble).join("")}
+        ${state.chatBusy ? `<div class="chat-row bot"><div class="bubble typing"><span></span><span></span><span></span></div></div>` : ""}
+      </div>
+
+      <div class="row" style="margin-top:.875rem">
+        <input class="field" id="chat-q" style="flex:1;min-width:14rem" placeholder="سؤالتان را بنویسید…" autocomplete="off">
+        <button class="btn btn-primary" data-chat-send>بپرس</button>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:1rem;padding:.5rem">
+      <div class="section-title" style="padding:.5rem .75rem 0"><h3>اسناد مرتبط با این موضوع <span class="count">${fa(docs.length)}</span></h3></div>
+      <div class="stack" style="gap:.5rem;padding:.5rem">${docs.map(docRow).join("")}</div>
+    </div>`;
+}
+
+function chatBubble(msg) {
+  if (msg.from === "user") {
+    return `<div class="chat-row user"><div class="bubble">${esc(msg.text)}</div></div>`;
+  }
+  if (!msg.hits.length) {
+    return `<div class="chat-row bot"><div class="bubble">
+      <p>در اسناد این موضوع چیزی دربارهٔ «${esc(msg.text)}» پیدا نکردم.</p>
+      <p class="muted small" style="margin-top:.35rem">یعنی چنین سندی در بایگانی ثبت نشده — نه اینکه پاسخ را نمی‌دانم.</p>
+    </div></div>`;
+  }
+  return `<div class="chat-row bot"><div class="bubble">
+    <p style="margin-bottom:.6rem">در ${fa(msg.hits.length)} سند به این موضوع اشاره شده است:</p>
+    ${msg.hits.map((hit, i) => `
+      <div class="hit" data-doc="${hit.id}">
+        <p class="hit-head">در سند ${fa(i + 1)} — ${esc(hit.title)}
+          <span class="muted tnum" style="font-weight:400">(${esc(hit.date)} · ${esc(hit.kind)})</span>
+        </p>
+        <p class="hit-quote">«${esc(hit.quote)}»</p>
+      </div>`).join("")}
+    <p class="muted small" style="margin-top:.6rem">
+      برای دیدن کل سند روی آن کلیک کنید. در این مرحله فقط سندهای مرتبط نشان داده می‌شود و تحلیلی ارائه نمی‌شود.
+    </p>
+  </div></div>`;
+}
+
+/* One question at a time, so an interrupted run never leaves a spinner. */
+let chatRun = 0;
+
+function askChat(caseId, question) {
+  const token = ++chatRun;
+  if (!state.chat[caseId]) state.chat[caseId] = [];
+  state.chat[caseId].push({ from: "user", text: question, hits: [] });
+  state.chatBusy = true;
+  render();
+
+  setTimeout(() => {
+    if (token !== chatRun) return;
+    const found = searchDocs(question, caseDocs(caseId)).map((r) => ({
+      id: r.doc.id,
+      title: r.doc.title,
+      date: r.doc.date,
+      kind: DOC_KINDS[r.doc.kind].label,
+      quote: r.quote,
+    }));
+    state.chat[caseId].push({ from: "bot", text: question, hits: found });
+    state.chatBusy = false;
+    render();
+    const log = document.querySelector(".chat-log");
+    if (log) log.scrollTop = log.scrollHeight;
+  }, 520);
+}
+
+/* --- archive ------------------------------------------------------------ */
+
+/* Archive dates are written the way the documents are: ۱۳۹۶/۰۳/۱۰. Folded to
+   digits they sort chronologically as plain text, which is all a range filter
+   needs. */
+function jYear(dateStr) {
+  const m = /^([۰-۹\d]{4})/.exec(String(dateStr || ""));
+  return m ? +norm(m[1]) : null;
+}
+
+function viewArchive() {
+  const all = archiveAll();
+  const q = (state.archiveQuery || "").trim();
+  const kind = state.archiveKind || "";
+  const from = state.archiveFrom ? +state.archiveFrom : null;
+  const to = state.archiveTo ? +state.archiveTo : null;
+
+  const years = [...new Set(all.map((d) => jYear(d.date)).filter(Boolean))].sort();
+
+  const list = all.filter((d) => {
+    if (kind && d.kind !== kind) return false;
+    const y = jYear(d.date);
+    if (from && (!y || y < from)) return false;
+    if (to && (!y || y > to)) return false;
+    if (!q) return true;
+    return norm(d.title + " " + (d.ref || "") + " " + (d.party || "") + " " + d.text)
+      .indexOf(norm(q)) !== -1;
+  });
+
+  const kinds = [...new Set(all.map((d) => d.kind))];
+  const yearOptions = (selected) => years.map((y) =>
+    `<option value="${y}" ${String(selected) === String(y) ? "selected" : ""}>${fa(y)}</option>`).join("");
+
+  return `
+    <div class="spread" style="margin-bottom:1.5rem">
+      <div>
+        <h1 style="font-size:1.5rem;font-weight:600">بایگانی</h1>
+        <p class="muted small" style="margin-top:.25rem">
+          همهٔ اسناد ثبت‌شده — صورت‌جلسه، نامه، قرارداد، گزارش، مصوبه، قانون و یادداشت.
+        </p>
+      </div>
+      <button class="btn btn-primary" data-add-doc>+ افزودن سند</button>
+    </div>
+
+    <div class="card" style="margin-bottom:1rem">
+      <div class="row">
+        <input class="field" id="arch-q" style="flex:1;min-width:14rem" placeholder="جست‌وجو در عنوان، شماره یا متن سند…" value="${esc(state.archiveQuery || "")}">
+        <button class="btn btn-secondary" data-arch-search>جست‌وجو</button>
+      </div>
+
+      <div class="filters">
+        <div class="filter-group">
+          <span class="label" style="margin:0">تاریخ</span>
+          <select class="field field-sm" id="arch-from"><option value="">از ابتدا</option>${yearOptions(state.archiveFrom)}</select>
+          <span class="muted small">تا</span>
+          <select class="field field-sm" id="arch-to"><option value="">امروز</option>${yearOptions(state.archiveTo)}</select>
+          ${(state.archiveFrom || state.archiveTo || kind || q) ? `<button class="btn btn-ghost btn-sm" data-clear-filters>حذف فیلترها</button>` : ""}
+        </div>
+      </div>
+
+      <div class="row" style="margin-top:.75rem">
+        <button class="btn btn-sm ${kind === "" ? "btn-secondary" : "btn-ghost"}" data-kind="">همه (${fa(all.length)})</button>
+        ${kinds.map((k) => `
+          <button class="btn btn-sm ${kind === k ? "btn-secondary" : "btn-ghost"}" data-kind="${k}">
+            ${DOC_KINDS[k].glyph} ${DOC_KINDS[k].label} (${fa(all.filter((d) => d.kind === k).length)})
+          </button>`).join("")}
+      </div>
+    </div>
+
+    <p class="muted small tnum" style="margin-bottom:.5rem">${fa(list.length)} سند از ${fa(all.length)} سند نمایش داده می‌شود</p>
+
+    ${list.length === 0 ? `
+      <div class="empty">
+        <span class="glyph">📁</span>
+        <p style="font-weight:500">سندی با این مشخصات پیدا نشد</p>
+        <p class="muted small">فیلتر را بردارید یا سند تازه‌ای اضافه کنید.</p>
+      </div>` : `
+      <div class="card" style="padding:.5rem">
+        <div class="stack" style="gap:.5rem">${list.map(docRow).join("")}</div>
+      </div>`}
+
+    <div class="demo-note" style="margin-top:1.5rem">
+      <span>هرچه در «ورود دیتا» ثبت شود، همان لحظه به این بایگانی اضافه و قابل جست‌وجو می‌شود.</span>
+      <button class="btn btn-ghost btn-sm" data-go="dashboard">رفتن به ورود دیتا</button>
+    </div>`;
+}
+
+function docRow(d) {
+  const k = DOC_KINDS[d.kind];
+  const meta = state.docMeta[d.id];
+  const bits = [d.date, d.party].filter(Boolean);
+  if (d.ref) bits.splice(1, 0, "شمارهٔ " + d.ref);
+  if (d.amount) bits.push(d.amount);
+  return `
+    <div class="source-row" data-doc="${d.id}" style="cursor:pointer">
+      <span class="glyph">${k.glyph}</span>
+      <div class="info">
+        <p class="fname">${esc(d.title)}</p>
+        <p class="fmeta tnum">${bits.map(esc).join(" · ")}</p>
+      </div>
+      ${meta && meta.comments.length ? `<span class="chip">💬 ${fa(meta.comments.length)}</span>` : ""}
+      ${meta && meta.assignment && meta.assignment.status === "open"
+        ? `<span class="badge badge-warning">واگذارشده</span>` : ""}
+      <span class="badge badge-${k.tone}">${k.label}</span>
+      ${d.fromMeeting ? `<span class="badge badge-success">از ورود دیتا</span>` : ""}
+    </div>`;
+}
+
+function wire() {
+  const $ = (sel) => Array.prototype.slice.call(document.querySelectorAll(sel));
+  const on = (sel, ev, fn) => $(sel).forEach((el) => el.addEventListener(ev, fn));
+
+  /* ---- role ---- */
+  on("[data-role]", "click", (e) => {
+    state.role = e.currentTarget.dataset.role;
+    toast("اکنون به عنوان " + me().label + " وارد شده‌اید");
+    render();
+  });
+
+  /* ---- subjects & the chat ---- */
+  on("[data-open-case]", "click", (e) => go({ name: "case", id: e.currentTarget.dataset.openCase }));
+  on("[data-new-case]", "click", () => toast("در نسخهٔ نمونه، موضوع‌ها از پیش ساخته شده‌اند"));
+
+  const sendChat = () => {
+    const box = document.getElementById("chat-q");
+    const text = (box && box.value || "").trim();
+    if (!text || state.chatBusy) return;
+    box.value = "";
+    askChat(state.route.id, text);
+  };
+  on("[data-chat-send]", "click", sendChat);
+  const chatBox = document.getElementById("chat-q");
+  if (chatBox) {
+    chatBox.addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); sendChat(); } });
+    if (state.chat[state.route.id] && state.chat[state.route.id].length) chatBox.focus();
+  }
+  const log = document.querySelector(".chat-log");
+  if (log) log.scrollTop = log.scrollHeight;
+
+  /* ---- one document's record ---- */
+  on("[data-doc]", "click", (e) => {
+    const doc = archiveAll().find((d) => d.id === e.currentTarget.dataset.doc);
+    if (doc) { state.docTab = "comments"; state.modal = { type: "doc", doc: doc }; render(); }
+  });
+
+  on("[data-doc-tab]", "click", (e) => { state.docTab = e.currentTarget.dataset.docTab; render(); });
+
+  on("[data-add-comment]", "click", (e) => {
+    const box = document.getElementById("cm-text");
+    const text = (box && box.value || "").trim();
+    if (!text) { toast("چیزی بنویسید"); return; }
+    addComment(e.currentTarget.dataset.addComment, text);
+    toast("یادداشت ثبت شد");
+    render();
+  });
+
+  on("[data-save-doc-title]", "click", (e) => {
+    const id = e.currentTarget.dataset.saveDocTitle;
+    const box = document.getElementById("ch-title");
+    const next = (box && box.value || "").trim();
+    const doc = archiveAll().find((d) => d.id === id);
+    if (!doc || !next || next === doc.title) { toast("تغییری وارد نشد"); return; }
+    addChange(id, "عنوان سند", doc.title, next);
+    if (doc.fromMeeting) {
+      // Documents from "ورود دیتا" are derived fresh on every render, so writing
+      // to the derived copy would be undone by the next one.
+      const m = state.meetings.find((x) => x.id === doc.fromMeeting);
+      if (m) { m.title = next; if (m.minutes) m.minutes.title = next; }
+    } else {
+      doc.title = next;
+    }
+    if (state.modal) state.modal.doc = archiveAll().find((d) => d.id === id) || doc;
+    toast("اصلاح ثبت شد");
+    render();
+  });
+
+  on("[data-assign]", "click", (e) => {
+    const id = e.currentTarget.dataset.assign;
+    const task = (document.getElementById("as-task").value || "").trim();
+    if (!task) { toast("شرح کار را بنویسید"); return; }
+    docMeta(id).assignment = {
+      to: "secretary", by: me().name, at: stamp(), task: task,
+      due: (document.getElementById("as-due").value || "").trim() || null,
+      status: "open", done: null,
+    };
+    toast("کار به منشی واگذار شد");
+    render();
+  });
+
+  on("[data-assign-done]", "click", (e) => {
+    const a = docMeta(e.currentTarget.dataset.assignDone).assignment;
+    a.status = "done"; a.done = stamp();
+    toast("انجام کار اعلام شد");
+    render();
+  });
+
+  on("[data-assign-reopen]", "click", (e) => {
+    const a = docMeta(e.currentTarget.dataset.assignReopen).assignment;
+    a.status = "open"; a.done = null;
+    toast("کار دوباره باز شد");
+    render();
+  });
+
+  on("[data-assign-remind]", "click", () => toast("یادآوری برای منشی فرستاده شد"));
+
+  on("[data-add-doc]", "click", () => { state.modal = { type: "adddoc", draft: {} }; render(); });
+
+  const filePick = document.getElementById("nd-file");
+  if (filePick) filePick.addEventListener("change", (e) => {
+    const file = e.currentTarget.files && e.currentTarget.files[0];
+    if (!file) return;
+    const titleBox = document.getElementById("nd-title");
+    if (titleBox && !titleBox.value.trim()) {
+      titleBox.value = file.name.replace(/\.[^.]+$/, "");
+    }
+    toast("فایل «" + file.name + "» انتخاب شد");
+  });
+
+  on("[data-save-doc]", "click", () => {
+    const val = (id) => (document.getElementById(id).value || "").trim();
+    const title = val("nd-title");
+    if (!title) { toast("عنوان سند را بنویسید"); return; }
+    const caseId = val("nd-case");
+    ARCHIVE.unshift({
+      id: nid("doc"),
+      kind: val("nd-kind") || "contract",
+      title: title,
+      date: val("nd-date") || "بدون تاریخ",
+      ref: val("nd-ref") || null,
+      party: val("nd-party") || null,
+      cases: caseId ? [caseId] : [],
+      text: val("nd-text") || "متن این سند وارد نشده است.",
+    });
+    state.modal = null;
+    toast("سند به بایگانی افزوده شد");
+    render();
+  });
+
+  on("[data-kind]", "click", (e) => { state.archiveKind = e.currentTarget.dataset.kind; render(); });
+  const bindSelect = (id, key) => {
+    const el = document.getElementById(id);
+    if (el) el.addEventListener("change", () => { state[key] = el.value; render(); });
+  };
+  bindSelect("arch-from", "archiveFrom");
+  bindSelect("arch-to", "archiveTo");
+  on("[data-clear-filters]", "click", () => {
+    state.archiveFrom = ""; state.archiveTo = ""; state.archiveKind = ""; state.archiveQuery = "";
+    render();
+  });
+  on("[data-arch-search]", "click", () => {
+    const box = document.getElementById("arch-q");
+    state.archiveQuery = box ? box.value : "";
+    render();
+  });
+  const archBox = document.getElementById("arch-q");
+  if (archBox) archBox.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") { state.archiveQuery = e.currentTarget.value; render(); }
+  });
+
+  on("[data-go]", "click", (e) => {
+    const to = e.currentTarget.dataset.go;
+    if (to === "landing") go({ name: "landing" });
+    else go({ name: to });
+  });
+
+  on("[data-auth]", "click", (e) => {
+    state.authTab = e.currentTarget.dataset.auth;
+    state.authError = null;
+    go({ name: "auth" });
+  });
+
+  on("[data-reset]", "click", () => {
+    confirmModal("بازنشانی دمو",
+      "همهٔ ورودی‌ها، یادداشت‌ها و اسنادی که در این مرورگر ثبت کرده‌اید پاک می‌شود و دمو به حالت اولیه برمی‌گردد.",
+      "بازنشانی", true, resetDemo);
+  });
+
+  on("[data-logout]", "click", () => { state.user = null; go({ name: "landing" }); });
+
+  const authForm = document.getElementById("auth-form");
+  if (authForm) authForm.addEventListener("submit", (e) => {
+    e.preventDefault();
+    const email = (document.getElementById("au-email").value || "").trim();
+    const pass = document.getElementById("au-pass").value || "";
+    if (!email || !email.includes("@")) { state.authError = "ایمیل معتبر وارد کنید."; return render(); }
+    if (pass.length < 8) { state.authError = "رمز عبور باید حداقل ۸ کاراکتر باشد."; return render(); }
+    const nameEl = document.getElementById("au-name");
+    state.user = { email: email, name: nameEl ? nameEl.value : "کاربر نمونه" };
+    state.authError = null;
+    if (!state.meetings.length) state.meetings = seedMeetings();
+    toast("خوش آمدید");
+    go({ name: "dashboard" });
+  });
+
+  on("[data-open]", "click", (e) => go({ name: "meeting", id: e.currentTarget.dataset.open }));
+
+  const newForm = document.getElementById("new-form");
+  if (newForm) newForm.addEventListener("submit", (e) => {
+    e.preventDefault();
+    const title = (document.getElementById("nm-title").value || "").trim();
+    const date = document.getElementById("nm-date").value;
+    const kind = document.getElementById("nm-kind").value;
+    const m = {
+      id: nid("m"),
+      kind: kind,
+      title: title || (DOC_KINDS[kind].label + " بدون عنوان"),
+      date: date || null,
+      time: (document.getElementById("nm-time").value || "").trim() || null,
+      location: null,
+      description: (document.getElementById("nm-desc").value || "").trim() || null,
+      status: "draft", sources: [], minutes: null, job: null, versions: [],
+    };
+    state.meetings.unshift(m);
+    toast("ورودی ساخته شد — حالا محتوای آن را اضافه کنید");
+    go({ name: "meeting", id: m.id });
+  });
+
+  on("[data-add-text]", "click", () => {
+    const box = document.getElementById("text-in");
+    const text = (box && box.value || "").trim();
+    if (text.length < 10) { toast("متن کوتاه‌تر از آن است که سندی باشد"); return; }
+    const m = currentMeeting();
+    if (!m) return;
+    m.sources.push({
+      id: nid("s"), name: "متن واردشده.txt", type: "document", status: "uploaded",
+      size: text.length * 2, text: text, chars: text.length,
+    });
+    if (m.status === "draft") m.status = "uploaded";
+    box.value = "";
+    toast("متن به این ورودی افزوده شد");
+    render();
+  });
+
+  /* --- uploads --- */
+  const zone = document.querySelector("[data-drop]");
+  const input = document.getElementById("file-input");
+  if (zone && input) {
+    const m = currentMeeting();
+    const busy = m && m.status === "processing";
+    zone.addEventListener("click", () => { if (!busy) input.click(); });
+    zone.addEventListener("keydown", (e) => { if (!busy && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); input.click(); } });
+    zone.addEventListener("dragover", (e) => { e.preventDefault(); if (!busy && !state.dragging) { state.dragging = true; zone.classList.add("drag"); } });
+    zone.addEventListener("dragleave", () => { state.dragging = false; zone.classList.remove("drag"); });
+    zone.addEventListener("drop", (e) => {
+      e.preventDefault(); state.dragging = false;
+      if (!busy) addFiles(e.dataTransfer.files);
+    });
+    input.addEventListener("change", (e) => { addFiles(e.target.files); e.target.value = ""; });
+  }
+
+  on("[data-remove-source]", "click", (e) => {
+    const m = currentMeeting();
+    const id = e.currentTarget.dataset.removeSource;
+    const s = m.sources.find((x) => x.id === id);
+    confirmModal("حذف منبع", "«" + s.name + "» حذف شود؟", "حذف", true, () => {
+      m.sources = m.sources.filter((x) => x.id !== id);
+      if (!m.sources.length && !m.minutes) m.status = "draft";
+      toast("منبع حذف شد");
+      state.modal = null; render();
+    });
+  });
+
+  on("[data-view-source]", "click", (e) => {
+    const m = currentMeeting();
+    const s = m.sources.find((x) => x.id === e.currentTarget.dataset.viewSource);
+    state.modal = { type: "source", source: s }; render();
+  });
+
+  on("[data-download-source]", "click", (e) => {
+    toast("در نسخهٔ نمایشی دانلود فعال نیست: " + e.currentTarget.dataset.downloadSource);
+  });
+
+  on("[data-retry]", "click", () => { toast("برای تلاش دوباره، پردازش را دوباره اجرا کنید."); });
+
+  /* --- processing --- */
+  on("[data-process]", "click", () => runPipeline(currentMeeting(), false));
+  on("[data-regenerate]", "click", () => {
+    confirmModal("تولید مجدد صورت‌جلسه",
+      "صورت‌جلسه دوباره تولید می‌شود. نسخهٔ فعلی حذف نمی‌شود و در تاریخچه باقی می‌ماند.",
+      "تولید مجدد", false, () => { state.modal = null; runPipeline(currentMeeting(), true); });
+  });
+
+  /* --- minutes editing --- */
+  on("[data-edit-title]", "click", () => { resetEditing(); state.editingTitle = true; render(); });
+  on("[data-save-title]", "click", () => {
+    const m = currentMeeting();
+    const v = (document.getElementById("ed-title").value || "").trim();
+    if (!v) return toast("عنوان صورت‌جلسه نمی‌تواند خالی باشد.");
+    m.minutes.title = v; bumpVersion(m, "user_edit"); resetEditing();
+    toast("ذخیره شد"); render();
+  });
+
+  on("[data-edit-summary]", "click", () => { resetEditing(); state.editingSummary = true; render(); });
+  on("[data-save-summary]", "click", () => {
+    const m = currentMeeting();
+    m.minutes.summary = document.getElementById("ed-summary").value.trim();
+    bumpVersion(m, "user_edit"); resetEditing(); toast("ذخیره شد"); render();
+  });
+
+  on("[data-edit-action]", "click", (e) => { resetEditing(); state.editingAction = e.currentTarget.dataset.editAction; render(); });
+  on("[data-save-action]", "click", (e) => {
+    const m = currentMeeting();
+    const a = m.minutes.actions.find((x) => x.id === e.currentTarget.dataset.saveAction);
+    const title = (document.getElementById("ac-title").value || "").trim();
+    if (!title) return toast("عنوان اقدام نمی‌تواند خالی باشد.");
+    a.title = title;
+    a.desc = (document.getElementById("ac-desc").value || "").trim() || null;
+    const owner = (document.getElementById("ac-owner").value || "").trim();
+    a.owner = owner || null;
+    a.ownerConfirmed = !!owner;                       // a name typed by a person is confirmed
+    a.deadline = document.getElementById("ac-deadline").value || null;
+    a.deadlineText = a.deadline ? null : ((document.getElementById("ac-dtext").value || "").trim() || null);
+    a.status = document.getElementById("ac-status").value;
+    a.priority = document.getElementById("ac-priority").value || null;
+    bumpVersion(m, "user_edit"); resetEditing(); toast("اقدام ذخیره شد"); render();
+  });
+  on("[data-delete-action]", "click", (e) => {
+    const m = currentMeeting(); const id = e.currentTarget.dataset.deleteAction;
+    m.minutes.actions = m.minutes.actions.filter((x) => x.id !== id);
+    bumpVersion(m, "user_edit"); resetEditing(); toast("اقدام حذف شد"); render();
+  });
+  on("[data-status-for]", "change", (e) => {
+    const m = currentMeeting();
+    const a = m.minutes.actions.find((x) => x.id === e.currentTarget.dataset.statusFor);
+    a.status = e.currentTarget.value;
+    bumpVersion(m, "user_edit"); toast("وضعیت به‌روزرسانی شد"); render();
+  });
+
+  on("[data-add-action]", "click", () => { resetEditing(); state.addingAction = true; render(); });
+  on("[data-save-new-action]", "click", () => {
+    const m = currentMeeting();
+    const title = (document.getElementById("new-action-title").value || "").trim();
+    if (!title) return toast("عنوان اقدام نمی‌تواند خالی باشد.");
+    m.minutes.actions.push({ id: nid("a"), title: title, desc: null, owner: null, ownerConfirmed: false,
+      deadline: null, deadlineText: null, priority: null, status: "open", evidence: [] });
+    bumpVersion(m, "user_edit"); resetEditing(); toast("اقدام افزوده شد"); render();
+  });
+
+  on("[data-edit-decision]", "click", (e) => { resetEditing(); state.editingDecision = e.currentTarget.dataset.editDecision; render(); });
+  on("[data-save-decision]", "click", (e) => {
+    const m = currentMeeting();
+    const d = m.minutes.decisions.find((x) => x.id === e.currentTarget.dataset.saveDecision);
+    const t = (document.getElementById("dec-text").value || "").trim();
+    if (!t) return toast("متن تصمیم نمی‌تواند خالی باشد.");
+    d.text = t;
+    d.context = (document.getElementById("dec-ctx").value || "").trim() || null;
+    d.by = (document.getElementById("dec-by").value || "").trim() || null;
+    bumpVersion(m, "user_edit"); resetEditing(); toast("تصمیم ذخیره شد"); render();
+  });
+  on("[data-delete-decision]", "click", (e) => {
+    const m = currentMeeting(); const id = e.currentTarget.dataset.deleteDecision;
+    m.minutes.decisions = m.minutes.decisions.filter((x) => x.id !== id);
+    bumpVersion(m, "user_edit"); resetEditing(); toast("تصمیم حذف شد"); render();
+  });
+
+  on("[data-cancel-edit]", "click", () => { resetEditing(); render(); });
+
+  /* --- evidence / versions / export --- */
+  on("[data-evidence]", "click", (e) => {
+    const m = currentMeeting();
+    const [kind, id] = e.currentTarget.dataset.evidence.split(":");
+    const pool = kind === "action" ? m.minutes.actions : kind === "decision" ? m.minutes.decisions : m.minutes.proposals;
+    const item = pool.find((x) => x.id === id);
+    if (!item || !item.evidence.length) return toast("برای این مورد منبعی ثبت نشده است.");
+    state.modal = { type: "evidence", items: item.evidence }; render();
+  });
+
+  /* --- naming the separated voices --- */
+  on("[data-spk-name]", "input", (e) => {
+    // Deliberately no re-render: that would steal focus mid-word.
+    state.modal.draft = Object.assign({}, state.modal.draft || {}, {
+      [e.currentTarget.dataset.spkName]: e.currentTarget.value,
+    });
+  });
+
+  on("[data-spk-save]", "click", () => {
+    const src = state.modal.source;
+    const draft = state.modal.draft || {};
+    Object.keys(draft).forEach((label) => {
+      const value = draft[label].trim();
+      if (value) src.speakerNames[label] = value;
+      else delete src.speakerNames[label];  // cleared name = anonymous again
+    });
+    // The names have to reach the text, not just the panel: the transcript, the
+    // quotes taken from it, and the archive all read src.text.
+    src.text = speakerText(src);
+    src.chars = src.text.length;
+    state.modal = null;
+    const m = currentMeeting();
+    toast("نام گویندگان ذخیره شد");
+    // The panel says naming re-runs the analysis of this source. It does.
+    if (m && m.minutes) runPipeline(m, true);
+    else render();
+  });
+
+  on("[data-versions]", "click", () => { state.modal = { type: "versions" }; render(); });
+  on("[data-view-version]", "click", (e) => {
+    const m = currentMeeting();
+    const n = +e.currentTarget.dataset.viewVersion;
+    const v = m.versions.find((x) => x.n === n);
+    if (!v || !v.snapshot) return toast("متن این نسخه ذخیره نشده است.");
+    state.modal = { type: "oldVersion", n: n, minutes: v.snapshot, at: v.at, origin: v.origin };
+    render();
+  });
+
+  on("[data-export]", "click", (e) => {
+    state.modal = { type: "export", format: e.currentTarget.dataset.export }; render();
+  });
+
+  on("[data-delete-meeting]", "click", (e) => {
+    const id = e.currentTarget.dataset.deleteMeeting;
+    confirmModal("حذف جلسه",
+      "این جلسه و همهٔ فایل‌ها و صورت‌جلسه‌های آن برای همیشه حذف می‌شود. مطمئن هستید؟",
+      "حذف جلسه", true, () => {
+        state.meetings = state.meetings.filter((x) => x.id !== id);
+        toast("جلسه حذف شد");
+        go({ name: "dashboard" });
+      });
+  });
+
+  on("[data-close-modal]", "click", () => { state.modal = null; render(); });
+  on("[data-overlay]", "click", (e) => { if (e.target === e.currentTarget) { state.modal = null; render(); } });
+  on("[data-confirm-yes]", "click", () => { const fn = state.modal && state.modal.onYes; if (fn) fn(); });
+}
+
+/* --- what is on the record for one document ------------------------------ */
+
+function whoLine(entry) {
+  return `<span class="who">${ROLES[entry.role].glyph} ${esc(entry.who)}</span>
+          <span class="muted small tnum">${esc(entry.at)}</span>`;
+}
+
+function docComments(d, meta) {
+  return `
+    <div class="panel">
+      ${meta.comments.length === 0
+        ? `<p class="muted small">هنوز کسی دربارهٔ این سند چیزی ننوشته است.</p>`
+        : meta.comments.map((c) => `
+          <div class="comment ${c.role}">
+            <div class="spread">${whoLine(c)}</div>
+            <p style="margin-top:.35rem">${esc(c.text)}</p>
+          </div>`).join("")}
+
+      <div style="margin-top:.875rem">
+        <label class="label" for="cm-text">یادداشت شما به عنوان ${esc(me().label)}</label>
+        <textarea class="field" id="cm-text" rows="2" placeholder="نکته‌ای دربارهٔ این سند بنویسید…"></textarea>
+        <div class="row" style="margin-top:.5rem">
+          <button class="btn btn-secondary btn-sm" data-add-comment="${d.id}">ثبت یادداشت</button>
+        </div>
+      </div>
+    </div>`;
+}
+
+function docChanges(d, meta) {
+  return `
+    <div class="panel">
+      ${meta.changes.length === 0
+        ? `<p class="muted small">این سند از زمان ثبت تغییری نکرده است.</p>`
+        : meta.changes.map((c) => `
+          <div class="change">
+            <div class="spread">${whoLine(c)}</div>
+            <p style="margin-top:.35rem">
+              ${esc(c.what)}:
+              <span class="was">${esc(c.from || "—")}</span>
+              <span class="arrow">←</span>
+              <span class="now">${esc(c.to)}</span>
+            </p>
+          </div>`).join("")}
+
+      <div style="margin-top:.875rem">
+        <label class="label" for="ch-title">اصلاح عنوان سند</label>
+        <div class="row">
+          <input class="field" id="ch-title" style="flex:1;min-width:12rem" value="${esc(d.title)}">
+          <button class="btn btn-secondary btn-sm" data-save-doc-title="${d.id}">ثبت اصلاح</button>
+        </div>
+        <p class="hint">هر اصلاحی با نام و تاریخ ثبت می‌شود؛ نسخهٔ قبلی پاک نمی‌شود.</p>
+      </div>
+    </div>`;
+}
+
+function docAssignment(d, meta) {
+  const a = meta.assignment;
+
+  if (!a) {
+    if (state.role !== "manager") {
+      return `<div class="panel"><p class="muted small">کاری روی این سند واگذار نشده است. واگذاری کار از عهدهٔ مدیر است.</p></div>`;
+    }
+    return `
+      <div class="panel">
+        <p class="muted small" style="margin-bottom:.75rem">کاری روی این سند واگذار نشده است.</p>
+        <label class="label" for="as-task">شرح کاری که به منشی واگذار می‌کنید</label>
+        <input class="field" id="as-task" placeholder="مثلاً: پیگیری پاسخ این نامه">
+        <label class="label" style="margin-top:.625rem" for="as-due">مهلت</label>
+        <input class="field" id="as-due" placeholder="۱۴۰۵/۰۶/۱۵">
+        <div class="row" style="margin-top:.75rem">
+          <button class="btn btn-primary btn-sm" data-assign="${d.id}">واگذاری به منشی</button>
+        </div>
+      </div>`;
+  }
+
+  return `
+    <div class="panel">
+      <div class="assign ${a.status}">
+        <div class="spread">
+          <span class="who">🗂 واگذارشده به ${esc(ROLES[a.to].name)}</span>
+          <span class="badge badge-${a.status === "done" ? "success" : "warning"}">
+            ${a.status === "done" ? "انجام شد" : "در جریان"}
+          </span>
+        </div>
+        <p style="margin-top:.5rem;font-weight:500">${esc(a.task)}</p>
+        <p class="muted small tnum" style="margin-top:.35rem">
+          واگذاری از ${esc(a.by)} · ${esc(a.at)} · مهلت: ${esc(a.due || "مشخص نشده")}
+        </p>
+        ${a.done ? `<p class="muted small tnum" style="margin-top:.25rem">اعلام انجام: ${esc(a.done)}</p>` : ""}
+      </div>
+
+      <div class="row" style="margin-top:.75rem">
+        ${state.role === "secretary" && a.status === "open"
+          ? `<button class="btn btn-primary btn-sm" data-assign-done="${d.id}">انجام شد</button>` : ""}
+        ${state.role === "manager" && a.status === "done"
+          ? `<button class="btn btn-secondary btn-sm" data-assign-reopen="${d.id}">دوباره باز کن</button>` : ""}
+        ${state.role === "manager"
+          ? `<button class="btn btn-ghost btn-sm" data-assign-remind="${d.id}">یادآوری به منشی</button>` : ""}
+      </div>
+    </div>`;
+}
+
+function confirmModal(title, message, confirmLabel, danger, onYes) {
+  state.modal = { type: "confirm", title: title, message: message, confirmLabel: confirmLabel, danger: danger, onYes: onYes };
+  render();
+}
+
+function addFiles(fileList) {
+  const m = currentMeeting();
+  if (!m || !fileList || !fileList.length) return;
+  let added = 0; const rejected = [];
+
+  Array.prototype.forEach.call(fileList, (f) => {
+    const ext = extOf(f.name);
+    if (AUDIO_EXT.indexOf(ext) === -1 && DOC_EXT.indexOf(ext) === -1) {
+      rejected.push(f.name + " — قالب پشتیبانی نمی‌شود");
+      return;
+    }
+    if (f.size > 200 * 1024 * 1024) { rejected.push(f.name + " — حجم بیش از حد مجاز"); return; }
+    const src = {
+      id: nid("s"),
+      name: f.name.replace(/^.*[\\/]/, ""),
+      type: AUDIO_EXT.indexOf(ext) !== -1 ? "audio" : "document",
+      size: f.size, status: "uploaded",
+    };
+    m.sources.push(src);
+    // Plain text the browser can actually read is read, so the minutes come
+    // from the visitor's own words rather than from a sample.
+    if (TEXT_EXT.indexOf(ext) !== -1 && f.size <= 1048576) {
+      const reader = new FileReader();
+      reader.onload = () => { src.text = String(reader.result || ""); src.chars = src.text.length; render(); };
+      reader.readAsText(f);
+    }
+    added++;
+  });
+
+  if (added && m.status === "draft") m.status = "uploaded";
+  if (added) toast(fa(added) + " فایل بارگذاری شد");
+  rejected.forEach((r) => toast(r));
+  render();
+}
+
+/* ==========================================================================
+   Deriving a minutes document from what was actually uploaded
+
+   Rule-based on purpose. What this product sells is not "the model writes
+   well" — it is "nothing appears in the minutes that is not in your files".
+   So every decision, action, risk and question below is built from one line of
+   one source and keeps that line as its evidence. Better sentences can be
+   layered on later; the citation is the part that has to be true from day one.
+   ========================================================================== */
+
+/* Which bucket a line belongs in. First cue wins, so the order is the
+   priority: an instruction that happens to end in a question mark is an
+   action, not an open question. */
+const CUES = [
+  ["decision", [/تصویب\s*شد/, /مصوب/, /مقرر\s*شد/, /تصمیم\s*(?:گرفته\s*شد|گرفتیم|می‌?گیریم|بر\s*این\s*شد)/,
+                /موافقت\s*شد/, /قرار\s*شد/, /approved/i, /decided/i]],
+  ["action",   [/مسئول/, /مهلت/, /آماده\s*کن/, /تهیه\s*کن/, /پیگیری\s*کن/, /ارسال\s*کن/, /بررسی\s*کن/,
+                /رزرو\s*کن/, /تکمیل\s*کن/, /به‌?روزرسانی/, /باید\s*\S+\s*(?:کند|کنند|شود|دهد)/,
+                /خواهشمند\s*است/, /دستور\s*فرمایید/, /مقتضی\s*است/,
+                /(?:اعلام|ارسال|اقدام)\s*(?:شود|گردد|فرمایید)/,
+                /\bwill\b/i, /action item/i]],
+  ["proposal", [/پیشنهاد/, /شاید\s*بهتر/, /تصمیمی\s*(?:گرفته\s*)?نشد/, /به\s*تصمیم\s*نرسید/, /مطرح\s*شد/, /proposed/i]],
+  ["risk",     [/ریسک/, /خطر/, /مشکل‌?ساز/, /تأخیر|تاخیر/, /متوقف/, /آماده\s*(?:نشده|نکرده|نیست)/,
+                /مسدود/, /blocked/i, /\brisk\b/i]],
+  ["question", [/مشخص\s*نیست/, /معلوم\s*نیست/, /نامشخص/, /باید\s*(?:اول\s*)?\S*\s*چک\s*کنیم/,
+                /(?:چقدر|چند\s|آیا|چه\s*زمانی|چه\s*کسی|تعیین\s*تکلیف)[^.]*[؟?]/]],
+];
+
+/* Sentence boundaries for classification. Unlike the search splitter, this one
+   leaves a colon alone: "مسئول: سارا" is one clause, and splitting it turns a
+   name into a stray punctuation mark. */
+function clauses(text) {
+  return String(text || "").split(/(?<=[.؛!؟])\s+|\n+/)
+    .map((x) => x.trim()).filter((x) => x.length > 12);
+}
+
+function classify(text) {
+  for (const pair of CUES) {
+    for (const re of pair[1]) if (re.test(text)) return pair[0];
+  }
+  return null;
+}
+/* Lines that are structure rather than content: table headers, section
+   labels, the "حاضران:" line the participant reader has already used. */
+const META_RE = /^(?:حاضران|حاضرین|غایب(?:ان)?|غائبین|شرکت‌?کنندگان|تاریخ|ساعت|زمان|محل|مکان|هدف|موضوع|objective|date|time|location|attendees)\s*[:：]/i;
+
+function isTableHeader(cells) {
+  return cells.every((c) => c.length <= 14) &&
+         cells.some((c) => /^(?:عنوان|مسئول|مهلت|وضعیت|شرح|title|owner|due|status)$/i.test(c));
+}
+
+/* One source, broken into the units a person would point at. A recording is
+   its turns; a document is its lines, and only a long paragraph is cut further
+   into sentences. */
+function statementsOf(s) {
+  const out = [];
+  if (s.turns && s.turns.length) {
+    s.turns.forEach((t, i) => out.push({
+      src: s.name, type: "audio", text: t.text.trim(), who: speakerLabel(s, t.speaker), i: i,
+    }));
+    return out;
+  }
+  const type = s.type === "audio" ? "audio" : "document";
+  String(s.text || "").split(/\n+/).forEach((raw, i) => {
+    const line = raw.trim();
+    if (!line) return;
+    if (/^#{1,6}\s/.test(line)) {
+      out.push({ src: s.name, type: type, text: line.replace(/^#{1,6}\s*/, ""),
+                 heading: true, level: (/^#+/.exec(line) || ["#"])[0].length, i: i });
+      return;
+    }
+    if (line.length > 260) {
+      clauses(line).forEach((sn) => out.push({ src: s.name, type: type, text: sn, i: i }));
+      return;
+    }
+    out.push({ src: s.name, type: type, text: line, i: i });
+  });
+  return out;
+}
+
+/* ---- the fields an item is made of ------------------------------------- */
+
+const DEADLINE_RES = [
+  /مهلت\s*[:：]?\s*([^|—\n]{2,30})/,
+  /(تا\s+(?:پایان\s+)?(?:هفتهٔ?\s+آینده|ماه\s+آینده|آخر\s+هفته|[^\s،.؛]{2,18}))/,
+  /(پیش\s+از\s+[^\s،.؛]{2,20})/,
+  /\b(by\s+(?:next\s+week|[A-Za-z]+day|[A-Za-z]+\s+\d{1,2}))\b/i,
+];
+function extractDeadline(text) {
+  for (const re of DEADLINE_RES) {
+    const m = re.exec(text);
+    if (m) {
+      const v = m[1].trim().replace(/[.،؛:]+$/, "");
+      if (v && !/^(?:این|آن|همان)$/.test(v.replace(/^تا\s+/, ""))) return v;
+    }
+  }
+  return null;
+}
+
+const UNKNOWN_OWNER = /^(?:؟|\?|-|—|نامشخص|مشخص\s*نشده|نامعلوم)$/;
+function extractOwner(text, known) {
+  let m = /مسئول(?:\s+[آ-ی]{2,})?\s*[:：]\s*([^|—\n،.:：]{1,30})/.exec(text)
+       || /مسئول\s+([آ-ی]{2,}(?:\s+[آ-ی]{2,})?)\s*(?:[—–|]|$)/.exec(text);
+  if (m) {
+    const v = m[1].trim();
+    if (!v || UNKNOWN_OWNER.test(v) || !/[آ-یA-Za-z]/.test(v)) return null;
+    return fullName(v, known);
+  }
+  // "علی، می‌شود …" — in a meeting the person addressed is the person asked.
+  m = /(?:^|[.!؟]\s*)([آ-ی]{2,}(?:\s[آ-ی]{2,})?)\s*،\s/.exec(text);
+  if (m && !STOP.has(norm(m[1])) && !/^(?:یک\s|این|آن|بله|خب)/.test(m[1])) return fullName(m[1].trim(), known);
+  m = /(^|\s)([A-Z][a-z]{2,})\s+will\b/.exec(text);
+  if (m) return fullName(m[2], known);
+  for (const k of known) if (text.indexOf(k) !== -1) return k;
+  return null;
+}
+/* "علی" and "علی رضایی" are the same person; the minutes should print the
+   name the attendance line gave. */
+function fullName(name, known) {
+  const hit = known.find((k) => k === name || k.split(" ").indexOf(name) !== -1);
+  return hit || name;
+}
+
+const STATUS_WORDS = [[/انجام\s*‌?شده|انجام\s*شد|done|completed/i, "done"],
+                      [/در\s*حال\s*انجام|in progress/i, "in_progress"],
+                      [/متوقف|بلاتکلیف|blocked/i, "blocked"]];
+function extractStatus(text) {
+  for (const pair of STATUS_WORDS) if (pair[0].test(text)) return pair[1];
+  return "open";
+}
+
+/* The sentence — or the clause — that actually carries the cue, cleaned up
+   enough to be read as a heading. */
+function headline(kind, st) {
+  const res = (CUES.find((c) => c[0] === kind) || [null, []])[1];
+  const carries = (x) => res.some((re) => re.test(x));
+  const longest = (list) => list.slice().sort((a, b) => b.length - a.length)[0];
+
+  let best = st.text;
+  // Among the sentences that carry the cue, the fullest one states the point;
+  // the short ones are "…خوب، تصویب شد" and say nothing on their own.
+  const sents = clauses(st.text).filter(carries);
+  if (sents.length) best = longest(sents);
+  if (best.length > 70 && best.indexOf("،") !== -1) {
+    const clauses = best.split("،").map((c) => c.trim()).filter((c) => c.length >= 12 && carries(c));
+    if (clauses.length) best = longest(clauses);
+  }
+  best = best
+    .replace(/^[…\.\s]+/, "")
+    .replace(/^(?:یک\s*نکته|نکته|توجه|ضمناً)\s*[:：]\s*/, "")
+    .replace(/^[آ-ی]{2,}(?:\s[آ-ی]{2,})?\s*،\s*/, "")     // "علی، …"
+    .replace(/^(?:می‌?شود|لطفاً|لطفا|خواهشمند است)\s+/, "")
+    .replace(/^[-•*۰-۹0-9]+[.)]?\s*/, "")                  // list bullets and numbering
+    .replace(/\s*[—–]\s*(?:مصوب|تصویب\s*شد|approved)\s*$/i, "")
+    .replace(/\s*[.؟?!،]+\s*$/, "")
+    .trim();
+  return best.length > 140 ? best.slice(0, 137).trim() + "…" : best;
+}
+
+/* ---- who was there ------------------------------------------------------ */
+
+function splitPeople(v) {
+  return v.split(/[،,؛]/).map((x) => x.trim()).filter(Boolean).map((x) => {
+    const m = /^(.+?)\s*[(（]\s*(.+?)\s*[)）]\s*$/.exec(x);
+    return m ? { name: m[1].trim(), role: m[2].trim() } : { name: x, role: null };
+  }).filter((p) => p.name.length > 1 && p.name.length < 40);
+}
+
+/* "علی" in the transcript and "علی رضایی" on the attendance line are one
+   person; so are "آقای کریمی" and "حسن کریمی". */
+function samePerson(a, b) {
+  const A = norm(a).split(" ").filter((x) => x.length > 1);
+  const B = norm(b).split(" ").filter((x) => x.length > 1);
+  if (!A.length || !B.length) return false;
+  const short = A.length <= B.length ? A : B;
+  const long = A.length <= B.length ? B : A;
+  return short.every((t) => long.indexOf(t) !== -1);
+}
+
+/* Titles and the words that happen to sit next to a name are not the name. */
+const NOT_A_NAME = new Set(("آقای خانم جناب سرکار دکتر مهندس امروز فردا دیروز هنوز عملاً " +
+  "همچنان ایشان جلسه").split(" ").map(norm));
+function personName(raw) {
+  const parts = String(raw).trim().split(/\s+/)
+    .filter((w) => w.length > 1 && !NOT_A_NAME.has(norm(w)) && !STOP.has(norm(w)));
+  const name = parts.slice(-2).join(" ").trim();
+  return name.length > 2 ? name : null;
+}
+
+function collectPeople(sources, stmts) {
+  const participants = [], absentees = [];
+  const add = (list, p) => {
+    if (!p.name) return;
+    const twin = list.find((x) => samePerson(x.name, p.name));
+    if (!twin) { list.push(p); return; }
+    if (p.name.length > twin.name.length) twin.name = p.name;   // the fuller name wins
+    if (!twin.role && p.role) twin.role = p.role;
+  };
+
+  // A voice that someone has put a name to is a participant we can prove.
+  sources.forEach((s) => {
+    if (!s.turns || !s.speakerNames) return;
+    Object.keys(s.speakerNames).forEach((label) => {
+      const n = String(s.speakerNames[label] || "").trim();
+      if (n) add(participants, { name: n, role: null });
+    });
+  });
+
+  stmts.forEach((st) => {
+    let m = /^(?:حاضران|حاضرین|شرکت‌?کنندگان|attendees)\s*[:：]\s*(.+)$/i.exec(st.text);
+    if (m) splitPeople(m[1]).forEach((p) => add(participants, p));
+    m = /^(?:غایب(?:ان)?|غائبین|absent)\s*[:：]\s*(.+)$/i.exec(st.text);
+    if (m) splitPeople(m[1]).forEach((p) => add(absentees, p));
+    m = /((?:[آ-ی]{2,}\s+){0,3}[آ-ی]{2,})\s+(?:در\s*مرخصی|مرخصی|غایب|حضور\s*ندارند|حضور\s*ندارد)/.exec(st.text);
+    if (m) {
+      const name = personName(m[1]);
+      if (name) add(absentees, { name: name, role: null });
+    }
+  });
+
+  const names = participants.map((p) => p.name).concat(absentees.map((p) => p.name));
+  return { participants: participants, absentees: absentees, names: names };
+}
+
+/* ---- what was on the table ---------------------------------------------- */
+
+const SKIP_HEADING = /تصمیم|اقدام|حاضر|غایب|action|decision|attendee/i;
+
+function agendaSources(stmts) {
+  const names = {};
+  stmts.forEach((st) => { if (/agenda|دستور\s*جلسه/i.test(st.text)) names[st.src] = true; });
+  return names;
+}
+
+function collectTopics(stmts, agendas) {
+  const topics = [];
+  let current = null;
+  stmts.forEach((st) => {
+    if (st.heading) {
+      // "# یادداشت‌های جلسه" is the document's own title, not a topic in it.
+      current = (st.level === 1 || SKIP_HEADING.test(st.text)) ? null
+        : { title: st.text.replace(/^[۰-۹0-9]+[.)]\s*/, ""), summary: null, points: [] };
+      if (current) topics.push(current);
+      return;
+    }
+    // An agenda line — "1. Q2 sales performance review (Ali, 20 min)".
+    const ag = /^[۰-۹0-9]+[.)]\s+(.{6,90})$/.exec(st.text);
+    if (ag && agendas[st.src] && !classify(st.text)) {
+      topics.push({ title: ag[1].replace(/\s*\([^)]*\)\s*$/, "").trim(), summary: null, points: [] });
+      current = null;
+      return;
+    }
+    if (current && /^[-•*]\s+/.test(st.text)) current.points.push(st.text.replace(/^[-•*]\s+/, "").trim());
+    else if (current && !current.summary && st.text.length > 20 && !classify(st.text)) current.summary = st.text;
+  });
+  return topics.filter((t) => t.title.length > 2).slice(0, 8);
+}
+
+function collectInfo(m, stmts) {
+  const info = {
+    date: m.date || null,
+    time: m.time || null,
+    location: m.location || null,
+    objective: m.description || null,
+  };
+  stmts.forEach((st) => {
+    let x = /^(?:هدف(?:\s*جلسه)?|موضوع|objective)\s*[:：]\s*(.+)$/i.exec(st.text);
+    if (x && !info.objective) info.objective = x[1].trim();
+    x = /^(?:محل|مکان|location)\s*[:：]\s*(.+)$/i.exec(st.text);
+    if (x && !info.location) info.location = x[1].trim();
+    x = /(?:ساعت|زمان|time)\s*[:：]\s*([0-9۰-۹][^|\n]{2,20})/i.exec(st.text);
+    if (x && !info.time) info.time = x[1].trim();
+  });
+  return info;
+}
+
+/* ---- two lines that say the same thing are one line with two sources ----- */
+
+function overlap(a, b) {
+  const A = new Set(terms(a)), B = new Set(terms(b));
+  if (A.size < 2 || B.size < 2) return 0;
+  let n = 0;
+  A.forEach((t) => { if (B.has(t)) n += 1; });
+  return n / Math.min(A.size, B.size);
+}
+
+function mergeSame(items, keyOf) {
+  const out = [];
+  items.forEach((item) => {
+    const twin = out.find((x) => overlap(keyOf(x), keyOf(item)) >= 0.6);
+    if (!twin) { out.push(item); return; }
+    // Keep the fuller record, and keep both citations.
+    item.evidence.forEach((e) => {
+      if (!twin.evidence.some((x) => x.src === e.src && x.quote === e.quote)) twin.evidence.push(e);
+    });
+    if (item.owner && !twin.owner) { twin.owner = item.owner; twin.ownerConfirmed = item.ownerConfirmed; }
+    if (item.deadlineText && !twin.deadlineText && !twin.deadline) twin.deadlineText = item.deadlineText;
+    if (twin.status === "open" && item.status && item.status !== "open") twin.status = item.status;
+    if (keyOf(item).length > keyOf(twin).length + 12 && twin.context == null) twin.context = keyOf(item);
+  });
+  return out;
+}
+
+/* ---- the document ------------------------------------------------------- */
+
+function deriveMinutes(m, sources) {
+  const usable = sources.filter((s) => s.text || (s.turns && s.turns.length));
+  const stmts = [];
+  usable.forEach((s) => statementsOf(s).forEach((st) => stmts.push(st)));
+
+  const agendas = agendaSources(stmts);
+  const people = collectPeople(usable, stmts);
+  const info = collectInfo(m, stmts);
+  const evidenceOf = (st) => [{ src: st.src, type: st.type, quote: st.text }];
+
+  const decisions = [], actions = [], proposals = [], risks = [], questions = [], leftovers = [];
+
+  stmts.forEach((st, idx) => {
+    if (st.heading || META_RE.test(st.text) || st.text.length < 12) return;
+    // Already read as a topic by collectTopics.
+    if (agendas[st.src] && /^[۰-۹0-9]+[.)]\s+/.test(st.text)) return;
+
+    // "عنوان | مسئول | مهلت | وضعیت" and the rows under it.
+    const cells = st.text.split("|").map((c) => c.trim()).filter(Boolean);
+    if (cells.length >= 3) {
+      if (isTableHeader(cells)) return;
+      actions.push({
+        id: nid("a"), title: cells[0], desc: null,
+        owner: UNKNOWN_OWNER.test(cells[1]) ? null : fullName(cells[1], people.names),
+        ownerConfirmed: false, deadline: null,
+        deadlineText: UNKNOWN_OWNER.test(cells[2]) ? null : cells[2],
+        priority: null, status: extractStatus(cells[3] || ""), evidence: evidenceOf(st),
+      });
+      return;
+    }
+
+    // One turn can settle one thing, promise another and flag a third, so the
+    // sentence is what gets classified — while the citation stays the whole
+    // statement, because a quote has to be readable on its own.
+    const units = clauses(st.text);
+    const pick = {};
+    (units.length ? units : [st.text]).forEach((u) => {
+      const k = classify(u);
+      if (!k) return;
+      if (!pick[k] || u.length > pick[k].length) pick[k] = u;
+    });
+    const kinds = Object.keys(pick);
+    if (!kinds.length) { if (worthKeeping(st.text)) leftovers.push(st); return; }
+
+    kinds.forEach((kind) => {
+      const unit = pick[kind];
+      const title = headline(kind, { text: unit });
+      if (title.length < 8) return;
+
+      if (kind === "decision") {
+        decisions.push({ id: nid("d"), text: title, context: null,
+          by: st.who && !/^گویندهٔ/.test(st.who) ? st.who : null, evidence: evidenceOf(st) });
+      } else if (kind === "action") {
+        const next = stmts[idx + 1];
+        const owner = extractOwner(unit, people.names);
+        let due = extractDeadline(unit);
+        // A line written as "عنوان — مسئول: علی — مهلت: جمعه" keeps only its
+        // first part as the title; the rest is already in the fields.
+        const parts = unit.split(/\s*[—–]\s*/);
+        const structured = parts.length > 1 && /مسئول|مهلت/.test(unit)
+          ? parts[0].replace(/^[-•*۰-۹0-9]+[.)]?\s*/, "").trim() : null;
+        // "…آماده کنی؟" — "بله، تا جمعه." The commitment is in the reply.
+        if (!due && next && next.type === "audio" && next.src === st.src && next.text.length < 120) {
+          due = extractDeadline(next.text);
+        }
+        actions.push({
+          id: nid("a"), title: structured && structured.length >= 8 ? structured : title,
+          desc: null, owner: owner, ownerConfirmed: false, deadline: null, deadlineText: due,
+          priority: null, status: extractStatus(unit), evidence: evidenceOf(st),
+        });
+      } else if (kind === "proposal") {
+        proposals.push({ id: nid("p"), text: title,
+          context: "مطرح شد اما در این ورودی به تصمیم قطعی نرسیده است.", evidence: evidenceOf(st) });
+      } else if (kind === "risk") {
+        risks.push({ text: title, impact: null, mitigation: null, evidence: evidenceOf(st) });
+      } else {
+        questions.push({ text: title, context: null, evidence: evidenceOf(st) });
+      }
+    });
+  });
+
+  const dec = mergeSame(decisions, (x) => x.text);
+  const act = mergeSame(actions, (x) => x.title);
+  const pro = mergeSame(proposals, (x) => x.text);
+  const rsk = mergeSame(risks.map((r) => Object.assign(r, { owner: null, status: "open" })), (x) => x.text)
+    .map((r) => ({ text: r.text, impact: r.impact, mitigation: r.mitigation, evidence: r.evidence }));
+  const qst = mergeSame(questions.map((q) => Object.assign(q, { owner: null, status: "open" })), (x) => x.text)
+    .map((q) => ({ text: q.text, context: q.context, evidence: q.evidence }));
+
+  // Anyone named as responsible was in the room, whatever the attendance line said.
+  act.forEach((a) => {
+    if (a.owner && !people.participants.some((p) => norm(p.name) === norm(a.owner)) &&
+        !people.absentees.some((p) => norm(p.name) === norm(a.owner))) {
+      people.participants.push({ name: a.owner, role: null });
+    }
+  });
+
+  const summary = buildSummary(m, info, dec, act, pro, rsk, leftovers);
+
+  return {
+    title: m.title || (DOC_KINDS[m.kind || "meeting_minutes"].label + " بدون عنوان"),
+    info: info,
+    summary: summary,
+    participants: people.participants,
+    absentees: people.absentees,
+    topics: collectTopics(stmts, agendas),
+    decisions: dec,
+    proposals: pro,
+    actions: act,
+    questions: qst,
+    risks: rsk,
+    nextSteps: [],
+    notes: leftovers.slice(0, 3).map((st) => st.text),
+    sourcesUsed: usable.map((s) => s.name),
+    failedSources: sources.filter((s) => s.status === "failed").map((s) => s.name),
+    derived: true,
+    simulatedSources: usable.filter((s) => s.simulated).map((s) => s.name),
+    model: "استخراج قاعده‌محور — نسخهٔ نمایشی",
+    generatedAt: new Date().toISOString(),
+  };
+}
+
+/* Small talk carries a meeting but says nothing afterwards. */
+const CHATTER = /^(?:خب|سلام|بله|عالی|خیلی\s*خوب|ممنون|متشکرم|درست است|موافقم|بسیار\s*خوب)\b|سلام\s*به\s*همه|شروع\s*می‌?کنیم|برویم\s*سراغ/;
+function worthKeeping(text) {
+  if (text.length < 45 || CHATTER.test(text)) return false;
+  // A number, a percentage or a proper noun is the mark of a line that reports
+  // something rather than moves the meeting along.
+  return /[0-9۰-۹]/.test(text) || text.length > 90;
+}
+
+/* A summary a manager can act on: what was settled, what is owed, what is
+   still open. Built from the extracted items so it can never say something the
+   sources do not. */
+function buildSummary(m, info, dec, act, pro, rsk, leftovers) {
+  const parts = [];
+  if (info.objective) parts.push("هدف این ورودی: " + info.objective.replace(/\s*[.،]\s*$/, "") + ".");
+  else if (leftovers.length) parts.push(leftovers[0].text.replace(/\s*[.،]\s*$/, "") + ".");
+
+  if (dec.length) parts.push(fa(dec.length) + " تصمیم ثبت شد؛ از جمله «" + dec[0].text + "».");
+  else parts.push("در این ورودی تصمیم قطعی ثبت نشده است.");
+
+  if (act.length) {
+    const owned = act.filter((a) => a.owner).length;
+    parts.push(fa(act.length) + " اقدام استخراج شد" +
+      (owned < act.length ? " که برای " + fa(act.length - owned) + " مورد آن مسئولی مشخص نشده است." : " و برای همه مسئول مشخص است."));
+  }
+  if (pro.length) parts.push("«" + pro[0].text + "» مطرح شد اما به تصمیم نرسید.");
+  if (rsk.length) parts.push("ریسک ثبت‌شده: " + rsk[0].text + ".");
+  return parts.join(" ");
+}
+
+/* A browser cannot transcribe an MP3 or read a scanned PDF. Rather than let a
+   demo invent a result and present it as the visitor's own file, the sample
+   text is attached to the source itself and labelled as a sample wherever it
+   appears — so the minutes really are derived from something readable, and
+   nobody is left thinking their own recording produced it. */
+function simulateSource(s) {
+  if (s.text || (s.turns && s.turns.length)) return;
+  s.simulated = true;
+  if (s.type === "audio") {
+    s.turns = TRANSCRIPT_TURNS.map((t) => ({ speaker: t.speaker, text: t.text }));
+    s.speakerNames = {};
+    s.diarized = true;
+    s.segments = true;
+    s.duration = s.duration || 2340;
+    s.text = speakerText(s);
+  } else {
+    s.text = NOTES_TEXT;
+  }
+}
+
+/* Walks the six stages the real worker reports, then attaches minutes. */
+function runPipeline(m, isRegeneration) {
+  if (!m || !m.sources.length) return;
+
+  m.status = "processing";
+  m.job = {
+    status: "running", error: null, isRegeneration: isRegeneration,
+    stages: STAGE_DEFS.map((d) => ({ key: d.key, label: d.label, state: "pending", detail: null })),
+  };
+  m.sources.forEach((s) => { if (s.status !== "failed") s.status = "uploaded"; });
+  render();
+
+  const docs = m.sources.filter((s) => s.type === "document");
+  const auds = m.sources.filter((s) => s.type === "audio");
+  const stages = m.job.stages;
+
+  const steps = [
+    () => { stages[0].state = "done"; stages[0].detail = fa(m.sources.length) + " فایل"; },
+    () => {
+      if (!docs.length) { stages[1].state = "skipped"; stages[1].detail = "سند متنی وجود ندارد"; return; }
+      stages[1].state = "running";
+      docs.forEach((s) => { if (s.status !== "failed") s.status = "processing"; });
+    },
+    () => {
+      docs.forEach((s) => {
+        if (s.status === "failed") return;
+        s.status = "processed";
+        simulateSource(s);
+        s.chars = (s.text || "").length;
+      });
+      const bad = docs.filter((s) => s.status === "failed").length;
+      const ok = docs.length - bad;
+      if (docs.length) { stages[1].state = "done"; stages[1].detail = bad ? fa(ok) + " موفق، " + fa(bad) + " ناموفق" : fa(ok) + " مورد"; }
+    },
+    () => {
+      if (!auds.length) { stages[2].state = "skipped"; stages[2].detail = "فایل صوتی وجود ندارد"; return; }
+      stages[2].state = "running";
+      auds.forEach((s) => { s.status = "processing"; });
+    },
+    () => {
+      auds.forEach((s) => {
+        s.status = "processed";
+        simulateSource(s);
+        s.chars = (s.text || "").length;
+        if (!s.duration) s.duration = 900 + Math.floor(Math.random() * 2400);
+      });
+      if (auds.length) { stages[2].state = "done"; stages[2].detail = fa(auds.length) + " مورد"; }
+    },
+    () => { stages[3].state = "running"; },
+    () => {
+      const ok = m.sources.filter((s) => s.status === "processed").length;
+      stages[3].state = "done"; stages[3].detail = fa(ok) + " منبع تحلیل شد";
+      stages[4].state = "running";
+    },
+    () => { stages[4].state = "done"; stages[4].detail = "بدون هشدار"; stages[5].state = "running"; },
+    () => {
+      const processed = m.sources.filter((s) => s.status === "processed");
+      const failed = m.sources.filter((s) => s.status === "failed");
+      // Built from what was uploaded — a second run over changed sources gives a
+      // different document, which is the whole point of the button.
+      const minutes = deriveMinutes(m, processed);
+      minutes.failedSources = failed.map((s) => s.name);
+      m.minutes = minutes;
+
+      stages[5].state = "done";
+      stages[5].detail = fa(minutes.actions.length) + " اقدام، " + fa(minutes.decisions.length) + " تصمیم";
+      m.job.status = "succeeded";
+      m.status = failed.length && processed.length ? "partial_failure" : processed.length ? "ready" : "failed";
+      if (!processed.length) { m.job.status = "failed"; m.job.error = "هیچ منبعی با موفقیت پردازش نشد؛ صورت‌جلسه‌ای تولید نشد."; m.minutes = null; }
+      else bumpVersion(m, isRegeneration ? "regenerated" : "generated");
+      toast(failed.length && processed.length ? "صورت‌جلسه با خطای جزئی تولید شد" : processed.length ? "صورت‌جلسه آماده است" : "پردازش ناموفق بود");
+    },
+  ];
+
+  let i = 0;
+  (function tick() {
+    if (i >= steps.length) { render(); return; }
+    steps[i++]();
+    render();
+    setTimeout(tick, 620);
+  })();
+}
+
+/* ==========================================================================
+   Boot
+   ========================================================================== */
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape" && state.modal) { state.modal = null; render(); }
+});
+
+function seedAll() {
+  state.meetings = seedMeetings();
+  state.meetings.forEach((m) => { if (!m.kind) m.kind = "meeting_minutes"; });
+
+  /* The first tab is not only for meetings, so the seeded list is not either. */
+  state.meetings.push(
+  { id: "e-letter", kind: "letter", title: "نامهٔ پیگیری اعتبار مطالعات امنیت",
+    date: "2021-08-24", time: null, location: null,
+    description: "پیگیری بی‌پاسخ ماندن نامهٔ ۱۲/۸۸۹۰",
+    status: "uploaded", minutes: null, job: null, versions: [],
+    sources: [{ id: "s-l1", name: "متن نامه.txt", type: "document", status: "uploaded",
+      size: 1240, chars: 620,
+      text: "پیرو نامهٔ ۱۲/۸۸۹۰ دربارهٔ تأمین اعتبار مطالعات تکمیلی امنیت تبادل داده، تا این تاریخ پاسخی از سازمان برنامه و بودجه دریافت نشده است. خواهشمند است نتیجهٔ بررسی اعلام شود." }] },
+  { id: "e-note", kind: "note", title: "یادداشت شخصی دربارهٔ مرکز داده",
+    date: "2021-09-06", time: null, location: null, description: null,
+    status: "uploaded", minutes: null, job: null, versions: [],
+    sources: [{ id: "s-n1", name: "یادداشت.txt", type: "document", status: "uploaded",
+      size: 700, chars: 350,
+      text: "ظرفیت فاز نخست مرکز داده ملی عملاً پر شده و برای اتصال دستگاه‌های جدید جا نیست. این برداشت شخصی است و باید با گزارش رسمی راستی‌آزمایی شود." }] },
+  );
+
+  /* The seeded meetings arrive already generated, so version 1 has to carry the
+     document it produced — otherwise the first entry in the history is empty. */
+  state.meetings.forEach((m) => {
+    if (m.minutes && m.versions.length) m.versions[0].snapshot = snapshot(m.minutes);
+  });
+
+  seedDocMeta();
+}
+
+if (!loadState()) seedAll();
+render();
+</script>
