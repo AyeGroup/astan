@@ -1,5 +1,5 @@
 <meta charset="utf-8">
-<title>دستیار صورت‌جلسه و پرونده</title>
+<title>دستیار مدیر</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <!-- Loaded without blocking: a stylesheet in the head holds up the inline
@@ -12,7 +12,7 @@
 
 <style>
 /* ==========================================================================
-   Clickable prototype of the whole product: meeting minutes on one side,
+   Clickable prototype of the whole product: document intake on one side,
    case tracking and the document archive on the other.
    Same interface as the real React app; all state lives in memory.
    ========================================================================== */
@@ -47,7 +47,8 @@ body {
 /* Latin runs inside an RTL document need their own direction. */
 .ltr { direction: ltr; unicode-bidi: isolate; text-align: left; }
 
-h1,h2,h3,h4 { margin: 0; line-height: 1.3; }
+h1,h2,h3,h4 { margin: 0; line-height: 1.3; overflow-wrap: anywhere; }
+p, dd, td, th, li { overflow-wrap: anywhere; }
 p { margin: 0; }
 button { font: inherit; }
 
@@ -146,7 +147,18 @@ textarea.field { resize: vertical; min-height: 4.5rem; }
 }
 .appbar-inner {
   max-width: 72rem; margin: 0 auto; padding: .75rem 1rem;
-  display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+  display: flex; align-items: center; justify-content: space-between;
+  gap: .5rem 1rem; flex-wrap: wrap;
+}
+/* Below this the header is a brand, a nav that scrolls, and the role switch —
+   anything else pushes the page sideways on a phone. */
+@media (max-width: 720px) {
+  .appbar-inner .brand .name { display: none; }
+  .appbar-inner > .row { gap: .35rem; }
+  .appbar-inner > .row > .muted { display: none; }
+  .mainnav { overflow-x: auto; scrollbar-width: none; margin-inline-start: 0; }
+  .mainnav::-webkit-scrollbar { display: none; }
+  .mainnav button { white-space: nowrap; }
 }
 @media (min-width: 640px) { .appbar-inner { padding: .75rem 1.5rem; } }
 
@@ -182,17 +194,14 @@ main.wrap { max-width: 72rem; margin: 0 auto; padding: 1.5rem 1rem 4rem; }
 .landing-band-inner { max-width: 56rem; margin: 0 auto; padding: 3.5rem 1.5rem; }
 .band-title { text-align: center; font-size: .75rem; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: var(--s-500); margin-bottom: 2.5rem; }
 
-.flow-grid { display: grid; gap: 1rem; }
-@media (min-width: 640px) { .flow-grid { grid-template-columns: 1fr 1fr; } }
-.flow-item { display: flex; align-items: center; gap: 1rem; }
-.flow-item .glyph { width: 48px; height: 48px; border-radius: 12px; background: var(--s-100); display: grid; place-items: center; font-size: 1.5rem; flex: none; }
-
-.arrow { display: flex; justify-content: center; padding: 1.25rem 0; color: var(--s-300); }
-
-.out-list { display: grid; gap: .625rem; margin-top: 1rem; }
-@media (min-width: 640px) { .out-list { grid-template-columns: 1fr 1fr; } }
-.out-list li { display: flex; align-items: center; gap: .625rem; font-size: .875rem; color: var(--s-700); }
-.out-list .tick { width: 20px; height: 20px; border-radius: 999px; background: var(--ok-50); color: var(--ok-700); display: grid; place-items: center; font-size: .7rem; font-weight: 700; flex: none; }
+.steps { display: grid; gap: .75rem; }
+.step { display: flex; align-items: flex-start; gap: 1rem; }
+.step-n {
+  width: 2rem; height: 2rem; border-radius: 999px; flex: none;
+  background: var(--brand-50); color: var(--brand-700); border: 1px solid var(--brand-200);
+  display: grid; place-items: center; font-weight: 600; font-size: .875rem;
+}
+.step-t { font-weight: 600; }
 
 .principles { max-width: 64rem; margin: 0 auto; padding: 4rem 1.5rem; }
 .principles h2 { text-align: center; font-size: 1.5rem; font-weight: 700; }
@@ -291,8 +300,14 @@ table.meetings tbody tr:hover .title { color: var(--brand-700); }
 .kv dd { margin: 0; }
 
 .people { display: flex; flex-wrap: wrap; gap: .5rem; }
-.person { border: 1px solid var(--s-200); border-radius: 10px; padding: .375rem .75rem; font-size: .875rem; }
-.person .role { color: var(--s-500); font-size: .75rem; margin-inline-start: .375rem; }
+.person {
+  display: flex; flex-direction: column; gap: .1rem; background: #fff;
+  border: 1px solid var(--s-200); border-radius: 10px; padding: .45rem .75rem;
+  font-size: .875rem; min-width: 7rem;
+}
+.person .pname { font-weight: 500; }
+.person .role { color: var(--s-500); font-size: .75rem; }
+.person .role.muted { color: var(--s-400); }
 
 .decision-item { border: 1px solid var(--s-200); border-radius: 12px; padding: 1rem; }
 .decision-item .txt { line-height: 1.8; }
@@ -429,13 +444,6 @@ table.meetings tbody tr:hover .title { color: var(--brand-700); }
 .countbox.bad b { color: var(--bad-600); }
 @media (max-width: 520px) { .countbar { grid-template-columns: repeat(2, 1fr); } }
 
-.conflict-sides { display: grid; gap: .75rem; margin-top: .75rem; }
-@media (min-width: 640px) { .conflict-sides { grid-template-columns: 1fr 1fr; } }
-.conflict-sides .side {
-  border: 1px solid var(--warn-200); background: rgba(255,251,235,.5);
-  border-radius: 12px; padding: .75rem .875rem; font-size: .875rem; line-height: 1.8;
-}
-
 .cite {
   border: 1px solid var(--s-200); background: var(--s-50); color: var(--s-500);
   border-radius: 6px; padding: 0 .3rem; font-size: .75rem; cursor: pointer;
@@ -548,7 +556,7 @@ const STAGE_DEFS = [
   { key: "transcribe_audio",  label: "پیاده‌سازی صوت" },
   { key: "analyze_sources",   label: "تحلیل منابع" },
   { key: "consolidate",       label: "یکپارچه‌سازی اطلاعات" },
-  { key: "generate_minutes",  label: "تولید صورت‌جلسه" },
+  { key: "generate_minutes",  label: "تولید سند نهایی" },
 ];
 
 const MEETING_STATUS = {
@@ -819,6 +827,8 @@ const state = {
   editingDecision: null,
   editingTitle: false,
   editingSummary: false,
+  editingFacts: false,
+  editingPeople: false,
   addingAction: false,
   dragging: false,
   authTab: "login",
@@ -992,6 +1002,7 @@ function go(route) { state.route = route; state.modal = null; resetEditing(); re
 function resetEditing() {
   state.editingAction = null; state.editingDecision = null;
   state.editingTitle = false; state.editingSummary = false; state.addingAction = false;
+  state.editingFacts = false; state.editingPeople = false;
 }
 function snapshot(minutes) {
   return minutes ? JSON.parse(JSON.stringify(minutes)) : null;
@@ -1106,7 +1117,7 @@ function shell(inner) {
       <div class="appbar-inner">
         <button class="brand" data-go="dashboard">
           <span class="mark">📝</span>
-          <span class="name">دستیار صورت‌جلسه و پرونده</span>
+          <span class="name">دستیار مدیر</span>
         </button>
         <nav class="mainnav">
           <button data-go="dashboard" aria-current="${["dashboard","new","meeting"].includes(state.route.name)}">ورود دیتا</button>
@@ -1139,7 +1150,7 @@ function viewLanding() {
     <div class="appbar">
       <div class="appbar-inner">
         <button class="brand" data-go="landing">
-          <span class="mark">📝</span><span class="name">دستیار صورت‌جلسه</span>
+          <span class="mark">📝</span><span class="name">دستیار مدیر</span>
         </button>
         <div class="row">
           <button class="btn btn-ghost btn-sm" data-auth="login">ورود</button>
@@ -1150,11 +1161,15 @@ function viewLanding() {
 
     <section class="landing-hero">
       <div class="landing-inner">
-        <span class="eyebrow"><span class="dot"></span>تحلیل هوشمند جلسه‌ها</span>
-        <h1>جلسه‌های خود را به صورت‌جلسه‌ای روشن و قابل اقدام تبدیل کنید</h1>
-        <p class="lede">فایل صوتی، یادداشت‌ها و اسناد جلسه را بارگذاری کنید. هوش مصنوعی تصمیم‌ها، اقدام‌ها، مسئولان، مهلت‌ها و نکات کلیدی را استخراج می‌کند و همه را در یک صورت‌جلسهٔ حرفه‌ای کنار هم می‌گذارد.</p>
+        <span class="eyebrow"><span class="dot"></span>دستیار مدیر</span>
+        <h1>اسناد، جلسه‌ها و مکاتبات مدیریت — یک‌جا، مرتب و قابل پرسش</h1>
+        <p class="lede">
+          صوت جلسه، نامه، مصوبه، قرارداد یا یادداشت را وارد کنید. متنش استخراج می‌شود،
+          تصمیم‌ها و اقدام‌ها بیرون کشیده می‌شوند، سند در پروندهٔ خودش بایگانی می‌شود و
+          ماه‌ها بعد می‌توانید دربارهٔ همان پرونده سؤال بپرسید و پاسخ را با ارجاع به سند ببینید.
+        </p>
         <div class="cta">
-          <button class="btn btn-primary btn-lg" data-auth="register">شروع یک جلسه</button>
+          <button class="btn btn-primary btn-lg" data-auth="register">شروع</button>
           <button class="btn btn-secondary btn-lg" data-auth="login">قبلاً حساب دارم</button>
         </div>
       </div>
@@ -1163,36 +1178,46 @@ function viewLanding() {
     <section class="landing-band">
       <div class="landing-band-inner">
         <p class="band-title">چطور کار می‌کند</p>
-        <div class="flow-grid">
-          <div class="card flow-item"><span class="glyph">🎙</span><div><p style="font-weight:500">فایل صوتی جلسه</p><p class="muted small">MP3، WAV، M4A یا MP4</p></div></div>
-          <div class="card flow-item"><span class="glyph">📄</span><div><p style="font-weight:500">اسناد جلسه</p><p class="muted small">PDF، Word، متن و Markdown</p></div></div>
-        </div>
-        <div class="arrow">${arrowSvg()}</div>
-        <div class="card" style="max-width:28rem;margin:0 auto;text-align:center">
-          <p style="font-weight:600;color:var(--brand-700)">تحلیل هوش مصنوعی</p>
-          <p class="muted small" style="margin-top:.25rem">پیاده‌سازی صوت، استخراج متن اسناد و یکپارچه‌سازی همهٔ منابع</p>
-        </div>
-        <div class="arrow">${arrowSvg()}</div>
-        <div class="card" style="max-width:36rem;margin:0 auto">
-          <p style="font-weight:600;text-align:center">📝 صورت‌جلسهٔ نهایی</p>
-          <ul class="out-list" style="list-style:none;padding:0">
-            ${["تصمیمات","اقدامات و مسئولان","مهلت‌ها","پرسش‌های باز"].map((t) =>
-              `<li><span class="tick">✓</span>${t}</li>`).join("")}
-          </ul>
-          <p class="muted small" style="text-align:center;border-top:1px solid var(--s-100);margin-top:1.25rem;padding-top:1rem">قابل ویرایش · خروجی Word و PDF</p>
+        <div class="steps">
+          ${[
+            ["۱", "📥", "وارد کنید",
+             "فایل صوتی جلسه، فایل سند (PDF، Word، متن) یا حتی متن نامه را مستقیم بچسبانید. نوع سند را انتخاب می‌کنید: صورت‌جلسه، نامه، مصوبه، گزارش یا یادداشت."],
+            ["۲", "🔎", "استخراج می‌شود",
+             "صوت پیاده و متن اسناد خوانده می‌شود. بسته به نوع سند، تصمیم‌ها، اقدام‌ها و مسئولان، مهلت‌ها، طرفین یا شمارهٔ نامه جدا می‌شوند — هر کدام همراه با جملهٔ منبعش."],
+            ["۳", "🗂", "بایگانی و پرونده‌بندی",
+             "سند همان لحظه وارد بایگانی می‌شود و ذیل پروندهٔ مربوط به خودش می‌نشیند. جست‌وجو روی عنوان، شماره، طرف و متن کار می‌کند."],
+            ["۴", "💬", "بعداً بپرسید",
+             "«اعتبار مطالعات امنیت چه شد؟» را در پروندهٔ مربوطه بپرسید. اسناد مرتبط و همان جمله‌ای که پیدا شده نشان داده می‌شود تا خودتان قضاوت کنید."],
+            ["۵", "✅", "ارسال و تأیید",
+             "منشی سند یا گزارش را برای مدیر می‌فرستد؛ مدیر تأیید می‌کند، برای اصلاح برمی‌گرداند یا یادداشت می‌گذارد. همه‌چیز در سابقهٔ همان سند می‌ماند."],
+          ].map(([n, g, t, d]) => `
+            <div class="card step">
+              <span class="step-n">${n}</span>
+              <div>
+                <p class="step-t">${g} ${t}</p>
+                <p class="muted small" style="margin-top:.35rem;line-height:1.9">${d}</p>
+              </div>
+            </div>`).join("")}
         </div>
       </div>
     </section>
 
     <section class="principles">
-      <h2>چرا می‌توان به این صورت‌جلسه اعتماد کرد</h2>
-      <p class="sub">این ابزار فقط خلاصه‌نویسی نمی‌کند؛ سندی می‌سازد که می‌توانید بر اساس آن تصمیم بگیرید.</p>
+      <h2>چرا می‌شود به خروجی این دستیار تکیه کرد</h2>
+      <p class="sub">
+        آنچه بیرون می‌آید پیش‌نویس است، نه حکم. برای همین در هر مرحله می‌بینید هر جمله از کجا آمده
+        و تصمیم آخر با خودتان می‌ماند.
+      </p>
       <div class="principle-grid">
         ${[
-          ["هیچ چیز از خودش نمی‌سازد","اگر نام، تاریخ یا مسئولی در منابع نباشد، سیستم آن را «مشخص نشده» گزارش می‌کند؛ حدس نمی‌زند."],
-          ["اطلاعات منابع را یکپارچه می‌کند","اگر یک اقدام هم در فایل صوتی و هم در یادداشت‌ها آمده باشد، یک بار ثبت می‌شود — نه دو بار."],
-          ["قطعیت را مشخص می‌کند","«شاید هفته آینده منتشر کنیم» تصمیم نیست؛ به عنوان پیشنهاد ثبت می‌شود."],
-          ["منبع هر نکته قابل ردیابی است","برای هر تصمیم و اقدام می‌توانید ببینید از کدام فایل استخراج شده است."],
+          ["جای خالی را پر نمی‌کند",
+           "اگر نام مسئول، تاریخ یا مهلتی در متن نیامده باشد، «مشخص نشده» ثبت می‌شود. حدس زدن، همان جایی است که یک سند اداری بی‌اعتبار می‌شود."],
+          ["هر جمله نشانی دارد",
+           "کنار هر تصمیم و هر اقدام، دکمهٔ «مشاهدهٔ منبع» هست: عین جمله‌ای که از آن استخراج شده و نام فایلی که از آن آمده."],
+          ["قطعی را از احتمالی جدا نگه می‌دارد",
+           "«تصویب شد» یک تصمیم است و «شاید بهتر باشد» یک پیشنهاد. این دو در یک فهرست قاطی نمی‌شوند تا بعداً کسی به اشتباه به آن استناد نکند."],
+          ["اگر نمی‌داند، می‌گوید نمی‌داند",
+           "وقتی پاسخ پرسشی در اسناد ثبت‌نشده باشد، همین را می‌گوید. سکوت پرونده را با پاسخ سرِهم‌شده پر نمی‌کند."],
         ].map(([t, d]) => `<div class="card"><p style="font-weight:600">${t}</p><p class="muted small" style="margin-top:.5rem;line-height:1.9">${d}</p></div>`).join("")}
       </div>
     </section>
@@ -1200,17 +1225,13 @@ function viewLanding() {
     <section class="landing-close">
       <div class="landing-close-inner">
         <h2>آمادهٔ شروع هستید؟</h2>
-        <p>اولین جلسهٔ خود را بسازید و ببینید نتیجه چطور از آب درمی‌آید.</p>
-        <button class="btn btn-secondary btn-lg" style="margin-top:1.75rem" data-auth="register">شروع یک جلسه</button>
+        <p>اولین سندتان را وارد کنید و ببینید نتیجه چطور درمی‌آید.</p>
+        <button class="btn btn-secondary btn-lg" style="margin-top:1.75rem" data-auth="register">شروع</button>
       </div>
     </section>
 
-    <footer class="landing-footer">دستیار صورت‌جلسه — نسخهٔ نمایشی</footer>
+    <footer class="landing-footer">دستیار مدیر — نسخهٔ نمایشی</footer>
   </div>`;
-}
-
-function arrowSvg() {
-  return `<svg viewBox="0 0 24 40" width="24" height="40" fill="none" aria-hidden="true"><path d="M12 2v30m0 0-7-7m7 7 7-7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
 }
 
 /* ---------- auth ---------- */
@@ -1220,7 +1241,7 @@ function viewAuth() {
   <div class="auth-screen">
     <div class="auth-box">
       <button class="auth-brand brand" data-go="landing">
-        <span class="mark">📝</span><span class="name">دستیار صورت‌جلسه</span>
+        <span class="mark">📝</span><span class="name">دستیار مدیر</span>
       </button>
       <div class="card">
         <h1 style="font-size:1.25rem;font-weight:600">${isLogin ? "ورود به حساب" : "ساخت حساب کاربری"}</h1>
@@ -1365,7 +1386,7 @@ function viewMeeting() {
           ${m.sources.length ? `<div style="display:grid;gap:.5rem">${m.sources.map((s) => sourceRow(s, processing)).join("")}</div>` : ""}
           <div class="dropzone ${processing ? "disabled" : ""} ${state.dragging ? "drag" : ""}" data-drop tabindex="0" role="button">
             <span class="glyph">📎</span>
-            <p style="font-weight:500;color:var(--s-800)">فایل‌های جلسه را اینجا رها کنید</p>
+            <p style="font-weight:500;color:var(--s-800)">فایل‌های این سند را اینجا رها کنید</p>
             <p class="muted small">یا برای انتخاب کلیک کنید</p>
             <p class="muted" style="font-size:.75rem;margin-top:.5rem">صوت: MP3، WAV، M4A، MP4 — اسناد: PDF، Word، متن، Markdown · حداکثر ۲۰۰ مگابایت</p>
             <input type="file" id="file-input" multiple hidden>
@@ -1385,7 +1406,7 @@ function viewMeeting() {
               ${processing ? "در حال پردازش…" : "شروع پردازش"}
             </button>
             ${!hasSources ? `<p class="muted small">برای شروع پردازش حداقل یک فایل بارگذاری کنید.</p>` : ""}
-          ` : `<p class="muted small">پس از افزودن یا حذف منابع، صورت‌جلسه را دوباره تولید کنید.</p>`}
+          ` : `<p class="muted small">پس از افزودن یا حذف منابع، سند را دوباره تولید کنید.</p>`}
         </div>
       </div>
 
@@ -1403,7 +1424,7 @@ function viewMeeting() {
         <div class="empty">
           <span class="glyph">✨</span>
           <p style="font-weight:500">آمادهٔ پردازش</p>
-          <p class="muted small" style="max-width:32rem">با شروع پردازش، فایل صوتی پیاده‌سازی و متن اسناد استخراج می‌شود، سپس صورت‌جلسه تولید می‌گردد.</p>
+          <p class="muted small" style="max-width:32rem">با شروع پردازش، فایل صوتی پیاده‌سازی و متن اسناد استخراج می‌شود، سپس بر اساس نوع ورودی، سند آن تولید می‌گردد.</p>
         </div>` : "")}
     </div>`;
 }
@@ -1446,10 +1467,12 @@ function stageRow(st) {
 /* ---------- minutes ---------- */
 function minutesSection(m) {
   const d = m.minutes;
+  const kind = m.kind || "meeting_minutes";
+  const form = formOf(kind);
   const version = m.versions[m.versions.length - 1];
   return `
     <div class="minutes-head">
-      <h2>صورت‌جلسه</h2>
+      <h2>${DOC_KINDS[kind].glyph} ${DOC_KINDS[kind].label}</h2>
       <div class="row" style="gap:.5rem">
         ${can("submit") ? `<button class="btn btn-primary btn-sm" data-submit-minutes="${m.id}">ارسال برای تأیید مدیر</button>` : ""}
         <button class="btn btn-secondary btn-sm" data-regenerate ${m.status === "processing" ? "disabled" : ""}>تولید مجدد</button>
@@ -1461,40 +1484,41 @@ function minutesSection(m) {
     </div>
 
     ${d.simulatedSources && d.simulatedSources.length ? `<div class="alert alert-info">
-      این صورت‌جلسه از متن این فایل‌ها ساخته شده، اما متن آن‌ها در نسخهٔ نمایشی استخراج نشد و متن نمونه جایگزین شد:
+      این سند از متن فایل‌های زیر ساخته شده، اما متن آن‌ها در نسخهٔ نمایشی استخراج نشد و متن نمونه جایگزین شد:
       <span class="ltr" style="display:inline-block">${d.simulatedSources.map(esc).join("، ")}</span>.
       فایل‌های متنی (TXT و Markdown) همین‌جا واقعاً خوانده می‌شوند.
     </div>` : ""}
 
-    ${d.failedSources.length ? `<div class="alert alert-warning">این صورت‌جلسه بر پایهٔ منابع موفق تهیه شده است. فایل‌های زیر پردازش نشدند: <span class="ltr" style="display:inline-block">${d.failedSources.map(esc).join("، ")}</span></div>` : ""}
+    ${d.failedSources.length ? `<div class="alert alert-warning">این سند بر پایهٔ منابع موفق تهیه شده است. فایل‌های زیر پردازش نشدند: <span class="ltr" style="display:inline-block">${d.failedSources.map(esc).join("، ")}</span></div>` : ""}
 
     <div class="card">
       ${state.editingTitle ? `
         <div style="display:grid;gap:.75rem">
-          <div><label class="label" for="ed-title">عنوان صورت‌جلسه</label><input class="field" id="ed-title" value="${esc(d.title)}"></div>
+          <div><label class="label" for="ed-title">عنوان سند</label><input class="field" id="ed-title" value="${esc(d.title)}"></div>
           <div class="row"><button class="btn btn-primary btn-sm" data-save-title>ذخیره</button><button class="btn btn-secondary btn-sm" data-cancel-edit>انصراف</button></div>
         </div>` : `
         <div class="spread">
-          <div>
+          <div style="min-width:0">
             <h2 style="font-size:1.25rem;font-weight:600">${esc(d.title)}</h2>
             <dl class="kv">
+              <div><dt>نوع:</dt><dd>${DOC_KINDS[kind].label}</dd></div>
               ${d.info.date ? `<div><dt>تاریخ:</dt><dd class="tnum">${formatDate(d.info.date)}</dd></div>` : ""}
-              ${d.info.time ? `<div><dt>ساعت:</dt><dd class="tnum">${esc(d.info.time)}</dd></div>` : ""}
-              ${d.info.location ? `<div><dt>محل برگزاری:</dt><dd>${esc(d.info.location)}</dd></div>` : ""}
             </dl>
           </div>
           <button class="btn btn-ghost btn-sm" data-edit-title>ویرایش</button>
         </div>`}
       ${d.info.objective ? `
         <div style="border-top:1px solid var(--s-100);margin-top:1rem;padding-top:1rem">
-          <p class="muted" style="font-size:.6875rem;letter-spacing:.06em;text-transform:uppercase;font-weight:500">هدف جلسه</p>
+          <p class="muted" style="font-size:.6875rem;letter-spacing:.06em;font-weight:500">موضوع</p>
           <p class="small" style="margin-top:.25rem;color:var(--s-700);line-height:1.9">${esc(d.info.objective)}</p>
         </div>` : ""}
     </div>
 
+    ${factsCard(d, form)}
+
     <div class="card">
       <div class="section-title">
-        <h3>خلاصهٔ اجرایی</h3>
+        <h3>${form.summary}</h3>
         ${state.editingSummary ? "" : `<button class="btn btn-ghost btn-sm" data-edit-summary>ویرایش</button>`}
       </div>
       ${state.editingSummary ? `
@@ -1504,12 +1528,7 @@ function minutesSection(m) {
         </div>` : `<p style="line-height:2;color:var(--s-700);font-size:.9375rem">${esc(d.summary)}</p>`}
     </div>
 
-    ${d.participants.length || d.absentees.length ? `
-      <div class="card">
-        <div class="section-title"><h3>شرکت‌کنندگان <span class="count">${fa(d.participants.length)}</span></h3></div>
-        <div class="people">${d.participants.map((p) => `<span class="person">${esc(p.name)}${p.role ? `<span class="role">${esc(p.role)}</span>` : ""}</span>`).join("")}</div>
-        ${d.absentees.length ? `<p class="muted small" style="margin-top:.75rem">غایبان: ${d.absentees.map((p) => esc(p.name)).join("، ")}</p>` : ""}
-      </div>` : ""}
+    ${peopleCard(d, form)}
 
     ${d.decisions.length ? `
       <div class="card">
@@ -1589,6 +1608,102 @@ function minutesSection(m) {
     <p class="muted small tnum" style="text-align:center;padding-bottom:.5rem">
       نسخهٔ ${fa(version.n)} · تولیدشده در ${formatDate(d.generatedAt)}${d.model ? ` · <span class="ltr" style="display:inline-block">${esc(d.model)}</span>` : ""}
     </p>`;
+}
+
+/* The kind-specific facts — a letter's sender and number, a contract's amount
+   and term, a meeting's room and hour. Empty ones are still listed while
+   editing, because a blank a person can fill is more useful than a field that
+   only appears once it has a value. */
+function factsCard(d, form) {
+  if (!form.fields.length) return "";
+  const filled = form.fields.filter(([k]) => factValue(d, k));
+
+  if (state.editingFacts) {
+    return `
+      <div class="card">
+        <div class="section-title"><h3>مشخصات سند</h3></div>
+        <div style="display:grid;gap:.75rem;grid-template-columns:repeat(auto-fit,minmax(14rem,1fr))">
+          ${form.fields.map(([k, label]) => `
+            <div>
+              <label class="label" for="fx-${k}">${label}</label>
+              <input class="field" id="fx-${k}" value="${esc(factValue(d, k) || "")}" placeholder="مشخص نشده">
+            </div>`).join("")}
+        </div>
+        <div class="row" style="margin-top:.875rem">
+          <button class="btn btn-primary btn-sm" data-save-facts>ذخیره</button>
+          <button class="btn btn-secondary btn-sm" data-cancel-edit>انصراف</button>
+        </div>
+      </div>`;
+  }
+
+  return `
+    <div class="card">
+      <div class="section-title">
+        <h3>مشخصات سند</h3>
+        <button class="btn btn-ghost btn-sm" data-edit-facts>ویرایش</button>
+      </div>
+      ${filled.length ? `
+        <dl class="kv" style="margin:0;gap:.5rem 1.5rem">
+          ${filled.map(([k, label]) => `<div><dt>${label}:</dt><dd class="tnum">${esc(factValue(d, k))}</dd></div>`).join("")}
+        </dl>` : `
+        <p class="muted small">
+          ${form.fields.map(([, l]) => l).join("، ")} — هیچ‌کدام در متن این سند پیدا نشد.
+          اگر می‌دانید، خودتان وارد کنید.
+        </p>`}
+    </div>`;
+}
+
+/* People, only where a document has any. A letter has no attendees, and an
+   empty "شرکت‌کنندگان" card on a letter is noise pretending to be a form. */
+function peopleCard(d, form) {
+  if (!form.people) return "";
+
+  if (state.editingPeople) {
+    const rows = (list, prefix, label) => `
+      <p class="label" style="margin-top:.5rem">${label}</p>
+      <div style="display:grid;gap:.5rem">
+        ${list.map((p, i) => `
+          <div class="row" style="gap:.5rem;flex-wrap:nowrap">
+            <input class="field" data-${prefix}-name="${i}" value="${esc(p.name)}" placeholder="نام" style="flex:2;min-width:0">
+            <input class="field" data-${prefix}-role="${i}" value="${esc(p.role || "")}" placeholder="${esc(form.role || "سمت")}" style="flex:1;min-width:0">
+            <button class="btn btn-ghost btn-sm" style="color:var(--bad-600);flex:none" data-drop-person="${prefix}:${i}">حذف</button>
+          </div>`).join("")}
+        ${list.length ? "" : `<p class="muted small">کسی ثبت نشده است.</p>`}
+      </div>
+      <button class="btn btn-secondary btn-sm" style="margin-top:.5rem" data-add-person="${prefix}">+ افزودن</button>`;
+
+    return `
+      <div class="card">
+        <div class="section-title"><h3>${form.people}</h3></div>
+        ${rows(d.participants, "pp", form.people)}
+        ${form.absent ? rows(d.absentees, "ab", form.absent) : ""}
+        <div class="row" style="margin-top:.875rem;border-top:1px solid var(--s-100);padding-top:.875rem">
+          <button class="btn btn-primary btn-sm" data-save-people>ذخیره</button>
+          <button class="btn btn-secondary btn-sm" data-cancel-edit>انصراف</button>
+        </div>
+      </div>`;
+  }
+
+  return `
+    <div class="card">
+      <div class="section-title">
+        <h3>${form.people} <span class="count">${fa(d.participants.length)}</span></h3>
+        <button class="btn btn-ghost btn-sm" data-edit-people>ویرایش</button>
+      </div>
+      ${d.participants.length ? `
+        <div class="people">
+          ${d.participants.map((p) => `
+            <span class="person">
+              <span class="pname">${esc(p.name)}</span>
+              ${p.role ? `<span class="role">${esc(p.role)}</span>` : `<span class="role muted">${esc(form.role || "سمت")} ثبت نشده</span>`}
+            </span>`).join("")}
+        </div>` : `<p class="muted small">نامی در متن پیدا نشد. با «ویرایش» می‌توانید اضافه کنید.</p>`}
+      ${form.absent && d.absentees.length ? `
+        <div style="border-top:1px solid var(--s-100);margin-top:.875rem;padding-top:.75rem">
+          <p class="muted small" style="margin-bottom:.5rem">${form.absent}</p>
+          <div class="people">${d.absentees.map((p) => `<span class="person"><span class="pname">${esc(p.name)}</span>${p.role ? `<span class="role">${esc(p.role)}</span>` : ""}</span>`).join("")}</div>
+        </div>` : ""}
+    </div>`;
 }
 
 function decisionCard(dec, i) {
@@ -1726,7 +1841,7 @@ function viewModal() {
           <p style="font-weight:500;font-size:.875rem;margin-bottom:.25rem">گویندگان</p>
           <p class="muted" style="font-size:.75rem;line-height:1.8;margin-bottom:.75rem">
             صداها از هم تفکیک شده‌اند، اما سامانه نمی‌داند هر صدا متعلق به چه کسی است.
-            اگر نام هر گوینده را وارد کنید، در متن و در صورت‌جلسه به همان نام ارجاع داده می‌شود.
+            اگر نام هر گوینده را وارد کنید، در متن و در سند نهایی به همان نام ارجاع داده می‌شود.
           </p>
           ${stats.map((sp) => `
             <div class="spk-row ${toneOf(sp.label)}">
@@ -1791,6 +1906,7 @@ function viewModal() {
     const m = currentMeeting();
     const fmt = { docx: "Word", pdf: "PDF", md: "Markdown" }[mod.format];
     title = "پیش‌نمایش خروجی " + fmt;
+    m.minutes.kind = m.minutes.kind || m.kind || "meeting_minutes";
     wide = true;
     body = mod.format === "md"
       ? `<div class="transcript"><pre class="ltr" style="white-space:pre-wrap;font-size:.8125rem;line-height:1.8;margin:0;font-family:var(--font);direction:rtl;text-align:right">${esc(toMarkdown(m.minutes))}</pre></div>`
@@ -1883,10 +1999,50 @@ function viewModal() {
         ${submActions(sub)}
 
         <div class="row" style="margin-top:1rem;border-top:1px solid var(--s-100);padding-top:.875rem">
-          <button class="btn btn-secondary btn-sm" data-doc="${sub.docId}">مشاهدهٔ سند</button>
-          <span class="muted small">هر تصمیم و یادداشتی که اینجا ثبت شود، در سابقهٔ همین سند هم می‌ماند.</span>
+          ${archiveAll().some((x) => x.id === sub.docId)
+            ? `<button class="btn btn-secondary btn-sm" data-doc="${sub.docId}">مشاهدهٔ سند</button>
+               <span class="muted small">هر تصمیم و یادداشتی که اینجا ثبت شود، در سابقهٔ همین سند هم می‌ماند.</span>`
+            : `<span class="muted small">این مورد به سند مشخصی وصل نیست؛ سابقه‌اش همین‌جا نگه داشته می‌شود.</span>`}
         </div>`;
     }
+  }
+
+  else if (mod.type === "newsubm") {
+    const draft = mod.draft || {};
+    const docs = archiveAll();
+    title = "ارسال مورد جدید به " + ROLES.manager.name;
+    body = `
+      <p class="muted small" style="line-height:1.9;margin-bottom:1rem">
+        یا یکی از اسناد بایگانی را انتخاب کنید، یا موردی بنویسید که هنوز سندی ندارد —
+        مثل یک پیگیری یا یک یادآوری.
+      </p>
+
+      <label class="label" for="ns-kind">نوع ارسال</label>
+      <select class="field" id="ns-kind">
+        <option value="approval">🖋 درخواست تأیید نهایی</option>
+        <option value="report" ${draft.kind === "report" ? "selected" : ""}>📋 گزارش کار</option>
+      </select>
+
+      <label class="label" style="margin-top:.875rem" for="ns-doc">سند مرتبط</label>
+      <select class="field" id="ns-doc">
+        <option value="">— بدون سند (مورد مستقل) —</option>
+        ${docs.map((x) => `<option value="${esc(x.id)}" ${draft.docId === x.id ? "selected" : ""}>
+          ${esc(DOC_KINDS[x.kind].label)} — ${esc(x.title)}
+        </option>`).join("")}
+      </select>
+
+      <label class="label" style="margin-top:.875rem" for="ns-title">عنوان مورد</label>
+      <input class="field" id="ns-title" placeholder="اگر سند انتخاب کنید، عنوان همان سند استفاده می‌شود"
+             value="${esc(draft.title || "")}">
+
+      <label class="label" style="margin-top:.875rem" for="ns-note">شرح برای مدیر</label>
+      <textarea class="field" id="ns-note" rows="4"
+        placeholder="چه چیزی را می‌فرستید و از مدیر چه می‌خواهید؟">${esc(draft.note || "")}</textarea>
+
+      <div class="row" style="margin-top:1.25rem;justify-content:flex-end">
+        <button class="btn btn-secondary btn-sm" data-close-modal>انصراف</button>
+        <button class="btn btn-primary btn-sm" data-send-subm>ارسال به مدیر</button>
+      </div>`;
   }
 
   else if (mod.type === "adddoc") {
@@ -1895,7 +2051,7 @@ function viewModal() {
     body = `
       <p class="muted small" style="line-height:1.9;margin-bottom:1rem">
         هر نوع سندی را می‌توانید اضافه کنید — قرارداد، الحاقیه، تفاهم‌نامه، نامه، مصوبه، گزارش یا یادداشت.
-        صورت‌جلسه‌ها خودشان از بخش جلسه‌ها می‌آیند.
+        اسنادی که از «ورود دیتا» می‌آیند، خودکار اینجا ثبت شده‌اند.
       </p>
       <label class="label">نوع سند</label>
       <select class="field" id="nd-kind">
@@ -1962,13 +2118,17 @@ function viewModal() {
 /* rendered document, as the DOCX/PDF exporter would lay it out */
 function documentHtml(d) {
   const NS = "مشخص نشده";
-  let h = `<h1>${esc(d.title)}</h1><p class="doclabel">صورت‌جلسه</p>`;
-  const facts = [["تاریخ", d.info.date ? formatDate(d.info.date) : null], ["ساعت", d.info.time], ["محل برگزاری", d.info.location]].filter((f) => f[1]);
-  if (facts.length) h += `<h2>اطلاعات جلسه</h2>` + facts.map((f) => `<p>${f[0]}: ${esc(f[1])}</p>`).join("");
-  if (d.info.objective) h += `<h2>هدف جلسه</h2><p>${esc(d.info.objective)}</p>`;
-  if (d.summary) h += `<h2>خلاصهٔ اجرایی</h2><p>${esc(d.summary)}</p>`;
-  if (d.participants.length) h += `<h2>شرکت‌کنندگان</h2><ul>` + d.participants.map((p) => `<li>${esc(p.name)}${p.role ? " (" + esc(p.role) + ")" : ""}</li>`).join("") + `</ul>`;
-  if (d.absentees.length) h += `<p><strong>غایبان:</strong> ${d.absentees.map((p) => esc(p.name)).join("، ")}</p>`;
+  const kind = d.kind || "meeting_minutes";
+  const form = formOf(kind);
+  let h = `<h1>${esc(d.title)}</h1><p class="doclabel">${DOC_KINDS[kind].label}</p>`;
+  const facts = [["تاریخ", d.info.date ? formatDate(d.info.date) : null]]
+    .concat(form.fields.map((pair) => [pair[1], factValue(d, pair[0])]))
+    .filter((f) => f[1]);
+  if (facts.length) h += `<h2>مشخصات سند</h2>` + facts.map((f) => `<p>${f[0]}: ${esc(f[1])}</p>`).join("");
+  if (d.info.objective) h += `<h2>موضوع</h2><p>${esc(d.info.objective)}</p>`;
+  if (d.summary) h += `<h2>${form.summary}</h2><p>${esc(d.summary)}</p>`;
+  if (form.people && d.participants.length) h += `<h2>${form.people}</h2><ul>` + d.participants.map((p) => `<li>${esc(p.name)}${p.role ? " (" + esc(p.role) + ")" : ""}</li>`).join("") + `</ul>`;
+  if (form.absent && d.absentees.length) h += `<p><strong>${form.absent}:</strong> ${d.absentees.map((p) => esc(p.name)).join("، ")}</p>`;
   if (d.topics.length) h += `<h2>موضوعات مطرح‌شده</h2>` + d.topics.map((t, i) => `<p><strong>${fa(i + 1)}. ${esc(t.title)}</strong></p>${t.summary ? `<p>${esc(t.summary)}</p>` : ""}${t.points.length ? `<ul>${t.points.map((p) => `<li>${esc(p)}</li>`).join("")}</ul>` : ""}`).join("");
   if (d.decisions.length) h += `<h2>تصمیمات</h2>` + d.decisions.map((x, i) => `<p><strong>${fa(i + 1)}. ${esc(x.text)}</strong></p>${x.context ? `<p>${esc(x.context)}</p>` : ""}`).join("");
   if (d.proposals.length) h += `<h2>پیشنهادهای مطرح‌شده (تصویب‌نشده)</h2><ul>` + d.proposals.map((p) => `<li>${esc(p.text)}</li>`).join("") + `</ul>`;
@@ -1990,12 +2150,15 @@ function documentHtml(d) {
 
 function toMarkdown(d) {
   const NS = "مشخص نشده";
+  const form = formOf(d.kind || "meeting_minutes");
   const L = ["# " + d.title, ""];
   if (d.info.date) L.push("- **تاریخ:** " + formatDate(d.info.date));
-  if (d.info.time) L.push("- **ساعت:** " + d.info.time);
-  if (d.info.location) L.push("- **محل برگزاری:** " + d.info.location);
+  form.fields.forEach((pair) => {
+    const v = factValue(d, pair[0]);
+    if (v) L.push("- **" + pair[1] + ":** " + v);
+  });
   L.push("");
-  if (d.summary) L.push("## خلاصهٔ اجرایی", "", d.summary, "");
+  if (d.summary) L.push("## " + form.summary, "", d.summary, "");
   if (d.decisions.length) {
     L.push("## تصمیمات");
     d.decisions.forEach((x, i) => L.push(fa(i + 1) + ". **" + x.text + "**"));
@@ -2047,6 +2210,56 @@ const DOC_KINDS = {
   content_doc:     { label: "سند محتوایی",       glyph: "📄", weight: "سند پشتیبان", tone: "neutral" },
   related_docs:    { label: "اسناد مرتبط",       glyph: "🔗", weight: "سند پشتیبان", tone: "neutral" },
 };
+
+/* Not every entry is a meeting. A letter has a sender and a recipient and no
+   attendees; a note has an author and nothing to vote on. Printing every
+   section on every document and leaving most of them blank is how a form stops
+   being read — so each kind declares the sections it actually has, and the
+   document page shows only those. */
+const LETTER_FORM = { summary: "خلاصهٔ نامه", people: null, role: null, absent: null,
+  fields: [["sender", "فرستنده"], ["recipient", "گیرنده"], ["ref", "شمارهٔ نامه"], ["replyTo", "در پاسخ به"]] };
+const CONTRACT_FORM = { summary: "خلاصهٔ قرارداد", people: null, role: null, absent: null,
+  fields: [["party", "طرف قرارداد"], ["ref", "شمارهٔ قرارداد"], ["amount", "مبلغ"], ["term", "مدت"]] };
+const SUPPORT_FORM = { summary: "خلاصهٔ سند", people: null, role: null, absent: null,
+  fields: [["author", "تهیه‌کننده"], ["party", "مرجع / منبع"]] };
+
+const KIND_FORM = {
+  meeting_minutes: { summary: "خلاصهٔ جلسه", people: "شرکت‌کنندگان", role: "سمت", absent: "غایبان",
+    fields: [["location", "محل برگزاری"], ["time", "ساعت"]] },
+  negotiation: { summary: "خلاصهٔ گفت‌وگو", people: "طرف‌های گفت‌وگو", role: "سمت / نمایندهٔ", absent: null,
+    fields: [["location", "محل"], ["time", "ساعت"]] },
+  resolution: { summary: "خلاصهٔ مصوبه", people: "حاضران", role: "سمت", absent: null,
+    fields: [["authority", "مرجع تصویب"], ["ref", "شمارهٔ مصوبه"]] },
+  law: { summary: "خلاصهٔ قانون", people: null, role: null, absent: null,
+    fields: [["authority", "مرجع تصویب"], ["ref", "شماره / ماده"]] },
+  progress_report: { summary: "خلاصهٔ گزارش", people: null, role: null, absent: null,
+    fields: [["author", "تهیه‌کننده"], ["period", "دورهٔ گزارش"]] },
+  analysis: { summary: "خلاصهٔ تحلیل", people: null, role: null, absent: null,
+    fields: [["author", "تهیه‌کننده"]] },
+  note: { summary: "خلاصهٔ یادداشت", people: null, role: null, absent: null,
+    fields: [["author", "نویسنده"]] },
+  mou: { summary: "خلاصهٔ تفاهم‌نامه", people: null, role: null, absent: null,
+    fields: [["party", "طرف تفاهم"], ["term", "مدت"]] },
+  letter: LETTER_FORM, letter_in: LETTER_FORM, letter_out: LETTER_FORM,
+  contract: CONTRACT_FORM, contract_annex: CONTRACT_FORM,
+  content_doc: SUPPORT_FORM, related_docs: SUPPORT_FORM,
+};
+function formOf(kind) { return KIND_FORM[kind] || SUPPORT_FORM; }
+
+/* Two of the fields have lived on info since the beginning; the rest are new
+   and kind-specific. One pair of accessors keeps that an implementation
+   detail rather than something every caller has to remember. */
+function factValue(d, key) {
+  if (key === "location") return d.info.location;
+  if (key === "time") return d.info.time;
+  return (d.fields || {})[key] || null;
+}
+function setFact(d, key, v) {
+  const val = (v || "").trim() || null;
+  if (key === "location") d.info.location = val;
+  else if (key === "time") d.info.time = val;
+  else { d.fields = d.fields || {}; d.fields[key] = val; }
+}
 
 /* What the data-entry form offers, in the order it offers them. Same values
    as the archive uses, so an entry is filed the moment it is created. */
@@ -2408,84 +2621,6 @@ function searchDocs(query, pool, opts) {
 }
 
 /* ==========================================================================
-   Where the file contradicts itself
-
-   An archive that spans five years will say two different things about the
-   same subject, and the manager's real question is which of the two to
-   believe. So the two lines are put side by side, each labelled with what its
-   document is — an official progress report and a personal note are not equal
-   evidence — and the reader decides. Nothing is hidden and nothing wins
-   automatically; picking a side is not this product's job.
-   ========================================================================== */
-const STANCES = [
-  { key: "stalled", label: "متوقف / بی‌نتیجه", tone: "danger",
-    res: [/متوقف/, /توقف/, /راکد/, /معلق/, /بلاتکلیف/, /انجام\s*نشده/, /پاسخی\s*(?:ثبت|دریافت)\s*نشده/] },
-  { key: "done", label: "انجام‌شده / تکمیل", tone: "success",
-    res: [/تکمیل\s*شده/, /انجام\s*‌?شده/, /نهایی\s*شده/, /راه‌?اندازی\s*شد/,
-          /بهره‌?برداری\s*(?:کامل|شد)/, /تحویل\s*شد/] },
-];
-
-function stanceOf(text) {
-  for (const st of STANCES) { for (const re of st.res) if (re.test(text)) return st; }
-  return null;
-}
-
-/* The sentences of a document that assert a state of affairs. */
-function claimsOf(doc) {
-  return clauses(doc.text)
-    .map((t) => ({ doc: doc, text: t.trim(), stance: stanceOf(t) }))
-    .filter((c) => c.stance);
-}
-
-/* Not every document carries the same weight, and the order they are read in
-   should say so. */
-const AUTHORITY = ["law", "resolution", "contract", "contract_annex", "mou",
-                   "letter_in", "letter_out", "progress_report", "meeting_minutes",
-                   "analysis", "negotiation", "content_doc", "related_docs", "note"];
-function authority(doc) {
-  const i = AUTHORITY.indexOf(doc.kind);
-  return i === -1 ? 0 : AUTHORITY.length - i;
-}
-
-function findConflicts(docs) {
-  const claims = [];
-  docs.forEach((d) => claimsOf(d).forEach((c) => claims.push(c)));
-  const out = [], seen = {};
-  for (let i = 0; i < claims.length; i++) {
-    for (let j = i + 1; j < claims.length; j++) {
-      const a = claims[i], b = claims[j];
-      if (a.doc.id === b.doc.id || a.stance.key === b.stance.key) continue;
-      // Two lines only contradict each other if they are about the same thing.
-      if (overlap(a.text, b.text) < 0.5) continue;
-      const key = [a.doc.id, b.doc.id].sort().join("|");
-      if (seen[key]) continue;
-      seen[key] = true;
-      // The weightier document always sits first, so every pair reads the same
-      // way: what the record says, then what disputes it.
-      const pair = authority(a.doc) >= authority(b.doc) ? { a: a, b: b } : { a: b, b: a };
-      out.push(pair);
-    }
-  }
-  return out.slice(0, 4);
-}
-
-/* A letter that went out and was never answered is the one thing in an archive
-   nobody notices until it is too late. */
-function unansweredLetters(docs) {
-  return docs.filter((d) => d.kind === "letter_out" && d.ref &&
-    !docs.some((x) => x.kind === "letter_in" && x.reply === d.ref));
-}
-
-function caseCounts(docs) {
-  return {
-    docs: docs.length,
-    unanswered: unansweredLetters(docs).length,
-    stalled: docs.filter((d) => claimsOf(d).some((c) => c.stance.key === "stalled")).length,
-    conflicts: findConflicts(docs).length,
-  };
-}
-
-/* ==========================================================================
    What is on the record for a document
 
    Comments, tracked changes and one assignment. Kept beside the document
@@ -2663,7 +2798,7 @@ function viewCases() {
    programme's documents are its projects' documents. */
 function caseCard(c, depth) {
   const kids = childCases(c.id);
-  const counts = caseCounts(caseDocs(c.id));
+  const count = caseDocs(c.id).length;
   const pad = depth ? `margin-inline-start:${depth * 1.5}rem` : "";
   return `
     <div class="card subject" data-open-case="${c.id}" style="${pad}">
@@ -2672,12 +2807,8 @@ function caseCard(c, depth) {
           <p style="font-weight:600;font-size:${depth ? ".9375rem" : "1.0625rem"}">${esc(c.title)}</p>
           ${c.note ? `<p class="muted small" style="margin-top:.25rem">${esc(c.note)}</p>` : ""}
           <p class="muted small tnum" style="margin-top:.35rem">
-            ${fa(counts.docs)} سند${kids.length ? ` · ${fa(kids.length)} پروژهٔ زیرمجموعه` : ""}
+            ${fa(count)} سند${kids.length ? ` · ${fa(kids.length)} پروژهٔ زیرمجموعه` : ""}
           </p>
-        </div>
-        <div class="row" style="gap:.35rem">
-          ${counts.conflicts ? `<span class="badge badge-warning tnum">${fa(counts.conflicts)} ناهم‌خوانی</span>` : ""}
-          ${counts.unanswered ? `<span class="badge badge-danger tnum">${fa(counts.unanswered)} مکاتبهٔ بی‌پاسخ</span>` : ""}
         </div>
       </div>
     </div>
@@ -2693,7 +2824,6 @@ function viewCase() {
   const thread = state.chat[id] || [];
   const parent = parentCase(c);
   const kids = childCases(c.id);
-  const counts = caseCounts(docs);
   const asked = thread.filter((t) => t.from === "user").map((t) => t.text);
 
   return `
@@ -2712,15 +2842,8 @@ function viewCase() {
           </button>`).join("")}
         </div>` : ""}
 
-      <div class="countbar">
-        <div class="countbox"><b class="tnum">${fa(counts.docs)}</b><span>سند</span></div>
-        <div class="countbox ${counts.unanswered ? "bad" : ""}"><b class="tnum">${fa(counts.unanswered)}</b><span>مکاتبهٔ بی‌پاسخ</span></div>
-        <div class="countbox ${counts.stalled ? "warn" : ""}"><b class="tnum">${fa(counts.stalled)}</b><span>سند با موضوع متوقف</span></div>
-        <div class="countbox ${counts.conflicts ? "warn" : ""}"><b class="tnum">${fa(counts.conflicts)}</b><span>ناهم‌خوانی</span></div>
-      </div>
+      <p class="muted small tnum" style="margin-top:.75rem">${fa(docs.length)} سند ذیل این موضوع بایگانی شده است.</p>
     </div>
-
-    ${conflictPanel(findConflicts(docs))}
 
     <div class="card chat" style="margin-top:1rem">
       <div class="section-title"><h3>سؤال‌هایتان را از من بپرسید</h3></div>
@@ -2737,7 +2860,8 @@ function viewCase() {
           <div class="chat-hint">
             <p>هرچه می‌خواهید بپرسید — مثلاً «اعتبار مطالعات امنیت چه شد؟» یا «قرارداد مرکز داده».</p>
             <p class="muted small" style="margin-top:.35rem">
-              من در این مرحله نتیجه‌گیری نمی‌کنم؛ فقط سندهای مرتبط و همان جمله‌ای را که پیدا کرده‌ام نشان می‌دهم.
+              نتیجه‌گیری نمی‌کنم و نظر نمی‌دهم؛ فقط سند مرتبط و همان جمله‌ای را که پیدا کرده‌ام نشان می‌دهم
+              تا خودتان بخوانید و قضاوت کنید.
             </p>
           </div>` : thread.map(chatBubble).join("")}
         ${state.chatBusy ? `<div class="chat-row bot"><div class="bubble typing"><span></span><span></span><span></span></div></div>` : ""}
@@ -2747,40 +2871,17 @@ function viewCase() {
         <input class="field" id="chat-q" style="flex:1;min-width:14rem" placeholder="سؤالتان را بنویسید…" autocomplete="off">
         <button class="btn btn-primary" data-chat-send>بپرس</button>
       </div>
+
+      <p class="hint" style="margin-top:.75rem;line-height:1.9">
+        جست‌وجو روی متن اسناد همین موضوع انجام می‌شود و ممکن است مورد مرتبطی را جا بیندازد —
+        مخصوصاً وقتی سند با واژهٔ دیگری نوشته شده باشد. اگر پاسخ کامل نبود، با کلمات دیگری هم بپرسید
+        و پیش از هر تصمیمی، خود سند را باز کنید.
+      </p>
     </div>
 
     <div class="card" style="margin-top:1rem;padding:.5rem">
       <div class="section-title" style="padding:.5rem .75rem 0"><h3>اسناد مرتبط با این موضوع <span class="count">${fa(docs.length)}</span></h3></div>
       <div class="stack" style="gap:.5rem;padding:.5rem">${docs.map((d) => docRow(d)).join("")}</div>
-    </div>`;
-}
-
-/* Two documents, one subject, two answers. Both stay on the record. */
-function conflictPanel(pairs) {
-  if (!pairs.length) return "";
-  const side = (claim) => {
-    const k = DOC_KINDS[claim.doc.kind];
-    return `
-      <div class="side">
-        <div class="row" style="gap:.35rem;margin-bottom:.4rem">
-          <span class="badge badge-${claim.stance.tone}">${claim.stance.label}</span>
-          <span class="badge badge-${k.tone}">${k.glyph} ${k.label}</span>
-          <span class="muted small">${esc(k.weight)}</span>
-        </div>
-        <p>«${esc(claim.text)}»</p>
-        <button class="cite" data-doc="${claim.doc.id}">${esc(claim.doc.title)} · ${esc(claim.doc.date)}</button>
-      </div>`;
-  };
-  return `
-    <div class="card" style="margin-top:1rem">
-      <div class="section-title">
-        <h3>⚠️ موارد ناهم‌خوان <span class="count">${fa(pairs.length)}</span></h3>
-      </div>
-      <p class="muted small" style="margin:-.5rem 0 .25rem;line-height:1.9">
-        دو سند دربارهٔ یک موضوع دو چیز متفاوت گفته‌اند. هیچ‌کدام حذف یا ترجیح داده نمی‌شود؛
-        در کنار هم و همراه با نوع سند نشان داده می‌شود تا خودتان قضاوت کنید.
-      </p>
-      ${pairs.map((p) => `<div class="conflict-sides">${side(p.a)}${side(p.b)}</div>`).join("")}
     </div>`;
 }
 
@@ -2791,7 +2892,10 @@ function chatBubble(msg) {
   if (!msg.hits.length) {
     return `<div class="chat-row bot"><div class="bubble">
       <p>در اسناد این موضوع چیزی دربارهٔ «${esc(msg.text)}» پیدا نکردم.</p>
-      <p class="muted small" style="margin-top:.35rem">یعنی چنین سندی در بایگانی ثبت نشده — نه اینکه پاسخ را نمی‌دانم.</p>
+      <p class="muted small" style="margin-top:.35rem">
+        یعنی با این عبارت سندی پیدا نشد. ممکن است سند با واژهٔ دیگری ثبت شده باشد —
+        یک بار دیگر با کلمات دیگری بپرسید، یا در بایگانی مستقیم جست‌وجو کنید.
+      </p>
     </div></div>`;
   }
   return `<div class="chat-row bot"><div class="bubble">
@@ -2804,7 +2908,8 @@ function chatBubble(msg) {
         <p class="hit-quote">«${esc(hit.quote)}»</p>
       </div>`).join("")}
     <p class="muted small" style="margin-top:.6rem">
-      برای دیدن کل سند روی آن کلیک کنید. در این مرحله فقط سندهای مرتبط نشان داده می‌شود و تحلیلی ارائه نمی‌شود.
+      برای دیدن کل سند روی آن کلیک کنید. این فهرست بر پایهٔ واژه‌های سؤال شما ساخته شده،
+      نه بر پایهٔ قضاوت دربارهٔ محتوا — ممکن است سند مرتبط دیگری هم باشد که با این عبارت پیدا نشده است.
     </p>
   </div></div>`;
 }
@@ -2858,9 +2963,10 @@ function viewInbox() {
         <p class="muted small" style="margin-top:.25rem;max-width:44rem;line-height:1.9">
           ${boss
             ? "هرچه منشی برای تأیید یا گزارش فرستاده، اینجاست. می‌توانید تأیید کنید، برای اصلاح برگردانید، یا فقط یادداشت بگذارید."
-            : "هرچه برای مدیر فرستاده‌اید و پاسخی که گرفته‌اید. ارسال از داخل هر سند انجام می‌شود."}
+            : "هرچه برای مدیر فرستاده‌اید و پاسخی که گرفته‌اید. مورد تازه را از همین‌جا یا از داخل هر سند بفرستید."}
         </p>
       </div>
+      ${can("submit") ? `<button class="btn btn-primary" data-new-subm>+ ارسال مورد جدید</button>` : ""}
     </div>
 
     <div class="card">
@@ -2877,8 +2983,11 @@ function viewInbox() {
         <span class="glyph">📭</span>
         <p style="font-weight:500">کارتابل خالی است</p>
         <p class="muted small" style="max-width:30rem">
-          ارسال از داخل سند انجام می‌شود: سند را باز کنید و به تب «ارسال و تأیید» بروید.
+          ${can("submit")
+            ? "با دکمهٔ «ارسال مورد جدید» شروع کنید، یا سندی را باز کنید و از تب «ارسال و تأیید» بفرستید."
+            : "تا وقتی منشی چیزی نفرستاده، اینجا خالی می‌ماند."}
         </p>
+        ${can("submit") ? `<button class="btn btn-primary" style="margin-top:1rem" data-new-subm>+ ارسال مورد جدید</button>` : ""}
       </div>` : ""}
 
     ${group(boss ? "در انتظار بررسی شما" : "در انتظار پاسخ مدیر",
@@ -3177,6 +3286,29 @@ function wire() {
     render();
   });
 
+  on("[data-new-subm]", "click", () => {
+    if (!requires("submit")) return;
+    state.modal = { type: "newsubm", draft: {} };
+    render();
+  });
+
+  on("[data-send-subm]", "click", () => {
+    if (!requires("submit")) return;
+    const val = (id) => (document.getElementById(id).value || "").trim();
+    const note = val("ns-note");
+    if (!note) { toast("شرح مورد را برای مدیر بنویسید"); return; }
+    const docId = val("ns-doc");
+    const doc = docId ? archiveAll().find((x) => x.id === docId) : null;
+    const title = val("ns-title") || (doc ? doc.title : "");
+    if (!title) { toast("عنوان مورد را بنویسید یا سندی انتخاب کنید"); return; }
+    // A follow-up with no document yet is still a thing to answer, so it gets
+    // an id of its own and its own record.
+    submit(docId || nid("free"), title, val("ns-kind"), note, null);
+    state.modal = null;
+    toast("به کارتابل مدیر فرستاده شد");
+    render();
+  });
+
   on("[data-submit-doc]", "click", (e) => {
     if (!requires("submit")) return;
     const id = e.currentTarget.dataset.submitDoc;
@@ -3453,8 +3585,9 @@ function wire() {
   /* --- processing --- */
   on("[data-process]", "click", () => runPipeline(currentMeeting(), false));
   on("[data-regenerate]", "click", () => {
-    confirmModal("تولید مجدد صورت‌جلسه",
-      "صورت‌جلسه دوباره تولید می‌شود. نسخهٔ فعلی حذف نمی‌شود و در تاریخچه باقی می‌ماند.",
+    const cm = currentMeeting();
+    confirmModal("تولید مجدد " + DOC_KINDS[(cm && cm.kind) || "meeting_minutes"].label,
+      "این سند دوباره از روی منابع تولید می‌شود. نسخهٔ فعلی حذف نمی‌شود و در تاریخچه باقی می‌ماند.",
       "تولید مجدد", false, () => { state.modal = null; runPipeline(currentMeeting(), true); });
   });
 
@@ -3463,9 +3596,59 @@ function wire() {
   on("[data-save-title]", "click", () => {
     const m = currentMeeting();
     const v = (document.getElementById("ed-title").value || "").trim();
-    if (!v) return toast("عنوان صورت‌جلسه نمی‌تواند خالی باشد.");
+    if (!v) return toast("عنوان سند نمی‌تواند خالی باشد.");
     m.minutes.title = v; bumpVersion(m, "user_edit"); resetEditing();
     toast("ذخیره شد"); render();
+  });
+
+  on("[data-edit-facts]", "click", () => { resetEditing(); state.editingFacts = true; render(); });
+  on("[data-save-facts]", "click", () => {
+    const m = currentMeeting();
+    formOf(m.kind || "meeting_minutes").fields.forEach((pair) => {
+      const el = document.getElementById("fx-" + pair[0]);
+      if (el) setFact(m.minutes, pair[0], el.value);
+    });
+    bumpVersion(m, "user_edit"); resetEditing(); toast("مشخصات سند ذخیره شد"); render();
+  });
+
+  /* The list is rebuilt on every render, so whatever is typed has to be read
+     back before a row is added or dropped — otherwise adding one name erases
+     the one being typed next to it. */
+  const readPeople = () => {
+    const m = currentMeeting();
+    if (!m || !m.minutes) return;
+    [["pp", m.minutes.participants], ["ab", m.minutes.absentees]].forEach(([prefix, list]) => {
+      list.forEach((person, i) => {
+        const n = document.querySelector("[data-" + prefix + "-name=\"" + i + "\"]");
+        const r = document.querySelector("[data-" + prefix + "-role=\"" + i + "\"]");
+        if (n) person.name = n.value.trim();
+        if (r) person.role = r.value.trim() || null;
+      });
+    });
+  };
+  const peopleList = (prefix) => {
+    const m = currentMeeting();
+    return prefix === "pp" ? m.minutes.participants : m.minutes.absentees;
+  };
+
+  on("[data-edit-people]", "click", () => { resetEditing(); state.editingPeople = true; render(); });
+  on("[data-add-person]", "click", (e) => {
+    readPeople();
+    peopleList(e.currentTarget.dataset.addPerson).push({ name: "", role: null });
+    render();
+  });
+  on("[data-drop-person]", "click", (e) => {
+    const [prefix, i] = e.currentTarget.dataset.dropPerson.split(":");
+    readPeople();
+    peopleList(prefix).splice(+i, 1);
+    render();
+  });
+  on("[data-save-people]", "click", () => {
+    const m = currentMeeting();
+    readPeople();
+    m.minutes.participants = m.minutes.participants.filter((p) => p.name);
+    m.minutes.absentees = m.minutes.absentees.filter((p) => p.name);
+    bumpVersion(m, "user_edit"); resetEditing(); toast("ذخیره شد"); render();
   });
 
   on("[data-edit-summary]", "click", () => { resetEditing(); state.editingSummary = true; render(); });
@@ -3590,11 +3773,11 @@ function wire() {
   on("[data-delete-meeting]", "click", (e) => {
     if (!requires("removeRecord")) return;
     const id = e.currentTarget.dataset.deleteMeeting;
-    confirmModal("حذف جلسه",
-      "این جلسه و همهٔ فایل‌ها و صورت‌جلسه‌های آن برای همیشه حذف می‌شود. مطمئن هستید؟",
-      "حذف جلسه", true, () => {
+    confirmModal("حذف این ورودی",
+      "این ورودی و همهٔ فایل‌ها و سند تولیدشدهٔ آن برای همیشه حذف می‌شود. مطمئن هستید؟",
+      "حذف", true, () => {
         state.meetings = state.meetings.filter((x) => x.id !== id);
-        toast("جلسه حذف شد");
+        toast("ورودی حذف شد");
         go({ name: "dashboard" });
       });
   });
@@ -3946,6 +4129,38 @@ function headline(kind, st) {
   return best.length > 140 ? best.slice(0, 137).trim() + "…" : best;
 }
 
+/* The kind-specific facts, where the document states them plainly. A letter
+   that says "پیرو نامهٔ ۱۲/۸۸۹۰" has told us what it answers; one that does not
+   leaves the field empty for a person to fill, rather than being guessed at. */
+const FIELD_PATTERNS = {
+  sender:    [/(?:فرستنده|ارسال‌?کننده)\s*[:：]\s*([^\n|]{2,60})/, /(?:^|\n)\s*از\s*[:：]\s*([^\n|]{2,60})/],
+  recipient: [/(?:گیرنده|مخاطب)\s*[:：]\s*([^\n|]{2,60})/, /(?:^|\n)\s*به\s*[:：]\s*([^\n|]{2,60})/],
+  ref:       [/شمارهٔ?\s*(?:نامه|قرارداد|مصوبه)?\s*[:：]\s*([۰-۹0-9][۰-۹0-9\/\-]{2,20})/],
+  replyTo:   [/(?:پیرو\s*نامهٔ?|در\s*پاسخ\s*به|عطف\s*به\s*نامهٔ?)\s*([۰-۹0-9][۰-۹0-9\/\-]{2,20})/],
+  amount:    [/مبلغ\s*[:：]?\s*([^\n.،؛]{2,40})/],
+  term:      [/مدت\s*(?:قرارداد)?\s*[:：]\s*([^\n.،؛]{2,40})/],
+  party:     [/(?:طرف\s*قرارداد|طرف\s*تفاهم|پیمانکار|مجری)\s*[:：]?\s*([^\n.،؛]{2,60})/],
+  authority: [/(?:مرجع\s*تصویب|تصویب\s*شده\s*در)\s*[:：]?\s*([^\n.،؛]{2,60})/],
+  author:    [/(?:تهیه‌?کننده|نویسنده|تنظیم‌?کننده)\s*[:：]\s*([^\n.،؛]{2,60})/],
+  period:    [/دورهٔ?\s*گزارش\s*[:：]\s*([^\n.،؛]{2,40})/],
+};
+
+function extractFields(kind, stmts) {
+  const text = stmts.map((x) => x.text).join("\n");
+  const out = {};
+  formOf(kind).fields.forEach((pair) => {
+    const key = pair[0];
+    if (key === "location" || key === "time") return;   // these live on info
+    (FIELD_PATTERNS[key] || []).some((re) => {
+      const m = re.exec(text);
+      if (!m) return false;
+      out[key] = m[1].trim().replace(/[.،؛:]+$/, "");
+      return true;
+    });
+  });
+  return out;
+}
+
 /* ---- who was there ------------------------------------------------------ */
 
 function splitPeople(v) {
@@ -4197,8 +4412,11 @@ function deriveMinutes(m, sources) {
 
   const summary = buildSummary(m, info, dec, act, pro, rsk, leftovers);
 
+  const kind = m.kind || "meeting_minutes";
   return {
-    title: m.title || (DOC_KINDS[m.kind || "meeting_minutes"].label + " بدون عنوان"),
+    kind: kind,
+    fields: extractFields(kind, stmts),
+    title: m.title || (DOC_KINDS[kind].label + " بدون عنوان"),
     info: info,
     summary: summary,
     participants: people.participants,
@@ -4338,9 +4556,11 @@ function runPipeline(m, isRegeneration) {
       stages[5].detail = fa(minutes.actions.length) + " اقدام، " + fa(minutes.decisions.length) + " تصمیم";
       m.job.status = "succeeded";
       m.status = failed.length && processed.length ? "partial_failure" : processed.length ? "ready" : "failed";
-      if (!processed.length) { m.job.status = "failed"; m.job.error = "هیچ منبعی با موفقیت پردازش نشد؛ صورت‌جلسه‌ای تولید نشد."; m.minutes = null; }
+      if (!processed.length) { m.job.status = "failed"; m.job.error = "هیچ منبعی با موفقیت پردازش نشد؛ سندی تولید نشد."; m.minutes = null; }
       else bumpVersion(m, isRegeneration ? "regenerated" : "generated");
-      toast(failed.length && processed.length ? "صورت‌جلسه با خطای جزئی تولید شد" : processed.length ? "صورت‌جلسه آماده است" : "پردازش ناموفق بود");
+      const label = DOC_KINDS[m.kind || "meeting_minutes"].label;
+      toast(failed.length && processed.length ? label + " با خطای جزئی تولید شد"
+            : processed.length ? label + " آماده است" : "پردازش ناموفق بود");
     },
   ];
 
