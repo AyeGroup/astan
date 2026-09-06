@@ -536,6 +536,15 @@ table.meetings tbody tr:hover .title { color: var(--brand-700); }
   content:""; display:inline-block; width:.4rem; height:.4rem; border-radius:999px;
   background:var(--bad-600); margin-inline-start:.4rem; vertical-align:.15rem;
 }
+.kb {
+  display:flex; align-items:center; justify-content:space-between; gap:.75rem 1rem; flex-wrap:wrap;
+  border:1px solid; border-radius:12px; padding:.75rem 1rem; line-height:1.9;
+}
+.kb .small { font-size:.8125rem; margin-top:.15rem; }
+.kb-draft { background:var(--s-50);   border-color:var(--s-300);    color:var(--s-700); }
+.kb-in    { background:var(--ok-50);  border-color:var(--ok-200);   color:var(--ok-700); }
+.kb-stale { background:var(--warn-50);border-color:var(--warn-200); color:var(--warn-700); }
+
 .prov {
   font-size:.6875rem; font-weight:500; border-radius:999px; padding:.1rem .5rem;
   border:1px solid; white-space:nowrap;
@@ -1373,8 +1382,9 @@ function viewDashboard() {
     <div class="spread" style="margin-bottom:1.5rem">
       <div>
         <h1 style="font-size:1.5rem;font-weight:600">ورود دیتا</h1>
-        <p class="muted small" style="margin-top:.25rem">
-          هرچه وارد می‌کنید به بایگانی اضافه می‌شود و از همان لحظه در جست‌وجوی پرونده‌ها دیده می‌شود.
+        <p class="muted small" style="margin-top:.25rem;max-width:44rem;line-height:1.9">
+          هر ورودی اول پیش‌نویس است. هر وقت از درستی‌اش مطمئن شدید، آن را وارد <b>دانش سامانه</b> کنید —
+          از همان لحظه در بایگانی دیده می‌شود و دستیار در پرونده‌ها به آن استناد می‌کند.
         </p>
       </div>
       <button class="btn btn-primary" data-go="new">+ ورود دیتا</button>
@@ -1389,7 +1399,7 @@ function viewDashboard() {
       </div>` : `
       <div class="card table-wrap" style="padding:0;overflow:hidden">
         <table class="meetings">
-          <thead><tr><th>عنوان</th><th>نوع</th><th>تاریخ</th></tr></thead>
+          <thead><tr><th>عنوان</th><th>نوع</th><th>تاریخ</th><th>وضعیت دانش</th></tr></thead>
           <tbody>
             ${rows.map((m) => {
               const k = DOC_KINDS[m.kind || "meeting_minutes"];
@@ -1397,6 +1407,11 @@ function viewDashboard() {
                 <td class="title">${esc(m.title)}</td>
                 <td class="muted">${k.glyph} ${k.label}</td>
                 <td class="muted tnum">${m.date ? formatDate(m.date) : "—"}</td>
+                <td>${inKnowledge(m)
+                  ? (knowledgeStale(m)
+                      ? `<span class="badge badge-warning">دانش قدیمی</span>`
+                      : `<span class="badge badge-success">در دانش</span>`)
+                  : `<span class="badge badge-neutral">پیش‌نویس</span>`}</td>
               </tr>`;
             }).join("")}
           </tbody>
@@ -1409,6 +1424,9 @@ function viewDashboard() {
           <div class="card" data-open="${m.id}" style="cursor:pointer;padding:1rem">
             <p style="font-weight:500">${esc(m.title)}</p>
             <p class="muted small tnum" style="margin-top:.5rem">${k.glyph} ${k.label} · ${m.date ? formatDate(m.date) : "بدون تاریخ"}</p>
+            <p style="margin-top:.5rem">${inKnowledge(m)
+              ? (knowledgeStale(m) ? `<span class="badge badge-warning">دانش قدیمی</span>` : `<span class="badge badge-success">در دانش</span>`)
+              : `<span class="badge badge-neutral">پیش‌نویس</span>`}</p>
           </div>`;
         }).join("")}
       </div>`}
@@ -1476,6 +1494,8 @@ function viewMeeting() {
           </div>
         </div>
       </div>
+
+      ${knowledgeBar(m)}
 
       ${m.status === "failed" ? `<div class="alert alert-danger">آخرین پردازش ناموفق بود: ${esc(m.job && m.job.error || "خطای نامشخص")}</div>` : ""}
 
@@ -1561,6 +1581,47 @@ function stageRow(st) {
         ${st.detail ? `<p class="tl-detail tnum">${esc(st.detail)}</p>` : ""}
       </div>
     </div>`;
+}
+
+/* The one place that says whether this entry is answerable yet. It sits at the
+   top of the document because it is the first thing to know about it. */
+function knowledgeBar(m) {
+  if (!hasContent(m)) {
+    return `<div class="kb kb-draft">
+      <span>تا وقتی محتوایی وارد نشده، چیزی برای افزودن به دانش وجود ندارد.</span>
+    </div>`;
+  }
+  if (!inKnowledge(m)) {
+    return `<div class="kb kb-draft">
+      <div>
+        <p><b>📥 پیش‌نویس — هنوز وارد دانش سامانه نشده است</b></p>
+        <p class="small">این سند در بایگانی دیده نمی‌شود و دستیار در پرونده‌ها به آن استناد نمی‌کند.
+          هر وقت از درستی‌اش مطمئن شدید، واردش کنید.</p>
+      </div>
+      <button class="btn btn-primary btn-sm" data-kb-add="${m.id}">افزودن به دانش سامانه</button>
+    </div>`;
+  }
+  if (knowledgeStale(m)) {
+    return `<div class="kb kb-stale">
+      <div>
+        <p><b>⚠️ از زمان ورود به دانش، این سند ویرایش شده است</b></p>
+        <p class="small">دستیار هنوز نسخهٔ ${fa(m.knowledgeVersion)} را می‌خواند. اگر تغییرها را تأیید می‌کنید،
+          دانش را به‌روز کنید تا پاسخ‌ها با خود سند یکی شود.</p>
+      </div>
+      <div class="row" style="gap:.5rem">
+        <button class="btn btn-primary btn-sm" data-kb-add="${m.id}">به‌روزرسانی دانش</button>
+        <button class="btn btn-secondary btn-sm" data-kb-remove="${m.id}">خروج از دانش</button>
+      </div>
+    </div>`;
+  }
+  return `<div class="kb kb-in">
+    <div>
+      <p><b>✅ در دانش سامانه است</b></p>
+      <p class="small tnum">افزوده‌شده توسط ${esc(m.knowledgeBy || "—")} · ${esc(m.knowledgeAt || "—")} ·
+        بر پایهٔ نسخهٔ ${fa(m.knowledgeVersion || 1)}</p>
+    </div>
+    <button class="btn btn-secondary btn-sm" data-kb-remove="${m.id}">خروج از دانش</button>
+  </div>`;
 }
 
 /* ---------- minutes ---------- */
@@ -1902,7 +1963,7 @@ function trailCard(m) {
       <div class="section-title">
         <h3>تاریخچهٔ تغییرات <span class="count">${fa(trail.length)}</span></h3>
         <div class="row" style="gap:.5rem">
-          ${learned ? `<span class="badge badge-success tnum">${fa(learned)} مورد به دانش سامانه افزوده شد</span>` : ""}
+          ${learned ? `<span class="badge badge-success tnum">${fa(learned)} اصلاح تأییدشده</span>` : ""}
           ${trail.length ? `<button class="btn btn-ghost btn-sm" data-toggle-trail>${state.showTrail ? "بستن" : "نمایش"}</button>` : ""}
         </div>
       </div>
@@ -1926,16 +1987,17 @@ function trailCard(m) {
               </p>
               <div class="row" style="margin-top:.5rem">
                 ${c.learned
-                  ? `<span class="badge badge-success">به دانش سامانه افزوده شد — ${esc(c.learnedBy)}</span>`
+                  ? `<span class="badge badge-success">اصلاح تأییدشده — ${esc(c.learnedBy)}</span>`
                   : can("teach")
-                    ? `<button class="btn btn-secondary btn-sm" data-learn="${c.id}">تأیید و افزودن به دانش سامانه</button>`
-                    : `<span class="muted small">افزودن به دانش سامانه با مدیر است.</span>`}
+                    ? `<button class="btn btn-secondary btn-sm" data-learn="${c.id}">تأیید این اصلاح</button>`
+                    : `<span class="muted small">تأیید اصلاح‌ها با مدیر است.</span>`}
               </div>
             </div>`).join("")}
         </div>
         <p class="hint" style="margin-top:.875rem;line-height:1.9">
-          هر اصلاحی که تأیید شود، به‌عنوان نمونهٔ درست به دانش سامانه اضافه می‌شود تا در پردازش‌های بعدی
-          همان اشتباه تکرار نشود. تا وقتی تأیید نشده، فقط یک ویرایش ثبت‌شده است و روی رفتار سامانه اثری ندارد.
+          تأیید یک اصلاح یعنی مدیر آن را درست می‌داند و به‌عنوان نمونهٔ تأییدشده ثبت می‌شود.
+          این با «دانش سامانه» فرق دارد: آنچه دستیار در پرونده‌ها از رویش پاسخ می‌دهد، متنِ سندهایی است
+          که وارد دانش شده‌اند — از نوار بالای همین صفحه.
         </p>`}
     </div>`;
 }
@@ -2583,9 +2645,50 @@ const ARCHIVE = [
 /* Whatever is entered in the first tab is an archive document from the moment
    it has content — minutes generated from a recording, or a letter typed
    straight in. Nothing has to be filed twice. */
+/* ==========================================================================
+   The knowledge base
+
+   The chat in پرونده‌ها answers only from documents that were put into the
+   knowledge base, and putting one there is a decision a person makes — not
+   something that happens because a file was uploaded. An entry stays a draft
+   in the first tab until somebody says it belongs in the record, and an entry
+   that has been edited since is flagged so the answers and the document do not
+   quietly diverge.
+
+   The same question is asked again of anything added afterwards: a note
+   written on a document is only answerable if someone decided it should be.
+   ========================================================================== */
+function hasContent(m) { return !!(m.minutes || m.sources.some((s) => s.text)); }
+function inKnowledge(m) { return !!m.inKnowledge; }
+
+/* Edited since it was published, so what the chat reads is behind. */
+function knowledgeStale(m) {
+  return inKnowledge(m) && (m.versions || []).length > (m.knowledgeVersion || 0);
+}
+
+function addToKnowledge(m) {
+  m.inKnowledge = true;
+  m.knowledgeAt = stamp();
+  m.knowledgeBy = me().name;
+  m.knowledgeRole = state.role;
+  m.knowledgeVersion = (m.versions || []).length;
+}
+function removeFromKnowledge(m) {
+  m.inKnowledge = false;
+  m.knowledgeAt = null; m.knowledgeBy = null; m.knowledgeRole = null; m.knowledgeVersion = 0;
+}
+
+/* A document's text as the search engine sees it: the document itself, plus
+   any note somebody deliberately added to the knowledge base. */
+function knowledgeText(doc) {
+  const meta = state.docMeta[doc.id];
+  const notes = meta ? meta.comments.filter((c) => c.inKnowledge).map((c) => c.text) : [];
+  return String(doc.text || "") + (notes.length ? " " + notes.join(" ") : "");
+}
+
 function liveMeetingDocs() {
   return state.meetings
-    .filter((m) => m.minutes || m.sources.some((s) => s.text))
+    .filter((m) => hasContent(m) && inKnowledge(m))
     .map((m) => {
       const text = m.minutes
         ? (m.minutes.summary || "") + " " + m.minutes.actions
@@ -2705,7 +2808,7 @@ const SYN = (() => {
    «برنامه». */
 function docTokens(doc) {
   return new Set(terms(doc.title + " " + (doc.party || "") + " " + (doc.ref || "")
-    + " " + doc.text));
+    + " " + knowledgeText(doc)));
 }
 
 /* How well one word of the question is answered by one document:
@@ -2729,8 +2832,9 @@ function termHit(tokens, term) {
 function bestQuote(doc, matched) {
   // A colon does not end a sentence: quoting "موضوع قرارداد:" back at someone
   // answers nothing.
-  const list = clauses(doc.text);
-  if (!list.length) return String(doc.text || "").slice(0, 180);
+  const body = knowledgeText(doc);
+  const list = clauses(body);
+  if (!list.length) return String(body || "").slice(0, 180);
   let best = list[0], bestHits = -1;
   list.forEach((s) => {
     const tokens = new Set(terms(s));
@@ -2815,7 +2919,7 @@ function searchDocs(query, pool, opts) {
       // A document whose title is about the subject beats one that mentions it
       // in passing.
       if (inTitle) score += 0.15 * (inTitle / qt.length);
-      if (phrase && norm(doc.title + " " + doc.text).indexOf(phrase) !== -1) score += 0.4;
+      if (phrase && norm(doc.title + " " + knowledgeText(doc)).indexOf(phrase) !== -1) score += 0.4;
       return { doc, score, coverage: covered / qt.length, matched };
     })
     .filter((r) => r.coverage >= minCoverage && r.score > minScore)
@@ -2863,6 +2967,9 @@ function seedDocMeta() {
     text: "لطفاً پیگیری کنید که چرا نامهٔ ۱۲/۸۸۹۰ تا امروز بی‌پاسخ مانده است." });
   a5.changes.push({ role: "secretary", who: ROLES.secretary.name, at: "۱۴۰۰/۰۵/۲۸ · ۰۹:۱۵",
     what: "نوع سند", from: "سند محتوایی", to: "نامه" });
+  a5.comments[1].inKnowledge = true;
+  a5.comments[1].knowledgeBy = ROLES.manager.name;
+  a5.comments[1].knowledgeAt = "۱۴۰۰/۰۵/۲۸ · ۱۱:۴۵";
   a5.assignment = {
     to: "secretary", by: ROLES.manager.name, at: "۱۴۰۰/۰۵/۲۸ · ۱۱:۴۱",
     task: "پیگیری پاسخ نامهٔ ۱۲/۸۸۹۰ از سازمان برنامه و بودجه",
@@ -3064,8 +3171,8 @@ function viewCase() {
           <div class="chat-hint">
             <p>هرچه می‌خواهید بپرسید — مثلاً «اعتبار مطالعات امنیت چه شد؟» یا «قرارداد مرکز داده».</p>
             <p class="muted small" style="margin-top:.35rem">
-              نتیجه‌گیری نمی‌کنم و نظر نمی‌دهم؛ فقط سند مرتبط و همان جمله‌ای را که پیدا کرده‌ام نشان می‌دهم
-              تا خودتان بخوانید و قضاوت کنید.
+              فقط از سندهایی پاسخ می‌دهم که وارد دانش سامانه شده‌اند. نتیجه‌گیری نمی‌کنم و نظر نمی‌دهم؛
+              سند مرتبط و همان جمله‌ای را که پیدا کرده‌ام نشان می‌دهم تا خودتان بخوانید و قضاوت کنید.
             </p>
           </div>` : thread.map(chatBubble).join("")}
         ${state.chatBusy ? `<div class="chat-row bot"><div class="bubble typing"><span></span><span></span><span></span></div></div>` : ""}
@@ -3097,8 +3204,8 @@ function chatBubble(msg) {
     return `<div class="chat-row bot"><div class="bubble">
       <p>در اسناد این موضوع چیزی دربارهٔ «${esc(msg.text)}» پیدا نکردم.</p>
       <p class="muted small" style="margin-top:.35rem">
-        یعنی با این عبارت سندی پیدا نشد. ممکن است سند با واژهٔ دیگری ثبت شده باشد —
-        یک بار دیگر با کلمات دیگری بپرسید، یا در بایگانی مستقیم جست‌وجو کنید.
+        یعنی در سندهای واردشده به دانش، با این عبارت چیزی پیدا نشد. ممکن است سند با واژهٔ دیگری ثبت شده باشد،
+        یا هنوز پیش‌نویس باشد و وارد دانش نشده باشد.
       </p>
     </div></div>`;
   }
@@ -3340,7 +3447,7 @@ function viewArchive() {
       <div>
         <h1 style="font-size:1.5rem;font-weight:600">بایگانی</h1>
         <p class="muted small" style="margin-top:.25rem">
-          همهٔ اسناد ثبت‌شده — صورت‌جلسه، نامه، قرارداد، گزارش، مصوبه، قانون و یادداشت.
+          اسنادی که وارد دانش سامانه شده‌اند. ورودی‌های پیش‌نویس تا وارد نشوند اینجا دیده نمی‌شوند.
         </p>
       </div>
       <button class="btn btn-primary" data-add-doc>+ افزودن سند</button>
@@ -3722,6 +3829,7 @@ function wire() {
       location: null,
       description: (document.getElementById("nm-desc").value || "").trim() || null,
       status: "draft", sources: [], minutes: null, job: null, versions: [],
+      inKnowledge: false, knowledgeVersion: 0,
     };
     state.meetings.unshift(m);
     toast("ورودی ساخته شد — حالا محتوای آن را اضافه کنید");
@@ -4053,6 +4161,38 @@ function wire() {
     resetEditing(); toast(changed ? "ذخیره شد" : "تغییری وارد نشد"); render();
   });
 
+  on("[data-kb-add]", "click", (e) => {
+    const m = state.meetings.find((x) => x.id === e.currentTarget.dataset.kbAdd);
+    if (!m) return;
+    const updating = inKnowledge(m);
+    addToKnowledge(m);
+    toast(updating ? "دانش سامانه به‌روز شد" : "به دانش سامانه افزوده شد — از حالا در پرونده‌ها به آن استناد می‌شود");
+    render();
+  });
+
+  on("[data-kb-remove]", "click", (e) => {
+    const m = state.meetings.find((x) => x.id === e.currentTarget.dataset.kbRemove);
+    if (!m) return;
+    confirmModal("خروج از دانش سامانه",
+      "این سند از بایگانی و از پاسخ‌های دستیار کنار گذاشته می‌شود. خود سند و سابقه‌اش پاک نمی‌شود و هر وقت خواستید دوباره می‌توانید واردش کنید.",
+      "خروج از دانش", false, () => {
+        removeFromKnowledge(m);
+        state.modal = null;
+        toast("از دانش سامانه خارج شد");
+        render();
+      });
+  });
+
+  on("[data-cm-know]", "click", (e) => {
+    const [id, i, on_] = e.currentTarget.dataset.cmKnow.split(":");
+    const c = docMeta(id).comments[+i];
+    if (!c) return;
+    c.inKnowledge = on_ === "1";
+    if (c.inKnowledge) { c.knowledgeBy = me().name; c.knowledgeAt = stamp(); }
+    toast(c.inKnowledge ? "این یادداشت به دانش سامانه افزوده شد" : "از دانش سامانه خارج شد");
+    render();
+  });
+
   on("[data-toggle-trail]", "click", () => { state.showTrail = !state.showTrail; render(); });
   on("[data-learn]", "click", (e) => {
     if (!requires("teach")) return;
@@ -4060,7 +4200,7 @@ function wire() {
     const c = (m.trail || []).find((x) => x.id === e.currentTarget.dataset.learn);
     if (!c) return;
     c.learned = true; c.learnedBy = me().name; c.learnedAt = stamp();
-    toast("این اصلاح به دانش سامانه اضافه شد");
+    toast("اصلاح تأیید شد");
     render();
   });
 
@@ -4156,10 +4296,17 @@ function docComments(d, meta) {
     <div class="panel">
       ${meta.comments.length === 0
         ? `<p class="muted small">هنوز کسی دربارهٔ این سند چیزی ننوشته است.</p>`
-        : meta.comments.map((c) => `
+        : meta.comments.map((c, i) => `
           <div class="comment ${c.role}">
             <div class="spread">${whoLine(c)}</div>
             <p style="margin-top:.35rem">${esc(c.text)}</p>
+            <div class="row" style="margin-top:.5rem;gap:.5rem">
+              ${c.inKnowledge
+                ? `<span class="badge badge-success">در دانش سامانه</span>
+                   <button class="linkish" data-cm-know="${d.id}:${i}:0">خروج از دانش</button>`
+                : `<button class="btn btn-secondary btn-sm" data-cm-know="${d.id}:${i}:1">افزودن این یادداشت به دانش</button>
+                   <span class="muted small">تا افزوده نشود، دستیار در پاسخ‌ها به آن استناد نمی‌کند.</span>`}
+            </div>
           </div>`).join("")}
 
       <div style="margin-top:.875rem">
@@ -4922,7 +5069,8 @@ function runPipeline(m, isRegeneration) {
       else bumpVersion(m, isRegeneration ? "regenerated" : "generated");
       const label = DOC_KINDS[m.kind || "meeting_minutes"].label;
       toast(failed.length && processed.length ? label + " با خطای جزئی تولید شد"
-            : processed.length ? label + " آماده است" : "پردازش ناموفق بود");
+            : processed.length ? label + " آماده است — بازبینی کنید و به دانش اضافه کنید"
+            : "پردازش ناموفق بود");
     },
   ];
 
@@ -4966,6 +5114,15 @@ function seedAll() {
   /* The seeded meetings arrive already generated, so version 1 has to carry the
      document it produced — otherwise the first entry in the history is empty. */
   state.meetings.forEach((m) => {
+    // Everything seeded is already filed, except the personal note — which is
+    // exactly the document a manager should have to decide about.
+    if (hasContent(m) && m.id !== "e-note") {
+      m.inKnowledge = true;
+      m.knowledgeBy = ROLES.secretary.name;
+      m.knowledgeAt = "۱۴۰۰/۰۵/۲۸ · ۰۹:۱۰";
+      m.knowledgeRole = "secretary";
+      m.knowledgeVersion = (m.versions || []).length;
+    }
     if (m.minutes && m.versions.length) m.versions[0].snapshot = snapshot(m.minutes);
     // The seeded documents arrived generated, so they say so until someone edits them.
     if (m.minutes) markGenerated(m, ["header", "summary", "facts", "people", "decisions",
