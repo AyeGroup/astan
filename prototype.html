@@ -891,11 +891,11 @@ const state = {
    first question anyone asks of a file. */
 const ROLES = {
   manager: { label: "مدیر", name: "دکتر رضایی", glyph: "👔",
-    can: "تأیید نهایی ارسال‌ها · واگذاری کار به منشی · افزودن اصلاح‌ها به دانش سامانه · حذف رکورد",
+    can: "ثبت و ویرایش سند · تأیید ورود سند به دانش سامانه · تأیید نهایی ارسال‌ها · واگذاری کار به منشی · تأیید اصلاح‌ها · حذف رکورد",
     cannot: "ارسال برای تأیید (کسی بالادست او نیست)" },
   secretary: { label: "منشی", name: "خانم موسوی", glyph: "🗂",
-    can: "ثبت و ویرایش سند · ارسال برای تأیید مدیر · گزارش انجام کار واگذارشده",
-    cannot: "تأیید نهایی · واگذاری کار · حذف رکورد · افزودن به دانش سامانه" },
+    can: "ثبت و ویرایش سند · درخواست ورود سند به دانش · ارسال برای تأیید مدیر · گزارش انجام کار واگذارشده",
+    cannot: "تأیید ورود به دانش · تأیید نهایی · واگذاری کار · حذف رکورد · تأیید اصلاح‌ها" },
 };
 function me() { return ROLES[state.role]; }
 
@@ -905,8 +905,8 @@ function me() { return ROLES[state.role]; }
    every handler checks as well, because a rule a demo can be talked out of
    answers nothing about the real system. */
 const PERMISSIONS = {
-  manager:   { removeRecord: true,  assign: true,  completeAssignment: false, submit: false, decide: true,  teach: true,  editDoc: true },
-  secretary: { removeRecord: false, assign: false, completeAssignment: true,  submit: true,  decide: false, teach: false, editDoc: true },
+  manager:   { removeRecord: true,  assign: true,  completeAssignment: false, submit: false, decide: true,  teach: true,  editDoc: true, knowledge: true },
+  secretary: { removeRecord: false, assign: false, completeAssignment: true,  submit: true,  decide: false, teach: false, editDoc: true, knowledge: false },
 };
 function can(what) { return !!(PERMISSIONS[state.role] || {})[what]; }
 function requires(what) {
@@ -1383,8 +1383,9 @@ function viewDashboard() {
       <div>
         <h1 style="font-size:1.5rem;font-weight:600">ورود دیتا</h1>
         <p class="muted small" style="margin-top:.25rem;max-width:44rem;line-height:1.9">
-          هر ورودی اول پیش‌نویس است. هر وقت از درستی‌اش مطمئن شدید، آن را وارد <b>دانش سامانه</b> کنید —
-          از همان لحظه در بایگانی دیده می‌شود و دستیار در پرونده‌ها به آن استناد می‌کند.
+          ورود داده کار هر دو نقش است، اما هر ورودی اول <b>پیش‌نویس</b> می‌ماند و تنها با
+          <b>تأیید مدیر</b> وارد <b>دانش سامانه</b> می‌شود — از آن لحظه در بایگانی دیده می‌شود و
+          دستیار در پرونده‌ها به آن استناد می‌کند.
         </p>
       </div>
       <button class="btn btn-primary" data-go="new">+ ورود دیتا</button>
@@ -1592,13 +1593,19 @@ function knowledgeBar(m) {
     </div>`;
   }
   if (!inKnowledge(m)) {
+    const pending = state.submissions.some((x) => x.kind === "knowledge" && x.meetingId === m.id && x.status === "pending");
+    const returned = state.submissions.filter((x) => x.kind === "knowledge" && x.meetingId === m.id && x.status === "returned")[0];
     return `<div class="kb kb-draft">
       <div>
         <p><b>📥 پیش‌نویس — هنوز وارد دانش سامانه نشده است</b></p>
-        <p class="small">این سند در بایگانی دیده نمی‌شود و دستیار در پرونده‌ها به آن استناد نمی‌کند.
-          هر وقت از درستی‌اش مطمئن شدید، واردش کنید.</p>
+        <p class="small">این سند در بایگانی دیده نمی‌شود و دستیار در پرونده‌ها به آن استناد نمی‌کند.</p>
+        ${returned ? `<p class="small" style="color:var(--warn-700)">مدیر برای اصلاح برگرداند: «${esc(returned.replies[returned.replies.length - 1].text || "—")}»</p>` : ""}
       </div>
-      <button class="btn btn-primary btn-sm" data-kb-add="${m.id}">افزودن به دانش سامانه</button>
+      ${can("knowledge")
+        ? `<button class="btn btn-primary btn-sm" data-kb-add="${m.id}">تأیید و ورود به دانش سامانه</button>`
+        : pending
+          ? `<span class="badge badge-brand">در انتظار تأیید ${esc(ROLES.manager.name)}</span>`
+          : `<button class="btn btn-primary btn-sm" data-kb-request="${m.id}">درخواست ورود به دانش از مدیر</button>`}
     </div>`;
   }
   if (knowledgeStale(m)) {
@@ -1609,8 +1616,10 @@ function knowledgeBar(m) {
           دانش را به‌روز کنید تا پاسخ‌ها با خود سند یکی شود.</p>
       </div>
       <div class="row" style="gap:.5rem">
-        <button class="btn btn-primary btn-sm" data-kb-add="${m.id}">به‌روزرسانی دانش</button>
-        <button class="btn btn-secondary btn-sm" data-kb-remove="${m.id}">خروج از دانش</button>
+        ${can("knowledge")
+          ? `<button class="btn btn-primary btn-sm" data-kb-add="${m.id}">به‌روزرسانی دانش</button>
+             <button class="btn btn-secondary btn-sm" data-kb-remove="${m.id}">خروج از دانش</button>`
+          : `<button class="btn btn-primary btn-sm" data-kb-request="${m.id}">درخواست به‌روزرسانی از مدیر</button>`}
       </div>
     </div>`;
   }
@@ -1620,7 +1629,7 @@ function knowledgeBar(m) {
       <p class="small tnum">افزوده‌شده توسط ${esc(m.knowledgeBy || "—")} · ${esc(m.knowledgeAt || "—")} ·
         بر پایهٔ نسخهٔ ${fa(m.knowledgeVersion || 1)}</p>
     </div>
-    <button class="btn btn-secondary btn-sm" data-kb-remove="${m.id}">خروج از دانش</button>
+    ${can("knowledge") ? `<button class="btn btn-secondary btn-sm" data-kb-remove="${m.id}">خروج از دانش</button>` : ""}
   </div>`;
 }
 
@@ -2996,8 +3005,9 @@ function seedDocMeta() {
    "what was in the tray" — it is "who approved this, and when".
    ========================================================================== */
 const SUBMISSION_KIND = {
-  approval: { label: "درخواست تأیید", glyph: "🖋" },
-  report:   { label: "گزارش کار",     glyph: "📋" },
+  approval:  { label: "درخواست تأیید",          glyph: "🖋" },
+  report:    { label: "گزارش کار",              glyph: "📋" },
+  knowledge: { label: "درخواست ورود به دانش",   glyph: "📥" },
 };
 
 const SUBMISSION_STATUS = {
@@ -3031,12 +3041,12 @@ function myInbox() {
 function inboxCount() { return myInbox().length; }
 function isUnread(sub) { return can("decide") ? !sub.seen.manager : !sub.seen.secretary; }
 
-function submit(docId, docTitle, kind, note, assignmentTask) {
+function submit(docId, docTitle, kind, note, assignmentTask, meetingId) {
   const sub = {
     id: nid("sub"), kind: kind, docId: docId, docTitle: docTitle,
     from: state.role, to: "manager", note: note, at: stamp(),
-    assignmentTask: assignmentTask || null, status: "pending",
-    seen: { manager: false, secretary: true }, replies: [],
+    assignmentTask: assignmentTask || null, meetingId: meetingId || null,
+    status: "pending", seen: { manager: false, secretary: true }, replies: [],
   };
   state.submissions.unshift(sub);
   addComment(docId, (kind === "approval" ? "ارسال برای تأیید مدیر — " : "گزارش کار — ") + note);
@@ -3046,6 +3056,11 @@ function submit(docId, docTitle, kind, note, assignmentTask) {
 function decideOn(sub, action, text) {
   const d = DECISIONS[action];
   sub.replies.push({ role: state.role, who: me().name, at: stamp(), action: action, text: text || "" });
+  // Approving a request to admit a document is the act of admitting it.
+  if (sub.kind === "knowledge" && action === "approve" && sub.meetingId) {
+    const m = state.meetings.find((x) => x.id === sub.meetingId);
+    if (m) addToKnowledge(m);
+  }
   if (d.status) sub.status = d.status;
   sub.seen = { manager: true, secretary: false };
   addComment(sub.docId, d.label + (text ? " — " + text : ""));
@@ -3350,9 +3365,11 @@ function submActions(sub) {
       ? `<p class="muted small">در انتظار بررسی ${esc(ROLES.manager.name)}.</p>`
       : `<p class="muted small">این مورد بسته شده است. اگر لازم است، از داخل سند دوباره ارسال کنید.</p>`;
   }
-  const close = sub.kind === "approval"
-    ? `<button class="btn btn-primary btn-sm" data-decide="${sub.id}:approve">✓ تأیید نهایی</button>`
-    : `<button class="btn btn-primary btn-sm" data-decide="${sub.id}:acknowledge">✓ خوانده شد</button>`;
+  const close = sub.kind === "knowledge"
+    ? `<button class="btn btn-primary btn-sm" data-decide="${sub.id}:approve">✓ تأیید و ورود به دانش سامانه</button>`
+    : sub.kind === "approval"
+      ? `<button class="btn btn-primary btn-sm" data-decide="${sub.id}:approve">✓ تأیید نهایی</button>`
+      : `<button class="btn btn-primary btn-sm" data-decide="${sub.id}:acknowledge">✓ خوانده شد</button>`;
   return `
     <label class="label" for="sub-note" style="margin-top:.875rem">یادداشت شما ${sub.status === "pending" ? "(اختیاری)" : ""}</label>
     <textarea class="field" id="sub-note" rows="2" placeholder="اگر نکته‌ای دارید بنویسید؛ روی سند هم ثبت می‌شود."></textarea>
@@ -4161,7 +4178,20 @@ function wire() {
     resetEditing(); toast(changed ? "ذخیره شد" : "تغییری وارد نشد"); render();
   });
 
+  on("[data-kb-request]", "click", (e) => {
+    const m = state.meetings.find((x) => x.id === e.currentTarget.dataset.kbRequest);
+    if (!m) return;
+    submit("m-" + m.id, m.minutes ? m.minutes.title : m.title, "knowledge",
+      inKnowledge(m)
+        ? "این سند بعد از ورود به دانش ویرایش شده؛ لطفاً به‌روزرسانی دانش را تأیید بفرمایید."
+        : "این سند آماده است؛ لطفاً ورود آن به دانش سامانه را تأیید بفرمایید.",
+      null, m.id);
+    toast("درخواست به کارتابل مدیر فرستاده شد");
+    render();
+  });
+
   on("[data-kb-add]", "click", (e) => {
+    if (!requires("knowledge")) return;
     const m = state.meetings.find((x) => x.id === e.currentTarget.dataset.kbAdd);
     if (!m) return;
     const updating = inKnowledge(m);
@@ -4171,6 +4201,7 @@ function wire() {
   });
 
   on("[data-kb-remove]", "click", (e) => {
+    if (!requires("knowledge")) return;
     const m = state.meetings.find((x) => x.id === e.currentTarget.dataset.kbRemove);
     if (!m) return;
     confirmModal("خروج از دانش سامانه",
@@ -4184,6 +4215,7 @@ function wire() {
   });
 
   on("[data-cm-know]", "click", (e) => {
+    if (!requires("knowledge")) return;
     const [id, i, on_] = e.currentTarget.dataset.cmKnow.split(":");
     const c = docMeta(id).comments[+i];
     if (!c) return;
@@ -4303,9 +4335,11 @@ function docComments(d, meta) {
             <div class="row" style="margin-top:.5rem;gap:.5rem">
               ${c.inKnowledge
                 ? `<span class="badge badge-success">در دانش سامانه</span>
-                   <button class="linkish" data-cm-know="${d.id}:${i}:0">خروج از دانش</button>`
-                : `<button class="btn btn-secondary btn-sm" data-cm-know="${d.id}:${i}:1">افزودن این یادداشت به دانش</button>
-                   <span class="muted small">تا افزوده نشود، دستیار در پاسخ‌ها به آن استناد نمی‌کند.</span>`}
+                   ${can("knowledge") ? `<button class="linkish" data-cm-know="${d.id}:${i}:0">خروج از دانش</button>` : ""}`
+                : can("knowledge")
+                  ? `<button class="btn btn-secondary btn-sm" data-cm-know="${d.id}:${i}:1">تأیید و افزودن این یادداشت به دانش</button>
+                     <span class="muted small">تا افزوده نشود، دستیار در پاسخ‌ها به آن استناد نمی‌کند.</span>`
+                  : `<span class="muted small">افزودن یادداشت به دانش با تأیید مدیر است.</span>`}
             </div>
           </div>`).join("")}
 
