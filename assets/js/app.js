@@ -15,12 +15,14 @@ import { reader, registerReaderActions, resetReader } from './views/reader.js';
 import { research, registerResearchActions, resetResearch } from './views/research.js';
 import { notifications, settings, registerMiscActions } from './views/misc.js';
 import { registerAddActions } from './views/add.js';
+import { translate, registerTranslateActions, resetTranslate } from './views/translate.js';
 
 const NAV = [
   { path: '/home',     label: 'خانه',      icon: 'home',    mobile: true },
   { path: '/discover', label: 'پیشنهادها', icon: 'compass', mobile: true },
   { path: '/library',  label: 'کتابخانه',  icon: 'book',    mobile: true },
-  { path: '/topics',   label: 'موضوع‌ها',  icon: 'hash',    mobile: true },
+  { path: '/translate', label: 'مترجم',    icon: 'globe',   mobile: true },
+  { path: '/topics',   label: 'موضوع‌ها',  icon: 'hash' },
   { path: '/sources',  label: 'منبع‌ها',   icon: 'layers' },
   { path: '/research', label: 'پرسیدن',    icon: 'search' },
 ];
@@ -123,6 +125,7 @@ const handlers = {
   sources: requireAccount(s => render(s.length ? sourceDetail(s) : sourcesIndex())),
   article: requireAccount(s => render(reader(s))),
   research: requireAccount(() => render(research())),
+  translate: requireAccount(() => render(translate())),
   notifications: requireAccount(() => render(notifications())),
   settings: requireAccount(() => render(settings())),
   __notfound: () => render({
@@ -143,6 +146,7 @@ window.addEventListener('hashchange', () => {
   if (seg !== 'topics') resetTopicTab();
   if (seg !== 'sources') resetSourceTab();
   if (seg !== 'research') resetResearch();
+  if (seg !== 'translate') resetTranslate();
 });
 
 /* ---------------------------------------------------------- Global actions */
@@ -348,6 +352,7 @@ registerReaderActions(rerender);
 registerResearchActions(rerender);
 registerMiscActions(rerender);
 registerAddActions(rerender);
+registerTranslateActions(rerender);
 
 store.applyTheme();
 store.touchVisit();

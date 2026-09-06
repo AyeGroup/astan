@@ -9,7 +9,7 @@ const KEY = 'pri.state.v1';
 
 const SIGNAL_WEIGHT = {
   save: 6, complete: 5, followTopic: 8, followSource: 6, search: 4, ask: 5,
-  open: 2, readingTime: 2, translate: 2,
+  open: 2, readingTime: 2, translate: 3,
   notInterested: -8, hideSource: -10, skip: -3,
 };
 
