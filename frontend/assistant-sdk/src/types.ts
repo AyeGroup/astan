@@ -102,6 +102,13 @@ export interface SdkOptions {
    */
   onOperationRequest?: (operation: string) => Promise<boolean> | boolean;
   onHumanSupport?: () => void;
+  /**
+   * Run the assistant in-page instead of over HTTP. Used by the offline demo
+   * build, where the whole engine is bundled into the same document; the
+   * signature is deliberately the same shape as the API so nothing else in
+   * the SDK has to know which mode it is in.
+   */
+  handler?: (path: string, body: unknown) => Promise<unknown>;
   /** Open the widget automatically on first load. */
   autoOpen?: boolean;
   debug?: boolean;

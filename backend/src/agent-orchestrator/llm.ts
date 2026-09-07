@@ -61,7 +61,17 @@ export interface LlmTurn {
   content: string;
 }
 
-export class LlmClient {
+/**
+ * What the orchestrator actually needs from a language model. Depending on
+ * this rather than on the concrete client keeps the Anthropic SDK out of any
+ * build that does not call it — the offline demo bundle, for one.
+ */
+export interface LlmEngine {
+  readonly enabled: boolean;
+  respond(context: PromptContextInput, history: LlmTurn[], userMessage: string): Promise<LlmResponse | null>;
+}
+
+export class LlmClient implements LlmEngine {
   private readonly client: Anthropic | null;
 
   constructor(private readonly config: LlmConfig) {

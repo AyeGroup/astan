@@ -21,7 +21,7 @@ import {
   toView,
 } from '../workflow-engine/index.js';
 import { detectIntent } from './intent.js';
-import { LlmClient, toActionCandidates } from './llm.js';
+import { toActionCandidates, type LlmEngine } from './llm.js';
 import { answer, quickActions, type RuleAnswer } from './rules.js';
 import { logger } from '../logger.js';
 
@@ -39,7 +39,7 @@ import { logger } from '../logger.js';
 export class AgentOrchestrator {
   constructor(
     private readonly sessions: SessionStore,
-    private readonly llm: LlmClient,
+    private readonly llm: LlmEngine,
     private readonly analytics: AnalyticsSink,
   ) {}
 

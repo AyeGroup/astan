@@ -223,6 +223,9 @@
   // ── راه‌اندازی دستیار ──────────────────────────────────────────────────
   AssistantSDK.init({
     apiBase: window.location.origin,
+    // Present only in the single-file offline build; otherwise the SDK talks
+    // to the assistant API over HTTP exactly as a real portal would.
+    handler: window.__ASSISTANT_LOCAL_HANDLER__,
     pageId: 'PAGE_HOME',
     debug: true,
     // The assistant asks; the portal's own router decides.

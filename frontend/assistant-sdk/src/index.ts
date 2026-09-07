@@ -44,7 +44,7 @@ class JudicialAssistantSDK {
     }
     this.started = true;
     this.options = options;
-    this.transport = new Transport(options.apiBase.replace(/\/$/, ''), options.debug ?? false);
+    this.transport = new Transport(options.apiBase.replace(/\/$/, ''), options.debug ?? false, options.handler);
     this.transport.restoreSession();
     this.context = new PageContextEngine(options.pageId);
 

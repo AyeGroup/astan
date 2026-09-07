@@ -1,6 +1,7 @@
 type Level = 'debug' | 'info' | 'warn' | 'error';
 const ORDER: Record<Level, number> = { debug: 10, info: 20, warn: 30, error: 40 };
-const threshold = ORDER[(process.env.LOG_LEVEL as Level) ?? 'info'] ?? 20;
+const configured = typeof process !== 'undefined' ? (process.env?.LOG_LEVEL as Level | undefined) : undefined;
+const threshold = ORDER[configured ?? 'info'] ?? 20;
 
 /**
  * Structured logs. Message text and context are never logged verbatim — only

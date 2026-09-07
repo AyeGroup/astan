@@ -1,4 +1,3 @@
-import { randomUUID } from 'node:crypto';
 import { emptyState } from '../workflow-engine/index.js';
 import type { Intent, PageContext, WorkflowState } from '@astan/contracts';
 
@@ -33,6 +32,13 @@ export interface AssistantSession {
 
 const HISTORY_LIMIT = 12;
 
+/** Web Crypto is available in Node 19+, browsers and edge runtimes alike. */
+function newSessionId(): string {
+  const webCrypto = globalThis.crypto;
+  if (webCrypto && typeof webCrypto.randomUUID === 'function') return webCrypto.randomUUID();
+  return `s-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 12)}`;
+}
+
 export class SessionStore {
   private readonly sessions = new Map<string, AssistantSession>();
 
@@ -41,7 +47,7 @@ export class SessionStore {
   create(): AssistantSession {
     const now = new Date().toISOString();
     const session: AssistantSession = {
-      id: randomUUID(),
+      id: newSessionId(),
       created_at: now,
       last_seen_at: now,
       workflow: emptyState(),

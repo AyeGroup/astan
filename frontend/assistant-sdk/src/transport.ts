@@ -4,7 +4,11 @@ import type { AssistantResponse, ContextResponse, EventResponse, PageContext, Sy
 export class Transport {
   private sessionId: string | null = null;
 
-  constructor(private readonly apiBase: string, private readonly debug = false) {}
+  constructor(
+    private readonly apiBase: string,
+    private readonly debug = false,
+    private readonly handler?: (path: string, body: unknown) => Promise<unknown>,
+  ) {}
 
   get session(): string | null {
     return this.sessionId;
@@ -69,6 +73,8 @@ export class Transport {
   }
 
   private async post<T>(path: string, body: unknown, attempt = 0): Promise<T> {
+    if (this.handler) return (await this.handler(path, body)) as T;
+
     const response = await fetch(`${this.apiBase}${path}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
