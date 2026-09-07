@@ -1,0 +1,27 @@
+{
+  "name": "astan-judicial-assistant",
+  "version": "0.1.0",
+  "private": true,
+  "description": "دستیار هوشمند ایجنتیک خدمات قضایی — Agentic Guidance Platform",
+  "type": "module",
+  "workspaces": [
+    "shared/contracts",
+    "backend",
+    "frontend/assistant-sdk"
+  ],
+  "scripts": {
+    "build": "npm run build -w @astan/contracts && npm run build -w @astan/backend && npm run build -w @astan/assistant-sdk",
+    "typecheck": "tsc -b shared/contracts backend frontend/assistant-sdk",
+    "test": "npm run test -w @astan/backend",
+    "dev": "npm run build && node backend/dist/src/index.js",
+    "start": "node backend/dist/src/index.js"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "esbuild": "^0.25.0",
+    "typescript": "^5.9.2"
+  }
+}
