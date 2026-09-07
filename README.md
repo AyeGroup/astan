@@ -39,8 +39,9 @@ npm test                  # ۴۷ تست: workflow، policy، sanitizer، orchest
 npm run build:demo        # dist/assistant-demo.html
 ```
 
-یک فایل HTML مستقل که با دوبار کلیک باز می‌شود: **بدون سرور، بدون کلید API،
-بدون شبکه**. همان Workflow Engine، Policy Engine و Knowledge Base واقعی داخل
+دو خروجی می‌سازد: `dist/assistant-demo.html` (سند کامل، با دوبار کلیک باز می‌شود)
+و `dist/assistant-demo.artifact.html` (قطعه‌ای برای میزبانی که خودش اسکلت سند را
+می‌دهد). هر دو **بدون سرور، بدون کلید API، بدون شبکه** کار می‌کنند. همان Workflow Engine، Policy Engine و Knowledge Base واقعی داخل
 مرورگر اجرا می‌شوند؛ تنها چیزی که جایگزین شده، لایه LLM است — یعنی دقیقاً همان
 مسیر Degraded تولید. برای دست‌به‌دست کردن بین ذی‌نفعان مناسب است.
 
@@ -149,7 +150,7 @@ frontend/assistant-sdk/
   page-context/       تشخیص صفحه و ساخت Context امن
   action-controller/  اجرای Actionهای مجاز روی صفحه
   widget/             رابط کاربری فارسی و RTL
-demo/                 نمونه درگاه خدمات قضایی برای آزمایش End-to-End
+demo/                 سامانه نمونه (بدون هویت سازمانی واقعی) برای آزمایش End-to-End
 demo/offline/         ساخت نسخه تک‌فایلی HTML (بدون سرور)
 ```
 

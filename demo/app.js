@@ -102,7 +102,7 @@
   function sendOtp() {
     var sms = $('#otp-sms');
     sms.hidden = false;
-    sms.textContent = 'پیامک آزمایشی: رمز موقت شما ' + state.otp + ' است.';
+    sms.textContent = 'شبیه‌سازی پیامک (ارسال واقعی انجام نمی‌شود): رمز موقت نمونه ' + state.otp + ' است.';
     AssistantSDK.emit('OTP_SENT');
   }
 

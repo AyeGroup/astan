@@ -3,15 +3,18 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>درگاه خدمات الکترونیک قضایی — نمونه آزمایشی</title>
+  <title>نمایش دستیار هوشمند</title>
   <link rel="stylesheet" href="/styles.css" />
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Ctext y=%2726%27 font-size=%2726%27%3E%E2%9A%96%3C/text%3E%3C/svg%3E" />
 </head>
 <body>
-  <div class="devbar" id="devbar">demo portal · page: <span id="dev-page">PAGE_HOME</span></div>
+  <div class="demo-banner" role="note">
+    <b>نمایش آموزشی</b> — این یک سامانه واقعی نیست، به هیچ سرویسی متصل نیست و هیچ داده‌ای ارسال نمی‌کند.
+    <span class="demo-banner-page">صفحه فعلی: <span id="dev-page">PAGE_HOME</span></span>
+  </div>
 
   <header class="topbar">
-    <div class="brand"><span class="seal">⚖</span><span>سامانه ابلاغ الکترونیک قضایی</span></div>
+    <div class="brand"><span class="seal">🧭</span><span>سامانه نمونه — نمایش دستیار</span></div>
     <nav>
       <a href="#/">صفحه اصلی</a>
       <a href="#/dashboard">سامانه ابلاغ</a>
@@ -24,8 +27,8 @@
   <!-- ─────────── صفحه اصلی درگاه ─────────── -->
   <section data-view="home">
     <div class="hero">
-      <h1>درگاه خدمات الکترونیک قضایی</h1>
-      <p>خدمات قضایی خود را به‌صورت الکترونیکی و بدون مراجعه حضوری دریافت کنید.</p>
+      <h1>نمایش دستیار هوشمند خدمات قضایی</h1>
+      <p>یک سامانه نمونه برای ارزیابی دستیار — فرآیند «مشاهده ابلاغیه» از ابتدا تا انتها.</p>
     </div>
     <div class="container">
       <div class="grid" data-assistant-target="services_grid">
@@ -60,24 +63,24 @@
   <!-- ─────────── ورود به ثنا ─────────── -->
   <section data-view="login" hidden>
     <div class="split">
-      <div class="art"><div><div class="seal-lg">⚖</div><p>قوه قضاییه جمهوری اسلامی ایران</p></div></div>
+      <div class="art"><div><div class="seal-lg">🔐</div><p>مرحله احراز هویت — نمونه</p></div></div>
       <div class="auth">
-        <h2>سامانه احراز هویت ثنا</h2>
-        <p class="sub">سامانه ابلاغ الکترونیک قضایی</p>
+        <h2>احراز هویت (نمونه)</h2>
+        <p class="sub">این فرم واقعی نیست و مقادیر آن از پیش پر شده‌اند.</p>
         <form id="login-form" data-assistant-target="login_form" autocomplete="off">
           <div class="tabs" data-assistant-target="login_person_type_tabs">
             <button type="button" class="active">حقیقی ایرانی</button>
             <button type="button">حقوقی</button>
           </div>
-          <label for="nid">شماره ملی</label>
-          <input id="nid" type="text" inputmode="numeric" maxlength="10" data-assistant-target="login_national_id" />
-          <label for="pwd">رمز شخصی</label>
-          <input id="pwd" type="password" data-assistant-target="login_password" />
+          <label for="nid">شناسه کاربر (نمونه — از پیش پر شده)</label>
+          <input id="nid" type="text" inputmode="numeric" maxlength="10" value="1234567890" data-assistant-target="login_national_id" />
+          <label for="pwd">رمز شخصی (نمونه — از پیش پر شده)</label>
+          <input id="pwd" type="password" value="1234" data-assistant-target="login_password" />
           <button class="btn" type="submit" data-assistant-target="login_submit">مرحله بعد</button>
           <button class="btn link" type="button" data-assistant-target="login_forgot_password">رمز خود را فراموش کرده‌اید؟</button>
           <div class="alert err" id="login-error" hidden></div>
         </form>
-        <p class="hint">نمونه آزمایشی: هر شماره ملی ۱۰ رقمی با رمز <code>1234</code> پذیرفته می‌شود.</p>
+        <p class="hint">مقادیر نمونه از پیش وارد شده‌اند. کافی است «مرحله بعد» را بزنید.</p>
       </div>
     </div>
   </section>
@@ -85,10 +88,10 @@
   <!-- ─────────── رمز موقت ─────────── -->
   <section data-view="otp" hidden>
     <div class="split">
-      <div class="art"><div><div class="seal-lg">⚖</div><p>سامانه احراز هویت ثنا</p></div></div>
+      <div class="art"><div><div class="seal-lg">📱</div><p>مرحله رمز موقت — نمونه</p></div></div>
       <div class="auth">
-        <h2>رمز موقت</h2>
-        <p class="sub">رمز موقت به تلفن همراه ثبت‌شده در ثنا ارسال شد.</p>
+        <h2>رمز موقت (نمونه)</h2>
+        <p class="sub">رمز نمونه در همین صفحه نمایش داده می‌شود؛ هیچ پیامکی ارسال نمی‌شود.</p>
         <form id="otp-form" data-assistant-target="otp_form" autocomplete="off">
           <label for="otp">رمز موقت</label>
           <input id="otp" type="text" inputmode="numeric" maxlength="6" data-assistant-target="otp_input" />
@@ -106,7 +109,7 @@
   <section data-view="dashboard" hidden>
     <div class="container">
       <div class="card">
-        <h2>سامانه ابلاغ الکترونیک قضایی</h2>
+        <h2>خدمات ابلاغ — نمونه</h2>
         <div class="grid" data-assistant-target="dashboard_tiles">
           <a class="tile" href="#/notifications" data-assistant-target="tile_new_notification">
             <span class="icon">📩</span><span class="label">ابلاغیه جدید</span>
@@ -154,9 +157,8 @@
         <h2>اطلاعات ابلاغیه</h2>
         <div class="notice-sheet" data-assistant-target="notification_body">
           <div class="head">
-            <div>بسمه تعالی</div>
-            <div><b>دادگستری جمهوری اسلامی ایران</b></div>
-            <div>مجتمع قضایی — ابلاغ الکترونیکی</div>
+            <div><b>ابلاغیه نمونه</b></div>
+            <div>محتوای این برگه ساختگی است و به هیچ پرونده واقعی مربوط نیست.</div>
           </div>
           <div class="row"><span>شماره ابلاغیه:</span><b id="d-number">—</b></div>
           <div class="row"><span>تاریخ صدور:</span><b id="d-date">—</b></div>
@@ -182,7 +184,7 @@
           <button class="btn" id="download-btn" data-assistant-target="notification_download_button">چاپ / ذخیره اطلاعات</button>
         </div>
         <div class="notice-sheet" data-assistant-target="notification_body">
-          <div class="head"><div>بسمه تعالی</div><div><b>نسخه چاپی ابلاغیه</b></div></div>
+          <div class="head"><div><b>نسخه چاپی — ابلاغیه نمونه</b></div></div>
           <div class="row"><span>شماره ابلاغیه:</span><b id="p-number">—</b></div>
           <p id="p-body">—</p>
         </div>

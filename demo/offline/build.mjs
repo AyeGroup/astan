@@ -2,8 +2,15 @@ import { build } from 'esbuild';
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 
 /**
- * Produces `dist/assistant-demo.html`: one self-contained file — portal,
- * assistant engine, widget and styles — that runs by double-clicking it.
+ * Two self-contained outputs from one source:
+ *
+ *   dist/assistant-demo.html           full document — open by double-clicking
+ *   dist/assistant-demo.artifact.html  body-only fragment for hosts that
+ *                                      supply their own document skeleton
+ *
+ * Both embed the real assistant: the same workflow engine, policy engine,
+ * knowledge base and orchestrator the server runs. Only the LLM is swapped
+ * for an engine that reports itself disabled — production's degraded path.
  */
 const bundle = await build({
   entryPoints: ['demo/offline/entry.ts'],
@@ -35,16 +42,49 @@ const inject = (source, marker, payload) => {
 /** A literal `</script>` inside injected JS would close the tag early. */
 const safe = (js) => js.replace(/<\/script/gi, '<\\/script');
 
-const inlined = [
-  ['<link rel="stylesheet" href="/styles.css" />', `<style>\n${css}\n</style>`],
-  ['<script src="/sdk/assistant-sdk.js"></script>', `<script>\n${safe(runtime)}\n</script>`],
-  ['<script src="/app.js"></script>', `<script>\n${safe(portal)}\n</script>`],
-  [
-    '<title>درگاه خدمات الکترونیک قضایی — نمونه آزمایشی</title>',
-    '<title>نمونه آزمایشی دستیار هوشمند خدمات قضایی</title>',
-  ],
-].reduce((acc, [marker, payload]) => inject(acc, marker, payload), html);
+const title = (html.match(/<title>([\s\S]*?)<\/title>/) ?? [])[1];
+if (!title) throw new Error('demo/index.html has no <title>');
+
+const bodyMatch = html.match(/<body>([\s\S]*)<\/body>/);
+if (!bodyMatch) throw new Error('demo/index.html has no <body>');
+
+const scripts = `<script>\n${safe(runtime)}\n</script>\n<script>\n${safe(portal)}\n</script>`;
+
+const bodyContent = inject(
+  inject(bodyMatch[1], '<script src="/sdk/assistant-sdk.js"></script>', ''),
+  '<script src="/app.js"></script>',
+  '',
+).trim();
 
 mkdirSync('dist', { recursive: true });
-writeFileSync('dist/assistant-demo.html', inlined, 'utf8');
-console.log(`dist/assistant-demo.html — ${(Buffer.byteLength(inlined) / 1024).toFixed(0)} KB`);
+
+// 1) Standalone document.
+const standalone = inject(
+  inject(
+    inject(html, '<link rel="stylesheet" href="/styles.css" />', `<style>\n${css}\n</style>`),
+    '<script src="/sdk/assistant-sdk.js"></script>',
+    `<script>\n${safe(runtime)}\n</script>`,
+  ),
+  '<script src="/app.js"></script>',
+  `<script>\n${safe(portal)}\n</script>`,
+);
+writeFileSync('dist/assistant-demo.html', standalone, 'utf8');
+
+// 2) Fragment. The host owns <html>, so direction and language are set from
+//    script rather than assumed from a document we do not write.
+const fragment = `<title>${title}</title>
+<style>
+${css}
+</style>
+<script>
+  document.documentElement.setAttribute('dir', 'rtl');
+  document.documentElement.setAttribute('lang', 'fa');
+</script>
+${bodyContent}
+${scripts}
+`;
+writeFileSync('dist/assistant-demo.artifact.html', fragment, 'utf8');
+
+for (const file of ['dist/assistant-demo.html', 'dist/assistant-demo.artifact.html']) {
+  console.log(`${file} — ${(Buffer.byteLength(readFileSync(file, 'utf8')) / 1024).toFixed(0)} KB`);
+}
