@@ -33,6 +33,9 @@ npm start
 npm test                  # ۴۷ تست: workflow، policy، sanitizer، orchestrator، acceptance
 ```
 
+CI روی هر Pull Request و هر push به `main` همین زنجیره را اجرا می‌کند:
+`npm ci` → `npm run build` → `npm test` → `npm run build:demo` → بررسی خروجی demo.
+
 ### نسخه تک‌فایلی برای ارزیابی
 
 ```bash
