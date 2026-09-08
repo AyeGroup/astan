@@ -1,0 +1,50 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+# A newer push supersedes an in-flight run on the same ref.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    name: Build and test
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+
+      # `npm ci` rather than `install`: the lockfile is the contract, and a
+      # silently-resolved different version is exactly what CI exists to catch.
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Type-check and build
+        run: npm run build
+
+      # 47 tests: workflow state machine, policy engine, PII sanitizer,
+      # orchestrator, and the §40 acceptance scenario over the real HTTP API.
+      - name: Test
+        run: npm test
+
+      # The single-file demo has its own inliner, which has broken before in a
+      # way no unit test would catch. Build it, then assert the output actually
+      # parses as a script rather than trusting that the build exited zero.
+      - name: Build offline demo
+        run: npm run build:demo
+
+      - name: Verify offline demo bundle
+        run: node scripts/verify-demo-build.mjs

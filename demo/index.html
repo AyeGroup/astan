@@ -1,0 +1,209 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>نمایش دستیار هوشمند</title>
+  <link rel="stylesheet" href="/styles.css" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Ctext y=%2726%27 font-size=%2726%27%3E%E2%9A%96%3C/text%3E%3C/svg%3E" />
+</head>
+<body>
+  <div class="demo-banner" role="note">
+    <b>نمایش آموزشی</b> — این یک سامانه واقعی نیست، به هیچ سرویسی متصل نیست و هیچ داده‌ای ارسال نمی‌کند.
+    <span class="demo-banner-page">صفحه فعلی: <span id="dev-page">PAGE_HOME</span></span>
+  </div>
+
+  <header class="topbar">
+    <div class="brand"><span class="seal">🧭</span><span>سامانه نمونه — نمایش دستیار</span></div>
+    <nav>
+      <a href="#/">صفحه اصلی</a>
+      <a href="#/dashboard">سامانه ابلاغ</a>
+      <a href="#/help">راهنمای سامانه</a>
+      <a href="#/support" data-assistant-target="support_link">پشتیبانی</a>
+      <a href="#/" id="logout" data-assistant-target="logout_button" hidden>خروج</a>
+    </nav>
+  </header>
+
+  <!-- ─────────── صفحه اصلی درگاه ─────────── -->
+  <section data-view="home">
+    <div class="hero">
+      <h1>نمایش دستیار هوشمند خدمات قضایی</h1>
+      <p>یک سامانه نمونه برای ارزیابی دستیار — فرآیند «مشاهده ابلاغیه» از ابتدا تا انتها.</p>
+    </div>
+    <div class="container">
+      <div class="grid" data-assistant-target="services_grid">
+        <a class="tile featured" href="#/login" data-assistant-target="notification_service_card">
+          <span class="icon">📨</span><span class="label">ابلاغ الکترونیک قضایی</span>
+        </a>
+        <a class="tile" href="#/support"><span class="icon">🗂️</span><span class="label">استعلام‌های پرونده</span></a>
+        <a class="tile" href="#/support"><span class="icon">🧾</span><span class="label">اوراق الکترونیک قضایی</span></a>
+        <a class="tile" href="#/support"><span class="icon">👤</span><span class="label">خدمات قضایی من</span></a>
+        <a class="tile" href="#/support"><span class="icon">⚖️</span><span class="label">خودکاربری وکلا</span></a>
+        <a class="tile" href="#/support"><span class="icon">🏛️</span><span class="label">خودکاربری مقام قضایی</span></a>
+      </div>
+      <div class="card" style="margin-top:20px">
+        <h2>چطور دستیار را آزمایش کنم؟</h2>
+        <p>روی دکمه <b>🤖 راهنمای هوشمند</b> در گوشه صفحه بزنید و بنویسید
+          «<span dir="rtl">ابلاغیه‌ام را می‌خواهم ببینم</span>». دستیار فرآیند را شروع می‌کند و
+          در هر مرحله همان عنصری را که باید بزنید مشخص می‌کند.</p>
+        <p>چند چیز که ارزش امتحان کردن دارد:</p>
+        <ul>
+          <li>در هر مرحله بنویسید «متوجه نشدم» — همان راهنمایی را ساده‌تر می‌گوید و عنصر را نشان می‌دهد.</li>
+          <li>در صفحه رمز موقت بنویسید «رمز برای من ارسال نشده» — به‌جای انجام مستقیم، از شما تأیید می‌گیرد.</li>
+          <li>عمداً رمز اشتباه بزنید؛ بعد از سه بار، پشتیبانی انسانی پیشنهاد می‌شود.</li>
+          <li>یک کد یا شماره ملی در چت بنویسید — پیش از رسیدن به موتور پاسخ، Mask می‌شود.</li>
+          <li>بپرسید «نظرت درباره رأی دادگاه من چیست؟» — خارج از حوزه اعلام می‌کند و اظهارنظر نمی‌کند.</li>
+        </ul>
+        <p class="hint">ورود آزمایشی: هر شماره ملی ۱۰ رقمی + رمز <code>1234</code>، سپس رمز موقت <code>12345</code>.
+          این نمونه به سامانه واقعی متصل نیست و هیچ داده‌ای ارسال نمی‌کند.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─────────── ورود به ثنا ─────────── -->
+  <section data-view="login" hidden>
+    <div class="split">
+      <div class="art"><div><div class="seal-lg">🔐</div><p>مرحله احراز هویت — نمونه</p></div></div>
+      <div class="auth">
+        <h2>احراز هویت (نمونه)</h2>
+        <p class="sub">این فرم واقعی نیست و مقادیر آن از پیش پر شده‌اند.</p>
+        <form id="login-form" data-assistant-target="login_form" autocomplete="off">
+          <div class="tabs" data-assistant-target="login_person_type_tabs">
+            <button type="button" class="active">حقیقی ایرانی</button>
+            <button type="button">حقوقی</button>
+          </div>
+          <label for="nid">شناسه کاربر (نمونه — از پیش پر شده)</label>
+          <input id="nid" type="text" inputmode="numeric" maxlength="10" value="1234567890" data-assistant-target="login_national_id" />
+          <label for="pwd">رمز شخصی (نمونه — از پیش پر شده)</label>
+          <input id="pwd" type="password" value="1234" data-assistant-target="login_password" />
+          <button class="btn" type="submit" data-assistant-target="login_submit">مرحله بعد</button>
+          <button class="btn link" type="button" data-assistant-target="login_forgot_password">رمز خود را فراموش کرده‌اید؟</button>
+          <div class="alert err" id="login-error" hidden></div>
+        </form>
+        <p class="hint">مقادیر نمونه از پیش وارد شده‌اند. کافی است «مرحله بعد» را بزنید.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─────────── رمز موقت ─────────── -->
+  <section data-view="otp" hidden>
+    <div class="split">
+      <div class="art"><div><div class="seal-lg">📱</div><p>مرحله رمز موقت — نمونه</p></div></div>
+      <div class="auth">
+        <h2>رمز موقت (نمونه)</h2>
+        <p class="sub">رمز نمونه در همین صفحه نمایش داده می‌شود؛ هیچ پیامکی ارسال نمی‌شود.</p>
+        <form id="otp-form" data-assistant-target="otp_form" autocomplete="off">
+          <label for="otp">رمز موقت</label>
+          <input id="otp" type="text" inputmode="numeric" maxlength="6" data-assistant-target="otp_input" />
+          <button class="btn" type="submit" data-assistant-target="otp_submit">ورود به سامانه</button>
+          <button class="btn link" type="button" id="otp-resend" data-assistant-target="otp_resend">ارسال مجدد رمز موقت</button>
+          <button class="btn link" type="button" id="otp-back" data-assistant-target="otp_back">مرحله قبل</button>
+          <div class="alert ok" id="otp-sms" hidden></div>
+          <div class="alert err" id="otp-error" hidden></div>
+        </form>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─────────── صفحه اصلی سامانه ابلاغ ─────────── -->
+  <section data-view="dashboard" hidden>
+    <div class="container">
+      <div class="card">
+        <h2>خدمات ابلاغ — نمونه</h2>
+        <div class="grid" data-assistant-target="dashboard_tiles">
+          <a class="tile" href="#/notifications" data-assistant-target="tile_new_notification">
+            <span class="icon">📩</span><span class="label">ابلاغیه جدید</span>
+          </a>
+          <a class="tile" href="#/notifications?seen=1" data-assistant-target="tile_viewed_notifications">
+            <span class="icon">📑</span><span class="label">ابلاغیه‌های مشاهده شده</span>
+          </a>
+          <a class="tile" href="#/support" data-assistant-target="tile_notification_by_code">
+            <span class="icon">🔑</span><span class="label">دریافت ابلاغیه با رمز</span>
+          </a>
+          <a class="tile" href="#/support" data-assistant-target="tile_notification_by_number">
+            <span class="icon">#️⃣</span><span class="label">دریافت ابلاغیه با شماره</span>
+          </a>
+          <a class="tile" href="#/support" data-assistant-target="tile_my_services">
+            <span class="icon">🗃️</span><span class="label">سامانه خدمات قضایی من</span>
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─────────── فهرست ابلاغیه‌ها ─────────── -->
+  <section data-view="notifications" hidden>
+    <div class="container">
+      <div class="card">
+        <h2 id="list-title">ابلاغیه‌های جدید</h2>
+        <table data-assistant-target="notification_list">
+          <thead>
+            <tr><th>ردیف</th><th>شماره ابلاغیه</th><th>نوع ابلاغیه</th><th>تاریخ صدور</th><th>وضعیت</th></tr>
+          </thead>
+          <tbody id="list-body"></tbody>
+        </table>
+        <div class="actions">
+          <button class="btn secondary" id="list-refresh" data-assistant-target="notification_list_refresh">بارگذاری مجدد فهرست</button>
+        </div>
+        <div class="alert err" id="list-empty" hidden>در حال حاضر ابلاغیه جدیدی وجود ندارد.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─────────── اطلاعات ابلاغیه ─────────── -->
+  <section data-view="detail" hidden>
+    <div class="container">
+      <div class="card">
+        <h2>اطلاعات ابلاغیه</h2>
+        <div class="notice-sheet" data-assistant-target="notification_body">
+          <div class="head">
+            <div><b>ابلاغیه نمونه</b></div>
+            <div>محتوای این برگه ساختگی است و به هیچ پرونده واقعی مربوط نیست.</div>
+          </div>
+          <div class="row"><span>شماره ابلاغیه:</span><b id="d-number">—</b></div>
+          <div class="row"><span>تاریخ صدور:</span><b id="d-date">—</b></div>
+          <div class="row"><span>نوع ابلاغیه:</span><b id="d-type">—</b></div>
+          <hr />
+          <p id="d-body">—</p>
+        </div>
+        <div class="actions">
+          <button class="btn" id="print-btn" data-assistant-target="notification_print_button">نسخه چاپی ابلاغیه</button>
+          <button class="btn secondary" data-assistant-target="notification_preview_button">پیش‌نمایش ابلاغیه</button>
+          <button class="btn secondary" data-assistant-target="notification_attachment_button">نسخه فایل پیوست</button>
+          <button class="btn secondary" data-assistant-target="notification_more_options">گزینه‌های بیشتر</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─────────── نسخه چاپی ─────────── -->
+  <section data-view="print" hidden>
+    <div class="container">
+      <div class="card">
+        <div class="actions" style="margin:0 0 16px">
+          <button class="btn" id="download-btn" data-assistant-target="notification_download_button">چاپ / ذخیره اطلاعات</button>
+        </div>
+        <div class="notice-sheet" data-assistant-target="notification_body">
+          <div class="head"><div><b>نسخه چاپی — ابلاغیه نمونه</b></div></div>
+          <div class="row"><span>شماره ابلاغیه:</span><b id="p-number">—</b></div>
+          <p id="p-body">—</p>
+        </div>
+        <div class="alert ok" id="download-done" hidden>نسخه ابلاغیه برای شما آماده شد.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─────────── راهنما و پشتیبانی ─────────── -->
+  <section data-view="support" hidden>
+    <div class="container">
+      <div class="card">
+        <h2>پشتیبانی</h2>
+        <p>این بخش در نمونه آزمایشی پیاده‌سازی نشده است. برای بازگشت، «صفحه اصلی» را انتخاب کنید.</p>
+      </div>
+    </div>
+  </section>
+
+  <script src="/sdk/assistant-sdk.js"></script>
+  <script src="/app.js"></script>
+</body>
+</html>

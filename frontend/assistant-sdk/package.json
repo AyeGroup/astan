@@ -1,0 +1,12 @@
+{
+  "name": "@astan/assistant-sdk",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "./dist/assistant-sdk.js",
+  "scripts": {
+    "build": "tsc -b && node build.mjs",
+    "clean": "rm -rf dist *.tsbuildinfo"
+  },
+  "dependencies": { "@astan/contracts": "*" }
+}
