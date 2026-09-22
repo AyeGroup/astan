@@ -1,0 +1,292 @@
+{
+  "_meta": {
+    "note": "seed فاز ۱ — ۱۲ خدمت اول. محتوای زیر از سه وویس مرجع استخراج شده و وضعیت همهٔ رکوردها عمداً needs_legal_review است. هیچ رکوردی تا تأیید کارشناس حقوقی به کاربر نهایی سرو نمی‌شود.",
+    "schema_version": 1,
+    "content_template": [
+      "title_fa", "aliases", "summary", "personas", "channels",
+      "prerequisites", "steps", "documents", "fees", "deadline_rules", "common_errors"
+    ]
+  },
+
+  "systems": [
+    { "slug": "sana",              "name_fa": "سامانه ثنا — ثبت‌نام الکترونیک قضایی", "login_method": "sana" },
+    { "slug": "eblagh",            "name_fa": "سامانه ابلاغ الکترونیک قضایی",        "login_method": "sana" },
+    { "slug": "case-notification", "name_fa": "سامانه اطلاع‌رسانی پرونده",            "login_method": "sana" },
+    { "slug": "my-eservices",      "name_fa": "خدمات الکترونیک قضایی من",             "login_method": "sana" },
+    { "slug": "divan-edalat",      "name_fa": "دیوان عدالت اداری",                    "login_method": "sana" },
+    { "slug": "eservice-offices",  "name_fa": "دفاتر خدمات الکترونیک قضایی",          "login_method": "sana" },
+    { "slug": "judicial-ads",      "name_fa": "سامانه آگهی قضایی",                    "login_method": null },
+    { "slug": "fee-gateway",       "name_fa": "درگاه محاسبه و پرداخت هزینه‌ها",        "login_method": "sana" }
+  ],
+
+  "services": [
+    {
+      "slug": "sana-registration",
+      "title_fa": "ثبت‌نام در سامانه ثنا",
+      "aliases": ["ثنا", "سنا", "sana", "ثبت نام قضایی", "ثبت نام الکترونیک قضایی", "شناسه ثنا"],
+      "system": "sana",
+      "category": "registration",
+      "summary": "پیش‌نیاز تقریباً همهٔ خدمات قضایی. پس از ثبت‌نام، شناسهٔ ثنا می‌گیرید و ابلاغیه‌های شما الکترونیکی ابلاغ می‌شود.",
+      "personas": [
+        { "persona": "haqiqi", "allowed": true },
+        { "persona": "hoquqi", "allowed": true, "restriction_note": "TODO_LEGAL: فرایند اشخاص حقوقی متفاوت است" }
+      ],
+      "channels": [
+        { "kind": "self_service", "is_primary": true },
+        { "kind": "edmat_office", "is_primary": false, "note": "تا پیش از الکترونیکی شدن، تنها راه همین بود" }
+      ],
+      "prerequisites": [],
+      "steps": [
+        { "ord": 1, "title": "ثبت‌نام اولیه", "body_md": "TODO_CONTENT", "common_error": "TODO_CONTENT" },
+        { "ord": 2, "title": "احراز هویت", "body_md": "TODO_CONTENT", "common_error": "TODO_CONTENT" },
+        { "ord": 3, "title": "دریافت شناسه ثنا", "body_md": "TODO_CONTENT", "common_error": "TODO_CONTENT" }
+      ],
+      "documents": [{ "name": "کارت ملی", "is_mandatory": true }],
+      "fees": [],
+      "deadline_rules": [],
+      "status": "needs_legal_review",
+      "confidence": 60
+    },
+
+    {
+      "slug": "sana-profile-edit",
+      "title_fa": "ویرایش اطلاعات و تغییر رمز ثنا",
+      "aliases": ["ویرایش ثنا", "تغییر رمز ثنا", "رمز موقت ثنا", "تغییر آدرس ثنا", "تغییر شماره تماس ثنا", "امضا ثنا"],
+      "system": "sana",
+      "category": "registration",
+      "summary": "پس از ثبت‌نام، از همین‌جا پروفایل را می‌بینید و تغییرات را ثبت می‌کنید: نشانی، شمارهٔ تماس، امضا، و تمدید مدت انقضای رمز موقت.",
+      "personas": [{ "persona": "haqiqi", "allowed": true }, { "persona": "hoquqi", "allowed": true }],
+      "channels": [{ "kind": "self_service", "is_primary": true }],
+      "prerequisites": [{ "slug": "sana-registration", "kind": "hard" }],
+      "steps": [
+        { "ord": 1, "title": "ورود به پروفایل", "body_md": "TODO_CONTENT", "common_error": "TODO_CONTENT" },
+        { "ord": 2, "title": "تغییر نشانی یا شماره تماس", "body_md": "TODO_CONTENT", "common_error": "TODO_CONTENT" },
+        { "ord": 3, "title": "تغییر امضا", "body_md": "TODO_CONTENT", "common_error": "TODO_CONTENT" },
+        { "ord": 4, "title": "تمدید مدت انقضای رمز موقت", "body_md": "TODO_CONTENT", "common_error": "TODO_CONTENT" }
+      ],
+      "documents": [],
+      "fees": [],
+      "deadline_rules": [],
+      "status": "needs_legal_review",
+      "confidence": 70,
+      "_source": "وویس ۲ کامل به این خدمت اختصاص دارد"
+    },
+
+    {
+      "slug": "eblagh-electronic",
+      "title_fa": "ابلاغ الکترونیک قضایی",
+      "aliases": ["ابلاغ", "ابلاغیه", "ثنا ابلاغ", "پیامک ابلاغ", "ابلاغ الکترونیکی"],
+      "system": "eblagh",
+      "category": "notification",
+      "summary": "محل دریافت اخطاریه، احضاریه، آرا، دادنامه و قرارها. لحظهٔ رؤیت ابلاغیه مبدأ شمارش مهلت‌های قانونی شماست.",
+      "personas": [
+        { "persona": "haqiqi", "allowed": true },
+        { "persona": "hoquqi", "allowed": true },
+        { "persona": "vakil",  "allowed": true }
+      ],
+      "channels": [{ "kind": "self_service", "is_primary": true }],
+      "prerequisites": [{ "slug": "sana-registration", "kind": "hard" }],
+      "steps": [
+        { "ord": 1, "title": "دریافت پیامک اطلاع", "body_md": "پیامک فقط اطلاع می‌دهد که ابلاغی وجود دارد و محتوای آن را نمی‌گوید.", "common_error": "منتظر ماندن برای محتوا در پیامک — محتوا هرگز پیامک نمی‌شود." },
+        { "ord": 2, "title": "ورود به سامانه ابلاغ و رؤیت", "body_md": "TODO_CONTENT", "common_error": "TODO_CONTENT" },
+        { "ord": 3, "title": "ثبت تاریخ رؤیت برای محاسبه مهلت", "body_md": "TODO_CONTENT", "common_error": "TODO_CONTENT" }
+      ],
+      "documents": [],
+      "fees": [],
+      "deadline_rules": ["tajdidnazar_hoquqi", "vakhahi", "farjam"],
+      "status": "needs_legal_review",
+      "confidence": 75,
+      "_source": "وویس ۱، دقیقه ۰۱:۳۷ تا ۰۵:۰۰ — مفهوم ابلاغ و آثار حقوقی"
+    },
+
+    {
+      "slug": "case-notification",
+      "title_fa": "اطلاع‌رسانی پرونده",
+      "aliases": ["اطلاع رسانی پرونده", "وضعیت پرونده", "خلاصه پرونده", "پیگیری پرونده"],
+      "system": "case-notification",
+      "category": "notification",
+      "summary": "هر رویداد و تغییر مرحلهٔ پرونده که منع اطلاع‌رسانی ندارد، اینجا برای طرف پرونده نمایش داده می‌شود. خلاصهٔ پرونده هم از همین‌جا گرفته می‌شود.",
+      "personas": [{ "persona": "haqiqi", "allowed": true }, { "persona": "hoquqi", "allowed": true }],
+      "channels": [{ "kind": "self_service", "is_primary": true }],
+      "prerequisites": [{ "slug": "sana-registration", "kind": "hard" }],
+      "steps": [
+        { "ord": 1, "title": "ورود و مشاهده فهرست پرونده‌ها", "body_md": "TODO_CONTENT", "common_error": "TODO_CONTENT" },
+        { "ord": 2, "title": "دریافت خلاصه پرونده", "body_md": "TODO_CONTENT", "common_error": "TODO_CONTENT" }
+      ],
+      "documents": [],
+      "fees": [],
+      "deadline_rules": [],
+      "status": "needs_legal_review",
+      "confidence": 65,
+      "_note": "وویس تصریح می‌کند برخی رویدادها عمداً نمایش داده نمی‌شوند — این را در متن خدمت بیاورید تا کاربر فکر نکند سامانه خراب است."
+    },
+
+    {
+      "slug": "sabt-shekvaiyeh",
+      "title_fa": "ثبت شکواییه",
+      "aliases": ["شکواییه", "شکایت کیفری", "ثبت شکایت"],
+      "system": "my-eservices",
+      "category": "filing",
+      "summary": "طرح شکایت کیفری از طریق خدمات الکترونیک قضایی من.",
+      "personas": [
+        { "persona": "haqiqi", "allowed": true },
+        { "persona": "danesh_hoquqi", "allowed": null, "restriction_note": "TODO_LEGAL: محدودیت ثبت شکایت برای این نقش باید دقیق بررسی شود" },
+        { "persona": "vakil", "allowed": true }
+      ],
+      "channels": [
+        { "kind": "self_service", "is_primary": true },
+        { "kind": "edmat_office", "is_primary": false }
+      ],
+      "prerequisites": [{ "slug": "sana-registration", "kind": "hard" }],
+      "steps": [{ "ord": 1, "title": "TODO_CONTENT", "body_md": "TODO_CONTENT", "common_error": "TODO_CONTENT" }],
+      "documents": [],
+      "fees": [{ "label": "هزینه شکواییه", "basis": "fixed", "as_of_year": 1405, "status": "needs_legal_review" }],
+      "deadline_rules": [],
+      "status": "needs_legal_review",
+      "confidence": 40
+    },
+
+    {
+      "slug": "dadkhast-badvi",
+      "title_fa": "ثبت دادخواست بدوی",
+      "aliases": ["دادخواست", "دادخواست بدوی", "طرح دعوا"],
+      "system": "my-eservices",
+      "category": "filing",
+      "summary": "طرح دعوای حقوقی در مرحلهٔ بدوی.",
+      "personas": [{ "persona": "haqiqi", "allowed": true }, { "persona": "vakil", "allowed": true }],
+      "channels": [{ "kind": "self_service", "is_primary": true }, { "kind": "edmat_office", "is_primary": false }],
+      "prerequisites": [{ "slug": "sana-registration", "kind": "hard" }],
+      "steps": [{ "ord": 1, "title": "TODO_CONTENT", "body_md": "TODO_CONTENT", "common_error": "TODO_CONTENT" }],
+      "documents": [],
+      "fees": [{ "label": "هزینه دادرسی مرحله بدوی", "basis": "percentage", "formula": { "type": "percentage", "of": "khaste_rial", "rate": null }, "as_of_year": 1405, "status": "needs_legal_review" }],
+      "deadline_rules": [],
+      "status": "needs_legal_review",
+      "confidence": 45
+    },
+
+    {
+      "slug": "sabt-layehe",
+      "title_fa": "ثبت لایحه",
+      "aliases": ["لایحه", "لایحه دفاعیه", "دفاعیه"],
+      "system": "my-eservices",
+      "category": "filing",
+      "summary": "ثبت دفاعیه یا مطلب در پرونده‌ای که در جریان است.",
+      "personas": [{ "persona": "haqiqi", "allowed": true }, { "persona": "vakil", "allowed": true }, { "persona": "hoquqi", "allowed": true }],
+      "channels": [{ "kind": "self_service", "is_primary": true }],
+      "prerequisites": [{ "slug": "sana-registration", "kind": "hard" }],
+      "steps": [{ "ord": 1, "title": "TODO_CONTENT", "body_md": "TODO_CONTENT", "common_error": "TODO_CONTENT" }],
+      "documents": [],
+      "fees": [],
+      "deadline_rules": [],
+      "status": "needs_legal_review",
+      "confidence": 45
+    },
+
+    {
+      "slug": "sabt-ezharnameh",
+      "title_fa": "ثبت اظهارنامه",
+      "aliases": ["اظهارنامه", "اظهار نامه قضایی"],
+      "system": "my-eservices",
+      "category": "filing",
+      "summary": "ابلاغ رسمی خواسته به طرف مقابل، پیش از طرح دعوا.",
+      "personas": [{ "persona": "haqiqi", "allowed": true }, { "persona": "hoquqi", "allowed": true }],
+      "channels": [{ "kind": "self_service", "is_primary": true }],
+      "prerequisites": [{ "slug": "sana-registration", "kind": "hard" }],
+      "steps": [{ "ord": 1, "title": "TODO_CONTENT", "body_md": "TODO_CONTENT", "common_error": "TODO_CONTENT" }],
+      "documents": [],
+      "fees": [{ "label": "هزینه اظهارنامه", "basis": "fixed", "as_of_year": 1405, "status": "needs_legal_review" }],
+      "deadline_rules": [],
+      "status": "needs_legal_review",
+      "confidence": 45
+    },
+
+    {
+      "slug": "divan-edalat-dadkhast",
+      "title_fa": "دادخواست بدوی دیوان عدالت اداری",
+      "aliases": ["دیوان عدالت اداری", "شکایت از دولت", "شکایت از اداره", "دیوان عدالت"],
+      "system": "divan-edalat",
+      "category": "filing",
+      "summary": "وقتی طرف مقابل شما یک دستگاه دولتی یا اداری است — مثلاً استخدام نشدن در دستگاه دولتی یا اختلاف بر سر تأمین اجتماعی و بیمه — مسیر شما دیوان عدالت اداری است، نه دادگستری.",
+      "personas": [{ "persona": "haqiqi", "allowed": true }, { "persona": "hoquqi", "allowed": true }],
+      "channels": [{ "kind": "self_service", "is_primary": true }],
+      "prerequisites": [{ "slug": "sana-registration", "kind": "hard" }],
+      "steps": [{ "ord": 1, "title": "TODO_CONTENT", "body_md": "TODO_CONTENT", "common_error": "TODO_CONTENT" }],
+      "documents": [],
+      "fees": [],
+      "deadline_rules": ["tajdidnazar_divan"],
+      "status": "needs_legal_review",
+      "confidence": 55,
+      "_related": ["ابطال مصوبات دیوان عدالت اداری — خدمت جداگانه، مرز این دو در فهرست تأییدیه حقوقی است"],
+      "_source": "وویس ۳، دقیقه ۰۰:۱۷ تا ۰۲:۲۷"
+    },
+
+    {
+      "slug": "estelam-madrak-qazai",
+      "title_fa": "استعلام اصالت مدرک قضایی",
+      "aliases": ["استعلام مدرک قضایی", "اصالت دادنامه", "صحت گواهی عدم سوءپیشینه", "استعلام قرار تأمین"],
+      "system": "my-eservices",
+      "category": "inquiry",
+      "summary": "وقتی کسی مدرکی قضایی به شما ارائه می‌دهد — دادنامه، گواهی عدم سوءپیشینه، قرار نظارت قضایی، قرار تأمین کیفری — از این مسیر می‌توانید درستی آن را بسنجید.",
+      "personas": [{ "persona": "haqiqi", "allowed": true }, { "persona": "hoquqi", "allowed": true }],
+      "channels": [{ "kind": "self_service", "is_primary": true }],
+      "prerequisites": [{ "slug": "sana-registration", "kind": "soft" }],
+      "steps": [{ "ord": 1, "title": "TODO_CONTENT", "body_md": "TODO_CONTENT", "common_error": "TODO_CONTENT" }],
+      "documents": [],
+      "fees": [],
+      "deadline_rules": [],
+      "status": "needs_legal_review",
+      "confidence": 55,
+      "_business_note": "ورودی اصلی B2B — واحد منابع انسانی شرکت‌ها"
+    },
+
+    {
+      "slug": "nobatdehi-dafater",
+      "title_fa": "نوبت‌دهی دفاتر خدمات الکترونیک قضایی",
+      "aliases": ["نوبت دفتر خدمات", "وقت دفتر خدمات قضایی", "نوبت گواهی عدم سوءپیشینه", "عدم سوءپیشینه"],
+      "system": "eservice-offices",
+      "category": "appointment",
+      "summary": "گرفتن وقت حضوری برای خدماتی مثل گواهی عدم سوءپیشینه.",
+      "personas": [{ "persona": "haqiqi", "allowed": true }],
+      "channels": [{ "kind": "self_service", "is_primary": true }, { "kind": "edmat_office", "is_primary": false }],
+      "prerequisites": [{ "slug": "sana-registration", "kind": "hard" }],
+      "steps": [{ "ord": 1, "title": "TODO_CONTENT", "body_md": "TODO_CONTENT", "common_error": "TODO_CONTENT" }],
+      "documents": [],
+      "fees": [],
+      "deadline_rules": [],
+      "status": "needs_legal_review",
+      "confidence": 50,
+      "_related": ["نوبت‌دهی واحدهای قضایی — خدمت جداگانه؛ در وویس ۳ تصریح شد که در سری قبل جا افتاده بود"]
+    },
+
+    {
+      "slug": "hazine-dadresi",
+      "title_fa": "محاسبه و پرداخت هزینه‌های قضایی",
+      "aliases": ["هزینه دادرسی", "پرداخت هزینه قضایی", "محاسبه هزینه دادرسی", "تعرفه دادرسی"],
+      "system": "fee-gateway",
+      "category": "payment",
+      "summary": "محاسبه و پرداخت هزینه‌هایی که برای خدمات قضایی باید بپردازید.",
+      "personas": [{ "persona": "haqiqi", "allowed": true }, { "persona": "hoquqi", "allowed": true }, { "persona": "vakil", "allowed": true }],
+      "channels": [{ "kind": "self_service", "is_primary": true }],
+      "prerequisites": [{ "slug": "sana-registration", "kind": "hard" }],
+      "steps": [{ "ord": 1, "title": "TODO_CONTENT", "body_md": "TODO_CONTENT", "common_error": "TODO_CONTENT" }],
+      "documents": [],
+      "fees": [],
+      "deadline_rules": [],
+      "status": "needs_legal_review",
+      "confidence": 50,
+      "_business_note": "وابستگی مشترک تقریباً همه مسیرها — ماشین‌حساب هزینه از این رکورد تغذیه می‌شود"
+    }
+  ],
+
+  "_backlog_services": [
+    "خودکاربری اشخاص حقوقی", "خودکاربری دارندگان دانش حقوقی",
+    "خودکاربری وکلا و کارشناسان", "دفاتر خدمات الکترونیک قضایی",
+    "خدمات نوین قضایی (کانون دفاتر)", "سامانه آگهی قضایی",
+    "نوبت‌دهی واحدهای قضایی", "ثبت مدارک قضایی",
+    "تجدیدنظر دیوان عدالت اداری", "اعتراض به آرا و تصمیمات مراجع اختصاصی اداری",
+    "ابطال مصوبات دیوان عدالت اداری", "استعلام سابقه طرح دعوای مرتبط با چک",
+    "استعلام وضعیت وکیل", "استعلام وضعیت کارشناس رسمی",
+    "سامانه ثبت دارایی مسئولان", "جست‌وجوی مراجع قضایی و دادگاه‌ها",
+    "سامانه ارائه و پیگیری درخواست"
+  ]
+}

@@ -1,0 +1,5 @@
+{"id":"g001","text":"پیامک اومده ابلاغیه دارم، چیکار کنم؟","persona":"haqiqi","expected_service":"eblagh-electronic","expected_channel":"self_service","must_not_contain":["روز","ماده"]}
+{"id":"g002","text":"از اداره بیمه شکایت دارم","persona":"haqiqi","expected_service":"divan-edalat-dadkhast","expected_channel":"self_service","must_not_contain":["روز"]}
+{"id":"g003","text":"این گواهی عدم سوءپیشینه که بهم دادن معتبره؟","persona":"hoquqi","expected_service":"estelam-madrak-qazai","expected_channel":"self_service"}
+{"id":"g004","text":"رمز ثنام منقضی شده","persona":"haqiqi","expected_service":"sana-profile-edit","expected_channel":"self_service"}
+{"id":"g005","text":"قیمت دلار چنده","persona":"haqiqi","expected_service":null,"expect_refusal":"out_of_scope"}

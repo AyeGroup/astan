@@ -1,0 +1,495 @@
+openapi: 3.1.0
+info:
+  title: Daadno Judicial Services Navigator API
+  version: 0.1.0
+  description: |
+    قرارداد API راهبر خدمات قضایی.
+
+    قواعد سراسری (اجباری، در ENGINEERING_RULES.md تشریح شده):
+      1. هیچ اندپوینتی رمز ثنا یا اعتبارنامه سامانه دولتی نمی‌پذیرد.
+      2. هر پاسخ تولیدشده باید آرایه `citations` غیرخالی داشته باشد، وگرنه
+         باید با `refused: true` برگردد.
+      3. هر عدد مهلت فقط از `/cases/{id}/deadlines` می‌آید — هرگز از متن مدل.
+      4. کد ملی فقط در اندپوینت‌هایی که صراحتاً آن را لازم دارند پذیرفته می‌شود.
+servers:
+  - url: https://api.example.ir/v1
+
+tags:
+  - name: catalog
+  - name: routing
+  - name: cases
+  - name: drafts
+  - name: admin
+
+paths:
+
+  /services:
+    get:
+      tags: [catalog]
+      summary: فهرست خدمات
+      parameters:
+        - { name: persona,  in: query, schema: { $ref: '#/components/schemas/Persona' } }
+        - { name: category, in: query, schema: { type: string } }
+        - { name: q,        in: query, schema: { type: string }, description: جست‌وجوی متنی ساده روی عنوان و مترادف‌ها }
+        - { name: limit,    in: query, schema: { type: integer, default: 20, maximum: 100 } }
+        - { name: cursor,   in: query, schema: { type: string } }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items]
+                properties:
+                  items:  { type: array, items: { $ref: '#/components/schemas/ServiceSummary' } }
+                  next_cursor: { type: [string, 'null'] }
+
+  /services/{slug}:
+    get:
+      tags: [catalog]
+      summary: کارت کامل خدمت
+      parameters:
+        - { name: slug, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ServiceCard' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /route:
+    post:
+      tags: [routing]
+      summary: متن آزاد کاربر → خدمات نامزد + پرسش تفکیکی
+      description: |
+        بدون عوارض جانبی. اگر ابهام باقی باشد `clarifying_questions` پر و
+        `candidates` مرتب برمی‌گردد. کلاینت تا رفع ابهام حق ندارد یک نامزد را
+        به عنوان پاسخ قطعی نمایش دهد.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [text]
+              properties:
+                text:    { type: string, maxLength: 2000 }
+                persona: { $ref: '#/components/schemas/Persona' }
+                answers:
+                  type: object
+                  additionalProperties: { type: string }
+                  description: پاسخ کاربر به پرسش‌های تفکیکی دور قبل
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [candidates, clarifying_questions]
+                properties:
+                  candidates:
+                    type: array
+                    maxItems: 5
+                    items:
+                      type: object
+                      required: [slug, title_fa, score, why]
+                      properties:
+                        slug:     { type: string }
+                        title_fa: { type: string }
+                        score:    { type: number }
+                        why:      { type: string, description: یک جمله، چرا این نامزد }
+                  clarifying_questions:
+                    type: array
+                    maxItems: 3
+                    items:
+                      type: object
+                      required: [id, question, options]
+                      properties:
+                        id:       { type: string }
+                        question: { type: string }
+                        options:  { type: array, items: { type: string } }
+                  confident: { type: boolean }
+
+  /ask:
+    post:
+      tags: [routing]
+      summary: پرسش و پاسخ مبتنی بر کاتالوگ
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [text, session_id]
+              properties:
+                text:       { type: string, maxLength: 2000 }
+                session_id: { type: string }
+                persona:    { $ref: '#/components/schemas/Persona' }
+      responses:
+        '200':
+          description: |
+            پاسخ گراندشده، یا امتناع. `refused: true` یعنی بازیابی زیر آستانه
+            بوده و مدل حق پاسخ نداشته — این حالت خطا نیست، رفتار درست است.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [refused, citations]
+                properties:
+                  answer_md: { type: [string, 'null'] }
+                  citations:
+                    type: array
+                    items: { $ref: '#/components/schemas/Citation' }
+                  service_card: { $ref: '#/components/schemas/ServiceCard' }
+                  refused: { type: boolean }
+                  refusal_reason:
+                    type: [string, 'null']
+                    enum: [low_recall, out_of_scope, needs_human, crisis_escalation, null]
+
+  /cases:
+    post:
+      tags: [cases]
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [label]
+              properties:
+                label:       { type: string, maxLength: 120 }
+                case_number: { type: string }
+                court_name:  { type: string }
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Case' }
+
+  /cases/{id}/eblagh:
+    post:
+      tags: [cases]
+      security: [{ bearerAuth: [] }]
+      summary: ثبت رویداد ابلاغ و محاسبه مهلت‌ها
+      description: |
+        `seen_at` تاریخ رؤیت ابلاغیه در سامانه ابلاغ است که **کاربر وارد می‌کند**.
+        سرویس هیچ‌جا آن را نمی‌خواند.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [eblagh_type, seen_at]
+              properties:
+                eblagh_type: { type: string, example: raye_badvi }
+                seen_at:     { type: string, format: date, description: تاریخ میلادی؛ تبدیل جلالی در کلاینت }
+                residency:   { type: string, enum: [inside_iran, outside_iran], default: inside_iran }
+      responses:
+        '201':
+          description: مهلت‌های محاسبه‌شده
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [deadlines, unavailable_rules]
+                properties:
+                  deadlines:
+                    type: array
+                    items: { $ref: '#/components/schemas/Deadline' }
+                  unavailable_rules:
+                    type: array
+                    description: قواعدی که هنوز تأیید حقوقی ندارند و عمداً محاسبه نشدند
+                    items:
+                      type: object
+                      properties:
+                        code:     { type: string }
+                        title_fa: { type: string }
+                        reason:   { type: string, enum: [needs_legal_review] }
+
+  /cases/{id}/deadlines:
+    get:
+      tags: [cases]
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/Deadline' }
+
+  /cases/{id}/export.ics:
+    get:
+      tags: [cases]
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        '200':
+          description: فایل تقویم
+          content:
+            text/calendar:
+              schema: { type: string }
+
+  /drafts:
+    post:
+      tags: [drafts]
+      security: [{ bearerAuth: [] }]
+      summary: تولید پیش‌نویس سند از قالب
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [template_code, fields]
+              properties:
+                template_code: { type: string, enum: [shekvaiyeh, dadkhast, layehe, ezharnameh] }
+                case_id:       { type: string, format: uuid }
+                fields:        { type: object, additionalProperties: true }
+      responses:
+        '201':
+          description: پیش‌نویس
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [id, body_md, disclaimer, citations]
+                properties:
+                  id:         { type: string, format: uuid }
+                  body_md:    { type: string }
+                  disclaimer: { type: string, description: متن ثابت «پیش‌نویس — پیش از ثبت بازبینی شود» }
+                  citations:  { type: array, items: { $ref: '#/components/schemas/Citation' } }
+        '429':
+          description: سقف تولید روزانه (ضد تولید انبوه شکایت)
+
+  /fees/estimate:
+    get:
+      tags: [catalog]
+      parameters:
+        - { name: service_slug, in: query, required: true, schema: { type: string } }
+        - { name: khaste_rial,  in: query, schema: { type: integer, description: مبلغ خواسته به ریال } }
+      responses:
+        '200':
+          description: برآورد
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items, total_rial, as_of_year, disclaimer]
+                properties:
+                  items:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        label:      { type: string }
+                        amount_rial:{ type: integer }
+                  total_rial: { type: integer }
+                  as_of_year: { type: integer, example: 1405 }
+                  disclaimer: { type: string }
+
+  /courts/search:
+    get:
+      tags: [catalog]
+      parameters:
+        - { name: q,        in: query, schema: { type: string } }
+        - { name: province, in: query, schema: { type: string } }
+      responses:
+        '200': { description: OK }
+
+  # ---------------- admin ----------------
+
+  /admin/services:
+    post:
+      tags: [admin]
+      security: [{ bearerAuth: [] }]
+      summary: ایجاد یا ویرایش خدمت (هر نوشتن یک نسخه جدید می‌سازد)
+      responses:
+        '201': { description: نسخه جدید ثبت شد }
+
+  /admin/services/{id}/verify:
+    post:
+      tags: [admin]
+      security: [{ bearerAuth: [] }]
+      summary: ثبت تأیید حقوقی؛ status به approved می‌رود و review_due_at تنظیم می‌شود
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        '200': { description: OK }
+        '403': { description: نقش فاقد اختیار تأیید حقوقی }
+
+  /admin/rules/{id}/approve:
+    post:
+      tags: [admin]
+      security: [{ bearerAuth: [] }]
+      summary: فعال‌سازی قاعده مهلت
+      description: |
+        تا وقتی `duration_value` و `legal_ref_id` پر نباشند، دیتابیس این
+        عملیات را رد می‌کند (CHECK rule_approved_is_complete).
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        '200': { description: OK }
+        '409': { description: قاعده ناقص است }
+
+components:
+  securitySchemes:
+    bearerAuth: { type: http, scheme: bearer, bearerFormat: JWT }
+
+  responses:
+    NotFound:
+      description: یافت نشد
+      content:
+        application/json:
+          schema:
+            type: object
+            properties: { error: { type: string } }
+
+  schemas:
+    Persona:
+      type: string
+      enum: [haqiqi, hoquqi, vakil, karshenas, danesh_hoquqi]
+
+    Channel:
+      type: string
+      enum: [self_service, edmat_office, judicial_unit, postal]
+
+    Citation:
+      type: object
+      required: [service_slug, section]
+      properties:
+        service_slug: { type: string }
+        section:      { type: string }
+        chunk_id:     { type: integer }
+        legal_ref:
+          type: object
+          properties:
+            law_title: { type: string }
+            article:   { type: string }
+            url:       { type: string }
+
+    ServiceSummary:
+      type: object
+      required: [slug, title_fa, summary, category, verified_at]
+      properties:
+        slug:        { type: string }
+        title_fa:    { type: string }
+        summary:     { type: string }
+        category:    { type: string }
+        verified_at: { type: [string, 'null'], format: date-time }
+        needs_review: { type: boolean, description: true اگر از review_due_at گذشته باشد }
+
+    ServiceCard:
+      allOf:
+        - $ref: '#/components/schemas/ServiceSummary'
+        - type: object
+          required: [personas, channels, steps, documents, fees]
+          properties:
+            aliases:  { type: array, items: { type: string } }
+            system:
+              type: object
+              properties:
+                name_fa: { type: string }
+                url:     { type: string }
+            personas:
+              type: array
+              items:
+                type: object
+                properties:
+                  persona:          { $ref: '#/components/schemas/Persona' }
+                  allowed:          { type: boolean }
+                  restriction_note: { type: string }
+            channels:
+              type: array
+              items:
+                type: object
+                properties:
+                  kind:       { $ref: '#/components/schemas/Channel' }
+                  is_primary: { type: boolean }
+                  deep_link:  { type: string }
+                  note:       { type: string }
+            prerequisites:
+              type: array
+              items:
+                type: object
+                properties:
+                  slug:     { type: string }
+                  title_fa: { type: string }
+                  kind:     { type: string, enum: [hard, soft] }
+            steps:
+              type: array
+              items:
+                type: object
+                properties:
+                  ord:          { type: integer }
+                  title:        { type: string }
+                  body_md:      { type: string }
+                  screen_hint:  { type: string }
+                  common_error: { type: string }
+            documents:
+              type: array
+              items:
+                type: object
+                properties:
+                  name:         { type: string }
+                  is_mandatory: { type: boolean }
+                  format_note:  { type: string }
+            fees:
+              type: array
+              items:
+                type: object
+                properties:
+                  label:      { type: string }
+                  basis:      { type: string }
+                  as_of_year: { type: integer }
+            related_deadline_rules:
+              type: array
+              items: { type: string }
+            legal_refs:
+              type: array
+              items:
+                type: object
+                properties:
+                  law_title: { type: string }
+                  article:   { type: string }
+                  url:       { type: string }
+
+    Case:
+      type: object
+      properties:
+        id:          { type: string, format: uuid }
+        label:       { type: string }
+        case_number: { type: [string, 'null'] }
+        court_name:  { type: [string, 'null'] }
+        is_closed:   { type: boolean }
+
+    Deadline:
+      type: object
+      required: [id, rule_code, title_fa, expires_on, days_left, legal_ref, disclaimer]
+      properties:
+        id:         { type: string, format: uuid }
+        rule_code:  { type: string }
+        title_fa:   { type: string }
+        expires_on: { type: string, format: date }
+        expires_on_jalali: { type: string, example: '1405/07/25' }
+        days_left:  { type: integer }
+        legal_ref:
+          type: object
+          properties:
+            law_title: { type: string }
+            article:   { type: string }
+            url:       { type: string }
+        recomputed: { type: boolean, description: true اگر قاعده بعداً اصلاح شده و عدد تغییر کرده }
+        disclaimer: { type: string }

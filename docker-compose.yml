@@ -1,0 +1,48 @@
+services:
+  db:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: daadno
+    ports: ["5432:5432"]
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      # مهاجرت‌ها در اولین بالا آمدن، به ترتیب نام، اجرا می‌شوند.
+      - ./db:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d daadno"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  api:
+    build: .
+    depends_on:
+      db: { condition: service_healthy }
+    environment:
+      DAADNO_DATABASE_URL: postgresql://postgres:postgres@db:5432/daadno
+      DAADNO_ENVIRONMENT: dev
+      DAADNO_PHONE_HMAC_KEY: ${DAADNO_PHONE_HMAC_KEY:-dev-only-change-me}
+      DAADNO_JWT_SECRET: ${DAADNO_JWT_SECRET:-dev-only-change-me}
+      DAADNO_EMBEDDING_PROVIDER: ${DAADNO_EMBEDDING_PROVIDER:-hashing}
+      DAADNO_LLM_PROVIDER: ${DAADNO_LLM_PROVIDER:-heuristic}
+    ports: ["8000:8000"]
+    command: >
+      sh -c "python scripts/load_seed.py --reindex &&
+             uvicorn daadno.app:app --host 0.0.0.0 --port 8000"
+
+  # ورکر یادآور (T-205). جدا از API تا ریستارت یکی، دیگری را نخواباند.
+  reminder-worker:
+    build: .
+    depends_on:
+      db: { condition: service_healthy }
+    environment:
+      DAADNO_DATABASE_URL: postgresql://postgres:postgres@db:5432/daadno
+      DAADNO_PHONE_HMAC_KEY: ${DAADNO_PHONE_HMAC_KEY:-dev-only-change-me}
+      DAADNO_JWT_SECRET: ${DAADNO_JWT_SECRET:-dev-only-change-me}
+    command: python scripts/run_workers.py --interval 60
+    restart: unless-stopped
+
+volumes:
+  pgdata:

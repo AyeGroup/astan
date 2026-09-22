@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="hero">
+  <h1>چه کاری در سامانه‌های قضایی دارید؟</h1>
+  <p class="lead">موضوعتان را به زبان خودتان بنویسید. خدمت درست، گام‌های دقیق و خطاهای رایج هر گام را نشان می‌دهیم.</p>
+  <form class="search search-big" action="/search" method="get" role="search">
+    <label class="sr-only" for="q-big">جست‌وجوی خدمت</label>
+    <input id="q-big" name="q" type="search" required autofocus
+           placeholder="مثلاً: پیامک ابلاغیه آمده" value="{{ query or '' }}">
+    <button type="submit">پیدا کن</button>
+  </form>
+  <ul class="chips">
+    {% for chip in chips %}
+    <li><a href="/search?q={{ chip|urlencode }}">{{ chip }}</a></li>
+    {% endfor %}
+  </ul>
+</section>
+
+<section>
+  <h2>خدمات پرکاربرد</h2>
+  {% if services %}
+  <ul class="cards">
+    {% for s in services %}
+    <li class="card">
+      <h3><a href="/services/{{ s.slug }}">{{ s.title_fa }}</a></h3>
+      <p>{{ s.summary }}</p>
+      <span class="badge">{{ category_labels.get(s.category, s.category) }}</span>
+    </li>
+    {% endfor %}
+  </ul>
+  {% else %}
+  <p class="empty">هنوز هیچ خدمتی تأیید حقوقی نگرفته است. تا آن زمان چیزی به کاربر نهایی نشان داده نمی‌شود.</p>
+  {% endif %}
+</section>
+{% endblock %}

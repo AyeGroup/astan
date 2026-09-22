@@ -1,0 +1,132 @@
+{
+  "_meta": {
+    "WARNING": "هیچ‌کدام از اعداد زیر پر نشده و نباید توسط برنامه‌نویس حدس زده شود. عدد ۳۰ روزی که در وویس مرجع آمده، صرفاً مثال گوینده بوده است. دیتابیس با CHECK rule_approved_is_complete جلوی approve شدن قاعدهٔ ناقص را می‌گیرد.",
+    "owner": "کارشناس حقوقی",
+    "blocks": "فاز ۲"
+  },
+
+  "eblagh_types": [
+    { "code": "raye_badvi",  "title_fa": "رأی بدوی" },
+    { "code": "dadnameh",    "title_fa": "دادنامه" },
+    { "code": "ahzariyeh",   "title_fa": "احضاریه" },
+    { "code": "ekhtariyeh",  "title_fa": "اخطاریه" },
+    { "code": "qarar",       "title_fa": "قرار" },
+    { "code": "jalase",      "title_fa": "ابلاغ جلسه رسیدگی" },
+    { "code": "ezharnameh",  "title_fa": "اظهارنامه" }
+  ],
+
+  "rules": [
+    {
+      "code": "tajdidnazar_hoquqi",
+      "title_fa": "مهلت تجدیدنظرخواهی — دعاوی حقوقی",
+      "trigger_type": "raye_badvi",
+      "duration_value": null,
+      "duration_unit": "day",
+      "residency": "inside_iran",
+      "count_from": "day_after_eblagh",
+      "skip_holidays": false,
+      "extend_if_ends_on_holiday": true,
+      "legal_ref": null,
+      "as_of_year": 1405,
+      "status": "needs_legal_review"
+    },
+    {
+      "code": "tajdidnazar_hoquqi_kharej",
+      "title_fa": "مهلت تجدیدنظرخواهی — مقیمین خارج از کشور",
+      "trigger_type": "raye_badvi",
+      "duration_value": null,
+      "duration_unit": "month",
+      "residency": "outside_iran",
+      "count_from": "day_after_eblagh",
+      "legal_ref": null,
+      "as_of_year": 1405,
+      "status": "needs_legal_review"
+    },
+    {
+      "code": "tajdidnazar_keyfari",
+      "title_fa": "مهلت تجدیدنظرخواهی — دعاوی کیفری",
+      "trigger_type": "raye_badvi",
+      "duration_value": null,
+      "duration_unit": "day",
+      "residency": "inside_iran",
+      "count_from": "day_after_eblagh",
+      "legal_ref": null,
+      "as_of_year": 1405,
+      "status": "needs_legal_review"
+    },
+    {
+      "code": "vakhahi",
+      "title_fa": "مهلت واخواهی از حکم غیابی",
+      "trigger_type": "dadnameh",
+      "duration_value": null,
+      "duration_unit": "day",
+      "residency": "inside_iran",
+      "count_from": "day_after_eblagh",
+      "legal_ref": null,
+      "as_of_year": 1405,
+      "status": "needs_legal_review"
+    },
+    {
+      "code": "farjam",
+      "title_fa": "مهلت فرجام‌خواهی",
+      "trigger_type": "dadnameh",
+      "duration_value": null,
+      "duration_unit": "day",
+      "residency": "inside_iran",
+      "count_from": "day_after_eblagh",
+      "legal_ref": null,
+      "as_of_year": 1405,
+      "status": "needs_legal_review"
+    },
+    {
+      "code": "eteraz_sales",
+      "title_fa": "مهلت اعتراض ثالث",
+      "trigger_type": "dadnameh",
+      "duration_value": null,
+      "duration_unit": "day",
+      "residency": "any",
+      "count_from": "day_after_eblagh",
+      "legal_ref": null,
+      "as_of_year": 1405,
+      "status": "needs_legal_review"
+    },
+    {
+      "code": "tajdidnazar_divan",
+      "title_fa": "مهلت تجدیدنظرخواهی — دیوان عدالت اداری",
+      "trigger_type": "dadnameh",
+      "duration_value": null,
+      "duration_unit": "day",
+      "residency": "inside_iran",
+      "count_from": "day_after_eblagh",
+      "legal_ref": null,
+      "as_of_year": 1405,
+      "status": "needs_legal_review"
+    },
+    {
+      "code": "hozur_jalase",
+      "title_fa": "فاصله ابلاغ تا جلسه رسیدگی",
+      "trigger_type": "jalase",
+      "duration_value": null,
+      "duration_unit": "day",
+      "residency": "inside_iran",
+      "count_from": "day_after_eblagh",
+      "legal_ref": null,
+      "as_of_year": 1405,
+      "status": "needs_legal_review"
+    }
+  ],
+
+  "reminder_ladder": [
+    { "at": "T-75%",  "channel": "push" },
+    { "at": "T-50%",  "channel": "push" },
+    { "at": "T-5d",   "channel": "push" },
+    { "at": "T-2d",   "channel": "sms"  },
+    { "at": "T-0 09:00", "channel": "sms" }
+  ],
+
+  "holidays": {
+    "_note": "جدول holiday باید از یک منبع رسمی پر شود و امکان درج دستی تعطیلی ناگهانی داشته باشد. تا پر شدن این جدول، extend_if_ends_on_holiday عملاً بی‌اثر است و باید در UI هشدار داده شود.",
+    "source_todo": true,
+    "entries": []
+  }
+}

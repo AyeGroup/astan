@@ -1,0 +1,159 @@
+{% extends "base.html" %}
+{% block title %}{{ card.title_fa }} — راهنمای گام‌به‌گام | دادنو{% endblock %}
+{% block description %}{{ card.summary|striptags|truncate(155, True, '…') }}{% endblock %}
+{% block head_extra %}
+<script type="application/ld+json">{{ json_ld|safe }}</script>
+{% endblock %}
+{% block content %}
+
+<nav class="breadcrumb" aria-label="مسیر">
+  <a href="/">خانه</a> ← <span>{{ card.title_fa }}</span>
+</nav>
+
+<article class="service" data-slug="{{ card.slug }}">
+  <h1>{{ card.title_fa }}</h1>
+  <p class="lead">{{ card.summary }}</p>
+
+  <dl class="meta">
+    {% if card.system %}<dt>سامانهٔ مربوط</dt><dd>{{ card.system.name_fa }}</dd>{% endif %}
+    <dt>آخرین تأیید حقوقی</dt>
+    <dd>{{ verified_jalali or 'تأیید نشده' }}</dd>
+  </dl>
+
+  {% if card.needs_review %}
+  <p class="warn">مهلت بازبینی دوره‌ای این محتوا گذشته است و در حال بازبینی مجدد است.</p>
+  {% endif %}
+
+  {% if card.prerequisites %}
+  <section>
+    <h2>پیش‌نیازها</h2>
+    <ul class="prereq">
+      {% for p in card.prerequisites %}
+      <li>
+        <a href="/services/{{ p.slug }}">{{ p.title_fa }}</a>
+        <span class="badge {{ 'hard' if p.kind == 'hard' else 'soft' }}">
+          {{ 'الزامی' if p.kind == 'hard' else 'بهتر است باشد' }}</span>
+      </li>
+      {% endfor %}
+    </ul>
+  </section>
+  {% endif %}
+
+  {% if card.channels %}
+  <section>
+    <h2>از چه راهی انجام می‌شود</h2>
+    <ul class="channels">
+      {% for c in card.channels %}
+      <li>
+        <strong>{{ channel_labels.get(c.kind, c.kind) }}</strong>
+        {% if c.is_primary %}<span class="badge">مسیر اصلی</span>{% endif %}
+        {% if c.note %}<p>{{ c.note }}</p>{% endif %}
+        {% if c.deep_link %}<a class="ext" rel="nofollow noopener" href="{{ c.deep_link }}">ورود به سامانه</a>{% endif %}
+      </li>
+      {% endfor %}
+    </ul>
+  </section>
+  {% endif %}
+
+  {% if card.personas %}
+  <section>
+    <h2>چه کسی می‌تواند این کار را انجام دهد</h2>
+    <ul class="personas">
+      {% for p in card.personas %}
+      <li class="{{ 'yes' if p.allowed else 'no' }}">
+        {{ persona_labels.get(p.persona, p.persona) }}
+        {% if p.restriction_note %}<span class="note">{{ p.restriction_note }}</span>{% endif %}
+      </li>
+      {% endfor %}
+    </ul>
+  </section>
+  {% endif %}
+
+  {% if card.steps %}
+  <section id="steps">
+    <h2>گام‌به‌گام</h2>
+    <p class="muted">پیشرفت شما روی همین دستگاه ذخیره می‌شود؛ هیچ‌چیز به سرور فرستاده نمی‌شود.</p>
+    <ol class="steps">
+      {% for s in card.steps %}
+      <li class="step" data-ord="{{ s.ord }}">
+        <label class="step-check">
+          <input type="checkbox" class="step-toggle" data-ord="{{ s.ord }}">
+          <span class="step-title">{{ s.title }}</span>
+        </label>
+        {% if s.body_md and 'TODO_CONTENT' not in s.body_md %}
+        <div class="step-body">{{ s.body_md }}</div>
+        {% else %}
+        <p class="pending">متن این گام در حال تدوین و بازبینی حقوقی است.</p>
+        {% endif %}
+        {% if s.screen_hint and 'TODO_CONTENT' not in s.screen_hint %}
+        <p class="hint">در صفحه: {{ s.screen_hint }}</p>
+        {% endif %}
+        {% if s.common_error and 'TODO_CONTENT' not in s.common_error %}
+        <p class="common-error"><strong>خطای رایج:</strong> {{ s.common_error }}</p>
+        {% endif %}
+      </li>
+      {% endfor %}
+    </ol>
+  </section>
+  {% endif %}
+
+  {% if card.documents %}
+  <section>
+    <h2>مدارک لازم</h2>
+    <ul class="docs">
+      {% for d in card.documents %}
+      <li>{{ d.name }}{% if not d.is_mandatory %} <span class="badge soft">اختیاری</span>{% endif %}
+        {% if d.format_note %}<span class="note">{{ d.format_note }}</span>{% endif %}</li>
+      {% endfor %}
+    </ul>
+  </section>
+  {% endif %}
+
+  {% if card.fees %}
+  <section>
+    <h2>هزینه‌ها</h2>
+    <ul class="fees">
+      {% for f in card.fees %}
+      <li>{{ f.label }} <span class="muted">(تعرفهٔ سال {{ f.as_of_year }})</span></li>
+      {% endfor %}
+    </ul>
+    <p class="muted">{{ fee_disclaimer }}</p>
+  </section>
+  {% endif %}
+
+  {% if card.related_deadline_rules %}
+  <section class="deadline-box">
+    <h2>مهلت‌های مرتبط</h2>
+    <p>عدد مهلت در صفحهٔ خدمت نوشته نمی‌شود. مهلت شما به تاریخ رؤیت ابلاغیهٔ خودتان بستگی دارد و در بخش «پرونده‌های من» محاسبه می‌شود.</p>
+    <a class="cta" href="/cases">ثبت ابلاغیه و محاسبهٔ مهلت</a>
+  </section>
+  {% endif %}
+
+  {% if card.faqs %}
+  <section>
+    <h2>پرسش‌های پرتکرار</h2>
+    <dl class="faq">
+      {% for f in card.faqs %}
+      <dt>{{ f.question }}</dt><dd>{{ f.answer_md }}</dd>
+      {% endfor %}
+    </dl>
+  </section>
+  {% endif %}
+
+  {% if card.legal_refs %}
+  <section>
+    <h2>مستندات قانونی</h2>
+    <ul class="refs">
+      {% for r in card.legal_refs %}
+      <li>{{ r.law_title }} — {{ r.article }}
+        {% if r.url %}<a rel="nofollow noopener" href="{{ r.url }}">متن</a>{% endif %}</li>
+      {% endfor %}
+    </ul>
+  </section>
+  {% endif %}
+</article>
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/steps.js" defer></script>
+{% endblock %}

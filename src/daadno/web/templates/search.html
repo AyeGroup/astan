@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block title %}جست‌وجو: {{ query }} — دادنو{% endblock %}
+{% block description %}نتایج جست‌وجوی «{{ query }}» در راهبر خدمات قضایی دادنو.{% endblock %}
+{% block head_extra %}<meta name="robots" content="noindex, follow">{% endblock %}
+{% block content %}
+<h1>نتایج برای «{{ query }}»</h1>
+
+{% if results %}
+<ul class="cards">
+  {% for s in results %}
+  <li class="card">
+    <h3><a href="/services/{{ s.slug }}">{{ s.title_fa }}</a></h3>
+    <p>{{ s.summary }}</p>
+  </li>
+  {% endfor %}
+</ul>
+{% else %}
+<p class="empty">تطبیق مستقیمی پیدا نشد.</p>
+{% endif %}
+
+{% if route %}
+<section class="route">
+  <h2>برای اینکه دقیق راهنمایی کنیم</h2>
+  {% if route.candidates %}
+  <p class="muted">نزدیک‌ترین خدمت‌ها به متن شما:</p>
+  <ul class="cards">
+    {% for c in route.candidates %}
+    <li class="card">
+      <h3><a href="/services/{{ c.slug }}">{{ c.title_fa }}</a></h3>
+      <p>{{ c.why }}</p>
+    </li>
+    {% endfor %}
+  </ul>
+  {% endif %}
+  {% if not route.confident and route.clarifying_questions %}
+  <div class="clarify">
+    <p>{% if route.candidates %}هنوز مطمئن نیستیم کدام‌یک مسیر شماست.{% else %}برای پیدا کردن مسیر درست، این‌ها را بگویید:{% endif %}</p>
+    {% for q in route.clarifying_questions %}
+    <fieldset>
+      <legend>{{ q.question }}</legend>
+      {% for opt in q.options %}
+      <a class="option" href="/search?q={{ query|urlencode }}&amp;{{ q.id }}={{ opt|urlencode }}">{{ opt }}</a>
+      {% endfor %}
+    </fieldset>
+    {% endfor %}
+  </div>
+  {% endif %}
+</section>
+{% endif %}
+{% endblock %}

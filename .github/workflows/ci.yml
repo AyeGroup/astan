@@ -1,0 +1,108 @@
+name: CI
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+
+jobs:
+  # بند ۱ تا ۳ ENGINEERING_RULES.md — بدون دیتابیس، تا سریع‌ترین بازخورد
+  # را روی هر PR بدهد. شکست این جاب بلاکر رلیز است.
+  engineering-rules:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.11" }
+      - name: بررسی قواعد مهندسی
+        run: python scripts/check_engineering_rules.py --strict
+
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.11" }
+      - run: pip install ruff==0.8.4
+      - run: ruff check src scripts tests
+      - run: ruff format --check src scripts tests
+
+  test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: postgres
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s --health-timeout 5s --health-retries 20
+    env:
+      DAADNO_TEST_ADMIN_URL: postgresql://postgres:postgres@127.0.0.1:5432/postgres
+      DAADNO_PHONE_HMAC_KEY: ci-hmac-key
+      DAADNO_JWT_SECRET: ci-jwt-secret
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.11" }
+      - run: sudo apt-get update && sudo apt-get install -y postgresql-client
+      - run: pip install -r requirements-dev.txt
+      - run: pytest -q
+
+  # T-105 — ارزیابی روی هر PR که پرامپت یا بازیابی را دست بزند.
+  eval:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: daadno
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s --health-timeout 5s --health-retries 20
+    env:
+      DAADNO_DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/daadno
+      DAADNO_PHONE_HMAC_KEY: ci-hmac-key
+      DAADNO_JWT_SECRET: ci-jwt-secret
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - id: touched
+        name: آیا این PR پرامپت یا بازیابی را دست زده؟
+        run: |
+          changed=$(git diff --name-only origin/${{ github.base_ref }}...HEAD)
+          echo "$changed"
+          if echo "$changed" | grep -qE '^(prompts/|db/002_search.sql|src/daadno/(retrieval|chunker|indexer|router_service|ask_service|guards)\.py|src/daadno/embeddings/)'; then
+            echo "run=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "run=false" >> "$GITHUB_OUTPUT"
+          fi
+      - uses: actions/setup-python@v5
+        if: steps.touched.outputs.run == 'true'
+        with: { python-version: "3.11" }
+      - if: steps.touched.outputs.run == 'true'
+        run: sudo apt-get update && sudo apt-get install -y postgresql-client
+      - if: steps.touched.outputs.run == 'true'
+        run: pip install -r requirements.txt
+      - if: steps.touched.outputs.run == 'true'
+        run: |
+          psql -v ON_ERROR_STOP=1 "$DAADNO_DATABASE_URL" \
+            -f db/001_schema.sql -f db/002_search.sql -f db/003_app.sql
+          python scripts/load_seed.py --reindex
+          python scripts/bootstrap_dev.py --approve-catalog
+      - if: steps.touched.outputs.run == 'true'
+        name: اجرای مجموعهٔ طلایی
+        # --enforce وقتی روشن می‌شود که مجموعه به ۲۰۰ ردیف رسیده باشد (T-105).
+        run: python scripts/run_eval.py --save eval/reports/pr.json
+      - if: steps.touched.outputs.run == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: eval-report
+          path: eval/reports/pr.json
